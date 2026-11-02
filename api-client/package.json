@@ -10,11 +10,11 @@
     "sdk-gen": "openapi-ts"
   },
   "dependencies": {
-    "ofetch": "^1.5.1",
-    "zod": "^4.4.3"
+    "ofetch": "catalog:",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@hey-api/openapi-ts": "^0.99.0",
-    "typescript": "^5.9.3"
+    "typescript": "catalog:"
   }
 }

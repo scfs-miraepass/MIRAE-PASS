@@ -11,16 +11,21 @@ MIRAE-PASS
 ```
 
 ## 개발 환경
-`client`, `admin`, `api-client`는 Yarn(v1) 워크스페이스입니다. 의존성은 저장소 루트에서 설치하며 `yarn.lock`도 루트에 하나만 둡니다.
+`client`, `admin`, `api-client`는 Yarn 4 워크스페이스입니다. 의존성은 저장소 루트에서 설치하며 `yarn.lock`도 루트에 하나만 둡니다.
+Yarn 버전은 `package.json`의 `packageManager`로 고정되어 있으므로 Corepack을 한 번 활성화해야 합니다.
 `server`는 워크스페이스에 포함되지 않고 `uv`로 따로 관리합니다. [server/README.md](server/README.md)를 참고하세요.
 
 ```bash
+corepack enable
 yarn install
 
 yarn dev:client         # 또는 dev:admin
 yarn build:client       # 또는 build:admin
 yarn typecheck:client   # 또는 typecheck:admin
 ```
+
+### 공통 의존성
+두 개 이상의 워크스페이스가 함께 쓰는 패키지의 버전은 `.yarnrc.yml`의 `catalog`에서 관리하고, 각 `package.json`에는 `"catalog:"`로 표기합니다. 버전을 올릴 때는 `.yarnrc.yml`을 수정한 뒤 `yarn install`을 실행하세요.
 
 ## SDK
 앱에서는 `@miraepass/api-client`로 가져옵니다.

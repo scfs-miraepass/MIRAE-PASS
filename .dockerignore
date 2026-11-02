@@ -3,6 +3,7 @@
 server
 docs
 **/node_modules
+**/.yarn
 **/.nuxt
 **/.nuxt-*
 **/.output

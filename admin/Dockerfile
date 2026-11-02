@@ -4,14 +4,15 @@ FROM node:24-slim AS builder
 
 WORKDIR /src
 
-COPY package.json yarn.lock ./
+COPY package.json yarn.lock .yarnrc.yml ./
 COPY client/package.json client/
 COPY admin/package.json admin/
 COPY api-client/package.json api-client/
 
 RUN apt-get update \
     && rm -rf /var/lib/apt/lists/* \
-    && yarn install --frozen-lockfile
+    && corepack enable \
+    && yarn install --immutable
 
 COPY . .
 RUN yarn workspace scfs-miraepass-dashboard postinstall && yarn workspace scfs-miraepass-dashboard build
