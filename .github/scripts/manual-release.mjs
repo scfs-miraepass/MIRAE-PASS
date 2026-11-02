@@ -72,11 +72,7 @@ writeFileSync("release-notes.md", notes);
 execFileSync("sh", [".github/scripts/bump-version.sh", version], { stdio: "inherit" });
 
 git("add", "CHANGELOG.md", "client/package.json", "admin/package.json", "server/pyproject.toml", "server/uv.lock");
-git(
-  "-c", "user.name=github-actions[bot]",
-  "-c", "user.email=41898282+github-actions[bot]@users.noreply.github.com",
-  "commit", "-m", `chore(release): ${version} [skip ci]`,
-);
+git("commit", "-m", `chore(release): ${version} [skip ci]`);
 git("tag", tag);
 
 // semantic-release는 사전 릴리스 태그의 채널을 이 note로 판단합니다. note가 없으면 dev 브랜치에서 태그를 무시합니다.
