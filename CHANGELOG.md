@@ -1,3 +1,16 @@
+# [1.14.0-dev.1](https://github.com/scfs-miraepass/MIRAE-PASS/compare/v1.13.1...v1.14.0-dev.1) (2026-11-02)
+
+
+### Bug Fixes
+
+* **client:** UI속 '환경의 날' 행사로 되어있는거 수정 ([3c8fc18](https://github.com/scfs-miraepass/MIRAE-PASS/commit/3c8fc18d3bf9d56838d2dd31282610090493b63c))
+* **client:** 스템프 부스 선택 UI에 학생의 날 부스 목록이 적용 안되던 현상 해결 ([41b5fef](https://github.com/scfs-miraepass/MIRAE-PASS/commit/41b5fef71fd64fab1cab423a69fa3452cad55489))
+
+
+### Features
+
+* **sdk:** Server `1.13.1` SDK ([95c4d2c](https://github.com/scfs-miraepass/MIRAE-PASS/commit/95c4d2cb87c6cb735153205e6e60d212525472b1))
+
 ## [1.13.1](https://github.com/scfs-miraepass/MIRAE-PASS/compare/v1.13.0...v1.13.1) (2026-11-02)
 
 
