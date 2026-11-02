@@ -6,5 +6,5 @@ logs
 
 database.erd
 *.env
-LICENSE
+../LICENSE
 README.md
