@@ -29,16 +29,8 @@
         "zod": "catalog:"
     },
     "devDependencies": {
-        "@semantic-release/changelog": "catalog:",
-        "@semantic-release/commit-analyzer": "catalog:",
-        "@semantic-release/exec": "catalog:",
-        "@semantic-release/git": "catalog:",
-        "@semantic-release/github": "catalog:",
-        "@semantic-release/npm": "catalog:",
-        "@semantic-release/release-notes-generator": "catalog:",
         "@types/node": "catalog:",
         "@types/ws": "^8.18.1",
-        "semantic-release": "catalog:",
         "typescript": "catalog:",
         "vue-tsc": "catalog:"
     }

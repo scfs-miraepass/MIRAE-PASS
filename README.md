@@ -65,3 +65,16 @@ docker build -f client/Dockerfile .
 docker build -f admin/Dockerfile .
 docker build server
 ```
+
+## 릴리스
+`client`, `admin`, `server`는 하나의 버전을 함께 사용합니다. `dev`나 `master`에 푸시하면 [semantic-release](https://github.com/semantic-release/semantic-release)가 커밋 메시지로 다음 버전을 정하고, 세 앱의 버전 파일과 루트 `CHANGELOG.md`를 갱신한 뒤 `v1.13.0` 형식의 태그를 만듭니다. `dev`에서는 `v1.13.0-dev.1` 형식의 사전 릴리스가 만들어집니다.
+
+새 버전이 나오면 세 앱의 이미지가 모두 같은 버전으로 빌드됩니다.
+
+```
+ghcr.io/scfs-miraepass/mirae-pass/client:<버전>
+ghcr.io/scfs-miraepass/mirae-pass/admin:<버전>
+ghcr.io/scfs-miraepass/mirae-pass/server:<버전>
+```
+
+변경 로그에서 앱을 구분할 수 있도록 커밋에 `feat(client): ...`처럼 scope를 적어 주세요. 통합 이전의 기록은 각 앱의 `CHANGELOG.md`에 남아 있습니다.

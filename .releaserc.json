@@ -1,5 +1,5 @@
 {
-  "tagFormat": "server-v${version}",
+  "tagFormat": "v${version}",
   "branches": [
     "master",
     { "name": "dev", "prerelease": "dev" }
@@ -11,13 +11,19 @@
     [
       "@semantic-release/exec",
       {
-        "prepareCmd": "echo \"NEW_VERSION=${nextRelease.version}\" >> build.env && uv version ${nextRelease.version} && uv lock"
+        "prepareCmd": "echo \"NEW_VERSION=${nextRelease.version}\" >> build.env && npm pkg set version=${nextRelease.version} -w client -w admin && uv --project server version ${nextRelease.version} --no-sync"
       }
     ],
     [
       "@semantic-release/git",
       {
-        "assets": ["pyproject.toml", "CHANGELOG.md", "uv.lock"],
+        "assets": [
+          "CHANGELOG.md",
+          "client/package.json",
+          "admin/package.json",
+          "server/pyproject.toml",
+          "server/uv.lock"
+        ],
         "message": "chore(release): ${nextRelease.version} [skip ci]"
       }
     ],

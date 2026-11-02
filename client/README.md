@@ -22,8 +22,7 @@ yarn sdk-gen
 ```
 
 ### 버전 지정
-버전의 경우 package.json에 작성합니다.<br>
-Dev또는 Master 브랜치에 푸시될경우 [semantic-release](https://github.com/semantic-release/semantic-release)를 통해 자동으로 버전이 지정되로 릴리즈 됩니다.
+`client`, `admin`, `server`는 하나의 버전을 함께 사용합니다. 자세한 내용은 [루트 README](../README.md#릴리스)를 참고하세요.
 ```
 Major.Minor.Patch
 - Major (1.x.x): 기존 기능과 호환되지 않는 큰 변화가 있을 때 (예: UI 전면 개편)
