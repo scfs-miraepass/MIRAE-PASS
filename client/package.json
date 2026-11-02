@@ -1,6 +1,6 @@
 {
     "name": "scfs-miraepass-front",
-    "version": "1.13.0-dev.1",
+    "version": "1.13.0-dev.2",
     "type": "module",
     "private": true,
     "scripts": {
