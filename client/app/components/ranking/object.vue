@@ -25,16 +25,16 @@ const pointLabel = computed(() => props.period === "weekly" ? "이번 주 포인
                 <div class="flex items-center mb-0.5">
                     <p class="text-p1">{{ name }}</p>
 
-                    <template v-if="grade >= 1">
+                    <template v-if="grade != null && grade >= 1">
                         <p
                             class="text-ui-p2 text-rose-400 ml-1"
-                            v-if="number <= 2"
+                            v-if="(number ?? 0) <= 2"
                         >
                             {{ grade }}학년 바이오
                         </p>
                         <p
                             class="text-ui-p2 text-blue-400 ml-1"
-                            v-else-if="number <= 4"
+                            v-else-if="(number ?? 0) <= 4"
                         >
                             {{ grade }}학년 소프트
                         </p>

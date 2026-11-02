@@ -8,3 +8,17 @@ repos:
           - id: ruff-format
             args: [--line-length=120]
             files: ^server/
+    - repo: local
+      hooks:
+          - id: typecheck-client
+            name: typecheck client
+            entry: yarn typecheck:client
+            language: system
+            pass_filenames: false
+            files: ^(client/|yarn\.lock$|\.yarnrc\.yml$)
+          - id: typecheck-admin
+            name: typecheck admin
+            entry: yarn typecheck:admin
+            language: system
+            pass_filenames: false
+            files: ^(admin/|yarn\.lock$|\.yarnrc\.yml$)

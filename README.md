@@ -24,6 +24,23 @@ yarn build:client       # 또는 build:admin
 yarn typecheck:client   # 또는 typecheck:admin
 ```
 
+### 커밋 검사
+커밋할 때 [pre-commit](https://pre-commit.com)이 스테이징된 파일의 경로에 따라 아래 검사를 실행하고, 실패하면 커밋을 막습니다.
+
+| 경로 | 검사 |
+| --- | --- |
+| `server` | `ruff check --fix`, `ruff format` |
+| `client` | `yarn typecheck:client` |
+| `admin` | `yarn typecheck:admin` |
+| `yarn.lock`, `.yarnrc.yml` | `client`, `admin` 타입 검사 모두 |
+
+훅은 `yarn install` 때 자동으로 설치되며 [uv](https://docs.astral.sh/uv/)가 필요합니다. ruff가 파일을 수정해 커밋이 중단되면 수정된 파일을 다시 `git add`한 뒤 커밋하세요.
+
+```bash
+yarn hooks:install                         # 훅만 따로 설치
+uv run --project server pre-commit run -a  # 전체 파일 검사
+```
+
 ### 공통 의존성
 두 개 이상의 워크스페이스가 함께 쓰는 패키지의 버전은 `.yarnrc.yml`의 `catalog`에서 관리하고, 각 `package.json`에는 `"catalog:"`로 표기합니다. 버전을 올릴 때는 `.yarnrc.yml`을 수정한 뒤 `yarn install`을 실행하세요.
 
