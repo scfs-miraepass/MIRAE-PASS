@@ -1,3 +1,10 @@
+## [1.13.1-dev.1](https://github.com/scfs-miraepass/MIRAE-PASS/compare/v1.13.0...v1.13.1-dev.1) (2026-11-02)
+
+
+### Bug Fixes
+
+* **client:** admin 접근 프록시 주소 변경 ([6f17926](https://github.com/scfs-miraepass/MIRAE-PASS/commit/6f179262948188468d4375af5072cdb1e6e47c3f))
+
 # [1.13.0](https://github.com/scfs-miraepass/MIRAE-PASS/compare/v1.12.0...v1.13.0) (2026-11-02)
 
 
