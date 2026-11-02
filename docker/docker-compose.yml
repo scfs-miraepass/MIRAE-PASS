@@ -1,0 +1,72 @@
+services:
+  client:
+    container_name: miraepass_client
+    restart: unless-stopped
+    image: ghcr.io/scfs-miraepass/mirae-pass/client:latest
+    ports:
+      - "3000:3000"
+    networks:
+      - miraepass-net
+    depends_on:
+      - admin
+  admin:
+    container_name: miraepass_admin
+    restart: unless-stopped
+    image: ghcr.io/scfs-miraepass/mirae-pass/admin:latest
+    networks:
+      - miraepass-net
+    depends_on:
+      - server
+  server:
+    container_name: miraepass_server
+    restart: unless-stopped
+    image: ghcr.io/scfs-miraepass/mirae-pass/server:latest
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-mysql+aiomysql://${DB_USERNAME}:${DB_PASSWORD}@database:3306/${DB_DATABASE_NAME}}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - miraepass-net
+    depends_on:
+      database:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+  database:
+    container_name: miraepass_mysql
+    restart: unless-stopped
+    image: mysql
+    volumes:
+      - ./data:/var/lib/mysql
+    env_file:
+      - .env
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_DATABASE: ${DB_DATABASE_NAME}
+    networks:
+      - miraepass-net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  redis:
+    container_name: miraepass_redis
+    image: docker.io/valkey/valkey
+    restart: always
+    networks:
+      - miraepass-net
+    healthcheck:
+      test: redis-cli ping || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  miraepass-net:
+    driver: bridge

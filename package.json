@@ -13,6 +13,7 @@
   "scripts": {
     "postinstall": "test ! -e .git || yarn hooks:install || echo '[경고] Git 훅 설치 실패: uv 설치 후 yarn hooks:install을 실행하세요.'",
     "hooks:install": "uv run --project server pre-commit install",
+    "run:docker": "docker compose -f docker/docker-compose.dev.yml up --remove-orphans",
     "dev:client": "yarn workspace scfs-miraepass-front dev",
     "dev:admin": "yarn workspace scfs-miraepass-dashboard dev",
     "build:client": "yarn workspace scfs-miraepass-front build",
