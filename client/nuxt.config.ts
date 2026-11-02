@@ -134,7 +134,7 @@ export default defineNuxtConfig({
             proxy: `${backendOrigin}/**`,
         },
         '/admin/**': {
-            proxy: process.env.NODE_ENV === 'production' ? 'http://dashboard:5234/**' : 'http://localhost:5234/**',
+            proxy: process.env.NODE_ENV === 'production' ? 'http://admin:5234/**' : 'http://localhost:5234/**',
         },
     },
 
