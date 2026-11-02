@@ -1,12 +1,14 @@
 from datetime import datetime
+from typing import Any
 
 from fastapi import APIRouter, HTTPException, status
-from pydantic import BaseModel
+from pydantic import BaseModel, field_serializer
 from sqlmodel import func, select
 
 from app.core.dependency import LoginDep, ServiceClient
 from app.schemas import PointHistoryType, Stamps, StampType, UserPermission
 from app.schemas.response import ErrorResponse, ResponseModel
+from app.schemas.core import SchemaCore
 
 router = APIRouter(
     prefix="/stamp",
@@ -29,6 +31,12 @@ class StampsList(BaseModel):
     name: str
     have: bool
     time: datetime | None
+
+    @field_serializer("time")
+    def serialize_created_at(self, dt: Any, _info):
+        if isinstance(dt, datetime):
+            return SchemaCore.sync_timezone(dt).isoformat()
+        return dt
 
 
 @router.post(
