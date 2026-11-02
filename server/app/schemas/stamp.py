@@ -19,15 +19,18 @@ class StampType(StrEnum):
     """
 
     BOOTH_1 = "보석 십자수"
-    BOOTH_3 = "페이스 페인팅"
-    BOOTH_5 = "수학 문제 풀이" # 추후 이름 수정
-    BOOTH_6 = "일러스트"
-    BOOTH_7 = "주짓수"
-    BOOTH_8 = "환경 퀴즈 맞추기"
+    BOOTH_2 = "페이스 페인팅"
+    BOOTH_3 = "수학, 스트링아트"
+    BOOTH_4 = "일러스트"
+    BOOTH_5 = "주짓수"
+    BOOTH_6 = "플리마켓"
+    BOOTH_7 = "환경 퀴즈"
+    BOOTH_8 = "분리수거 챌린지"
     BOOTH_9 = "인권 키링"
-    BOOTH_11 = "인권 나무"
-    BOOTH_12 = "문제 다트"
-    BOOTH_13 = "암호표 해독"
+    BOOTH_10 = "인권 나무"
+    BOOTH_11 = "문제 다트"
+    BOOTH_12 = "암호표 해독"
+    BOOTH_13 = "학교 폭력 예방"
 
 
 class Stamps(SQLModel, table=True):
