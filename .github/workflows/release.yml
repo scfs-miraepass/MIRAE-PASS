@@ -61,13 +61,59 @@ jobs:
           source build.env
           echo "NEW_VERSION=$NEW_VERSION" >> "$GITHUB_OUTPUT"
 
+  manual-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    if: ${{ inputs.manual_version }}
+    outputs:
+      version: ${{ inputs.manual_version }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'yarn'
+
+      - name: Install the latest version of uv
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9
+
+      - name: Install dependencies
+        run: yarn install --immutable --mode=skip-build
+
+      - name: Create release commit and tag
+        id: release
+        env:
+          MANUAL_VERSION: ${{ inputs.manual_version }}
+        run: node .github/scripts/manual-release.mjs
+
+      - name: Create GitHub Release
+        if: ${{ steps.release.outputs.created == 'true' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MANUAL_VERSION: ${{ inputs.manual_version }}
+        run: |
+          PRERELEASE=""
+          case "$MANUAL_VERSION" in *-*) PRERELEASE="--prerelease" ;; esac
+          gh release create "v$MANUAL_VERSION" --verify-tag --title "v$MANUAL_VERSION" --notes-file release-notes.md $PRERELEASE
+
   docker-build:
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
-    needs: [semantic-release]
-    if: ${{ always() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') && (inputs.manual_version || needs.semantic-release.outputs.new_version) }}
+    needs: [semantic-release, manual-release]
+    if: ${{ always() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') && (needs.manual-release.outputs.version || needs.semantic-release.outputs.new_version) }}
+    env:
+      VERSION: ${{ needs.manual-release.outputs.version || needs.semantic-release.outputs.new_version }}
     strategy:
       fail-fast: false
       matrix:
@@ -83,7 +129,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: ${{ needs.semantic-release.outputs.new_version && format('v{0}', needs.semantic-release.outputs.new_version) || github.sha }}
+          ref: v${{ env.VERSION }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -101,7 +147,7 @@ jobs:
         with:
           images: ${{ env.IMAGE_PREFIX }}/${{ matrix.app }}
           tags: |
-            type=raw,value=${{ inputs.manual_version || needs.semantic-release.outputs.new_version }}
+            type=raw,value=${{ env.VERSION }}
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/master' }}
             type=raw,value=dev,enable=${{ github.ref == 'refs/heads/dev' }}
 

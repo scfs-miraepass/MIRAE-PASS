@@ -11,7 +11,7 @@
     [
       "@semantic-release/exec",
       {
-        "prepareCmd": "echo \"NEW_VERSION=${nextRelease.version}\" >> build.env && npm pkg set version=${nextRelease.version} -w client -w admin && uv --project server version ${nextRelease.version} --no-sync"
+        "prepareCmd": "echo \"NEW_VERSION=${nextRelease.version}\" >> build.env && sh .github/scripts/bump-version.sh ${nextRelease.version}"
       }
     ],
     [

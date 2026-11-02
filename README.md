@@ -77,4 +77,11 @@ ghcr.io/scfs-miraepass/mirae-pass/admin:<버전>
 ghcr.io/scfs-miraepass/mirae-pass/server:<버전>
 ```
 
-변경 로그에서 앱을 구분할 수 있도록 커밋에 `feat(client): ...`처럼 scope를 적어 주세요. 통합 이전의 기록은 각 앱의 `CHANGELOG.md`에 남아 있습니다.
+변경 로그에서 앱을 구분할 수 있도록 커밋에 `feat(client): ...`처럼 scope를 적어 주세요.
+
+### 수동 릴리스
+Actions의 `Docker Image Release` 워크플로우를 `manual_version`을 넣어 실행하면 지정한 버전으로 릴리스합니다. 버전 파일, `CHANGELOG.md`, 태그, GitHub Release까지 자동 릴리스와 똑같이 만들어지므로 다음 자동 릴리스는 이 버전 다음부터 이어집니다.
+
+- `master`는 `1.14.0`, `dev`는 `1.14.0-dev.1` 또는 `1.14.0` 형식을 사용합니다.
+- 해당 브랜치의 마지막 릴리스보다 높은 버전만 새로 만들 수 있습니다.
+- 이미 태그가 있는 버전을 넣으면 릴리스는 만들지 않고 그 태그로 이미지만 다시 빌드합니다.
