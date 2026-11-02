@@ -1,9 +1,14 @@
-# [1.13.0-dev.3](https://github.com/scfs-miraepass/MIRAE-PASS/compare/v1.13.0-dev.2...v1.13.0-dev.3) (2026-11-02)
+# [1.13.0](https://github.com/scfs-miraepass/MIRAE-PASS/compare/v1.12.0...v1.13.0) (2026-11-02)
 
 
 ### Bug Fixes
 
-* **client:** admin 접근 프록시 주소 변경 ([6f17926](https://github.com/scfs-miraepass/MIRAE-PASS/commit/6f179262948188468d4375af5072cdb1e6e47c3f))
+* **client:** 프로덕션 상태에서 server 프록시 주소 변경 ([ca87111](https://github.com/scfs-miraepass/MIRAE-PASS/commit/ca871116402f1156b6099a63c89c7031fb649953))
+
+
+### Features
+
+* **server:** 부스 최종 정리 ([dfb66b6](https://github.com/scfs-miraepass/MIRAE-PASS/commit/dfb66b6ab132933fda635533a6a57eb2e993bcae))
 
 # [1.13.0-dev.2](https://github.com/scfs-miraepass/MIRAE-PASS/compare/v1.13.0-dev.1...v1.13.0-dev.2) (2026-11-02)
 

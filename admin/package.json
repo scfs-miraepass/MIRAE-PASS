@@ -1,6 +1,6 @@
 {
   "name": "scfs-miraepass-dashboard",
-  "version": "1.13.0-dev.3",
+  "version": "1.13.0",
   "private": true,
   "type": "module",
   "scripts": {
