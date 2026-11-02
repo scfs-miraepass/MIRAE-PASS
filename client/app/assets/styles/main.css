@@ -1,0 +1,130 @@
+@import "tailwindcss";
+@import "@nuxt/ui";
+
+
+/* ============================================= */
+/*                                               */
+/*                     System                    */
+/*                                               */
+/* ============================================= */
+@theme {
+    /* Heading */
+    --text-h1: 3.25rem; /* 52px */
+    --text-h1--line-height: 1em;
+    --text-h1--letter-spacing: 0.02em;
+    --text-h1--font-weight: 600;
+
+    --text-h2: 3rem; /* 48px */
+    --text-h2--line-height: 1em;
+    --text-h2--letter-spacing: 0.02em;
+    --text-h2--font-weight: 600;
+
+    --text-h3: 2.75rem; /* 44px */
+    --text-h3--line-height: 1em;
+    --text-h3--letter-spacing: 0.02em;
+    --text-h3--font-weight: 600;
+
+    --text-h4: 2.5rem; /* 40px */
+    --text-h4--line-height: 1em;
+    --text-h4--letter-spacing: 0.02em;
+    --text-h4--font-weight: 600;
+
+    --text-h5: 2.25rem; /* 36px */
+    --text-h5--line-height: 1em;
+    --text-h5--letter-spacing: 0.02em;
+    --text-h5--font-weight: 600;
+
+    --text-h6: 2rem; /* 32px */
+    --text-h6--line-height: 1em;
+    --text-h6--letter-spacing: 0.02em;
+    --text-h6--font-weight: 600;
+
+    /* Text */
+    --text-p0: 1.25rem; /* 20px */
+    --text-p0--line-height: 1.2em;
+    --text-p0--letter-spacing: 0;
+    --text-p0--font-weight: 500;
+
+    --text-p1: 1.125rem; /* 18px */
+    --text-p1--line-height: 1.2em;
+    --text-p1--letter-spacing: -0.02em;
+    --text-p1--font-weight: 500;
+
+    --text-p2: 0.875rem; /* 14px */
+    --text-p2--line-height: 1em;
+    --text-p2--letter-spacing: 0;
+    --text-p2--font-weight: 500;
+
+    --text-p3: 0.625rem; /* 10px */
+    --text-p3--line-height: 1em;
+    --text-p3--letter-spacing: -0.02em;
+    --text-p3--font-weight: 600;
+
+    /* UI Text */
+    --text-ui-p1: 1.125rem; /* 18px */
+    --text-ui-p1--line-height: 1.2em;
+    --text-ui-p1--letter-spacing: 0.02em;
+    --text-ui-p1--font-weight: 400;
+
+    --text-ui-p2: 0.875rem; /* 14px */
+    --text-ui-p2--line-height: 1em;
+    --text-ui-p2--letter-spacing: -0.02em;
+    --text-ui-p2--font-weight: 400;
+
+    /* NuxtFont */
+    --default-font-family: Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
+}
+
+/* ============================================== */
+/*                                                */
+/*                   Base Style                   */
+/*                                                */
+/* ============================================== */
+img {
+    -webkit-user-drag: none;
+}
+
+html, body {
+    @apply light:bg-elevated select-none
+}
+
+body {
+    overflow-x: hidden;
+}
+
+.tossface {
+    font-family: Tossface, emoji;
+}
+
+.pwa-only-content {
+    @apply hidden
+}
+@media (display-mode: standalone) {
+    .pwa-only-error {
+         @apply hidden!
+     }
+    .pwa-only-content {
+        @apply block!
+    }
+}
+
+/* ============================================== */
+/*                                                */
+/*                   Animation                    */
+/*                                                */
+/* ============================================== */
+@theme {
+    --animate-fade-up-blur: fade-up-blur 0.8s cubic-bezier(0.25, 1, 0.5, 1) forwards;;
+    @keyframes fade-up-blur {
+        0% {
+            opacity: 0;
+            filter: blur(12px);
+            transform: translateY(30px);
+        }
+        100% {
+            opacity: 1;
+            filter: blur(0);
+            transform: translateY(0);
+        }
+    }
+}

@@ -1,0 +1,45 @@
+{
+    "name": "scfs-miraepass-front",
+    "version": "1.12.0",
+    "type": "module",
+    "private": true,
+    "scripts": {
+        "build": "nuxt build",
+        "dev": "nuxt dev",
+        "generate": "nuxt generate",
+        "preview": "nuxt preview",
+        "postinstall": "nuxt prepare",
+        "dev:build": "nuxt build && node .output/server/index.mjs",
+        "sdk-gen": "openapi-ts"
+    },
+    "dependencies": {
+        "@nuxt/fonts": "0.14.0",
+        "@nuxt/ui": "^4.5.1",
+        "@nuxtjs/device": "4.0.0",
+        "@tailwindcss/vite": "^4.2.1",
+        "@vite-pwa/nuxt": "1.1.1",
+        "@vueuse/core": "^14.3.0",
+        "motion-v": "^2.0.0",
+        "nuxt": "^4.4.2",
+        "tailwindcss": "^4.2.1",
+        "vue": "^3.5.30",
+        "vue-router": "^5.0.3",
+        "ws": "^8.18.3",
+        "zod": "^4.4.3"
+    },
+    "devDependencies": {
+        "@hey-api/openapi-ts": "^0.99.0",
+        "@semantic-release/changelog": "^7.0.0",
+        "@semantic-release/commit-analyzer": "^13.0.1",
+        "@semantic-release/exec": "^7.1.0",
+        "@semantic-release/git": "^11.0.1",
+        "@semantic-release/github": "^12.0.10",
+        "@semantic-release/npm": "^13.2.0",
+        "@semantic-release/release-notes-generator": "^14.1.1",
+        "@types/node": "^25.6.0",
+        "@types/ws": "^8.18.1",
+        "semantic-release": "^25.0.9",
+        "typescript": "^5.9.3",
+        "vue-tsc": "^3.2.6"
+    }
+}
