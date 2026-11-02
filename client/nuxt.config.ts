@@ -5,7 +5,7 @@ import pkg from './package.json'
 
 // Nitro의 routeRules proxy(h3 proxyRequest)는 일반 HTTP 요청만 중계할 뿐 WebSocket Upgrade는 지원하지 않는다.
 // 그래서 이 값은 routeRules(일반 API 요청)와 server/routes의 수동 WS 프록시(노래방 실시간 경매)가 함께 참조한다.
-const backendOrigin = process.env.NODE_ENV === 'production' ? 'http://backend:8000' : 'http://localhost:8000';
+const backendOrigin = process.env.NODE_ENV === 'production' ? 'http://server:8000' : 'http://localhost:8000';
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
