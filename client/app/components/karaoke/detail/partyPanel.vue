@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { KaraokePartyDetail } from "@/client";
+import type { KaraokePartyDetail } from "@miraepass/api-client";
 import type { DutchPayShare } from "@/utils/karaoke";
 import Section from "~/components/setting/section.vue";
 import PageButton from "~/components/setting/object.vue";

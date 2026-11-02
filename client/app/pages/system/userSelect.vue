@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { UserType, User } from "@/client";
+import type { UserType, User } from "@miraepass/api-client";
 import { permissionsMiddleware } from "@/middleware/permissions.global";
 
 const session = useSession()

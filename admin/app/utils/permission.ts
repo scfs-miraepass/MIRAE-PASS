@@ -1,4 +1,4 @@
-import { UserPermission } from '@/client'
+import { UserPermission } from '@miraepass/api-client'
 
 export function hasPermission(
     userPermissions: UserPermission | number | undefined | null, 

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { KaraokeSocketBid } from "@/composables/useKaraokeSocket";
-import { KaraokeStatus } from "@/client";
+import { KaraokeStatus } from "@miraepass/api-client";
 import { karaokeStatusLabel, formatDuration } from "@/utils/karaoke";
 
 defineProps<{

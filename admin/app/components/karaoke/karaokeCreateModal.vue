@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { KaraokeCreate } from '@/client'
+import type { KaraokeCreate } from '@miraepass/api-client'
 import { todayDateString } from '@/utils/karaoke'
 
 const emit = defineEmits(['close', 'create'])

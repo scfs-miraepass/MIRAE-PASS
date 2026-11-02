@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { User } from "@/client";
+import type { User } from "@miraepass/api-client";
 import { karaokeErrorMessage } from "@/utils/karaoke";
 
 const props = defineProps<{

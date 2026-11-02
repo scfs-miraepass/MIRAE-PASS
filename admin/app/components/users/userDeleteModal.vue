@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { User } from '@/client'
+import type { User } from '@miraepass/api-client'
 
 const { user } = defineProps<{
     user: User

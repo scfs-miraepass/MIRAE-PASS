@@ -2,7 +2,7 @@
 import Group from "./days.vue";
 import Obj from "./object.vue";
 import { Motion } from "motion-v";
-import type { PointHistory } from "@/client";
+import type { PointHistory } from "@miraepass/api-client";
 
 const maxOffset = ref<number>(0);
 const dataOffset = ref<number>(1);

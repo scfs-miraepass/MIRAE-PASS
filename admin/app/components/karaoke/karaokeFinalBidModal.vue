@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { KaraokeResponse, KaraokeFinalBidResponse } from '@/client'
+import type { KaraokeResponse, KaraokeFinalBidResponse } from '@miraepass/api-client'
 import { karaokeTimeLabel } from '@/utils/karaoke'
 
 const { karaoke } = defineProps<{

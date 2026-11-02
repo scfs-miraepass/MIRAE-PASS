@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import Obj from "@/components/ranking/object.vue";
-import type { RankingResponse } from "@/client";
+import type { RankingResponse } from "@miraepass/api-client";
 
 const props = defineProps<{
     type: "student" | "teacher";

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { RankingResponse } from "@/client";
+import type { RankingResponse } from "@miraepass/api-client";
 
 const props = defineProps<RankingResponse & { period: "total" | "weekly" }>();
 const pointLabel = computed(() => props.period === "weekly" ? "이번 주 포인트" : "누적 포인트");

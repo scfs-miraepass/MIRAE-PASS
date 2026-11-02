@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Motion } from "motion-v";
-import type { User, GetLimitResponse } from '@/client'
+import type { User, GetLimitResponse } from '@miraepass/api-client'
 import { useElementSize } from '@vueuse/core'
 
 definePageMeta({

@@ -1,0 +1,22 @@
+{
+  "name": "miraepass",
+  "private": true,
+  "packageManager": "yarn@1.22.22",
+  "engines": {
+    "node": ">=24"
+  },
+  "workspaces": [
+    "client",
+    "admin",
+    "api-client"
+  ],
+  "scripts": {
+    "dev:client": "yarn workspace scfs-miraepass-front dev",
+    "dev:admin": "yarn workspace scfs-miraepass-dashboard dev",
+    "build:client": "yarn workspace scfs-miraepass-front build",
+    "build:admin": "yarn workspace scfs-miraepass-dashboard build",
+    "typecheck:client": "yarn workspace scfs-miraepass-front nuxt typecheck",
+    "typecheck:admin": "yarn workspace scfs-miraepass-dashboard typecheck",
+    "sdk-gen": "yarn workspace @miraepass/api-client sdk-gen"
+  }
+}

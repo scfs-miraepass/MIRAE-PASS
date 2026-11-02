@@ -163,6 +163,10 @@ export default defineNuxtConfig({
         "@vite-pwa/nuxt",
     ],
 
+    build: {
+        transpile: ["@miraepass/api-client"],
+    },
+
     fonts: {
         families: [{ name: "Pretendard", provider: "local" }],
     },

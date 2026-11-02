@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
-import { UserPermission } from '@/client'
+import { UserPermission } from '@miraepass/api-client'
 
 const props = defineProps<{
     users: string[]

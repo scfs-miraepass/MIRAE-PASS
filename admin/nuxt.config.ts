@@ -19,6 +19,10 @@ export default defineNuxtConfig({
 
     modules: ["@nuxt/ui", "@vueuse/nuxt", "@nuxt/fonts"],
 
+    build: {
+        transpile: ["@miraepass/api-client"],
+    },
+
     routeRules: {
         "/api/**": {
             proxy:

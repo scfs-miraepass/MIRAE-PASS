@@ -9,10 +9,10 @@
         "generate": "nuxt generate",
         "preview": "nuxt preview",
         "postinstall": "nuxt prepare",
-        "dev:build": "nuxt build && node .output/server/index.mjs",
-        "sdk-gen": "openapi-ts"
+        "dev:build": "nuxt build && node .output/server/index.mjs"
     },
     "dependencies": {
+        "@miraepass/api-client": "*",
         "@nuxt/fonts": "0.14.0",
         "@nuxt/ui": "^4.5.1",
         "@nuxtjs/device": "4.0.0",
@@ -28,7 +28,6 @@
         "zod": "^4.4.3"
     },
     "devDependencies": {
-        "@hey-api/openapi-ts": "^0.99.0",
         "@semantic-release/changelog": "^7.0.0",
         "@semantic-release/commit-analyzer": "^13.0.1",
         "@semantic-release/exec": "^7.1.0",

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { PointHistory } from "@/client";
+import type { PointHistory } from "@miraepass/api-client";
 
 const props = defineProps<PointHistory>();
 

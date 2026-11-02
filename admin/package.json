@@ -8,13 +8,13 @@
     "dev": "nuxt dev",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
-    "typecheck": "nuxt typecheck",
-    "sdk-gen": "openapi-ts"
+    "typecheck": "nuxt typecheck"
   },
   "dependencies": {
     "@iconify-json/lucide": "^1.2.104",
     "@iconify-json/simple-icons": "^1.2.80",
     "@internationalized/date": "^3.12.1",
+    "@miraepass/api-client": "*",
     "@nuxt/fonts": "0.14.0",
     "@nuxt/ui": "^4.7.0",
     "@tanstack/table-core": "^8.21.3",
@@ -25,10 +25,9 @@
     "nuxt": "^4.4.2",
     "tailwindcss": "^4.2.4",
     "vue": "^3.5.33",
-    "zod": "^4.3.6"
+    "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@hey-api/openapi-ts": "^0.99.0",
     "@semantic-release/changelog": "^7.0.0",
     "@semantic-release/commit-analyzer": "^13.0.1",
     "@semantic-release/exec": "^7.1.0",

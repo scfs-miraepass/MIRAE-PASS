@@ -1,10 +1,10 @@
-import { UserPermission as _UserPermission } from '@/client'
+import { UserPermission as _UserPermission } from '@miraepass/api-client'
 
 /*
 
 사용 예시:
 
-import { UserPermission } from '@/client'
+import { UserPermission } from '@miraepass/api-client'
 
 // 1. 기존 방식과 동일 (모두 만족해야 함 - 암시적 AND)
 const permissions = [ UserPermission._GRANT_POINT, UserPermission._MANAGE_USERS ]

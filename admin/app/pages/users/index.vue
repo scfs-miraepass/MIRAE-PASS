@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { UserType, UserPermission, type User } from '@/client'
+import { UserType, UserPermission, type User } from '@miraepass/api-client'
 import type { TableColumn } from '@nuxt/ui'
 
 import DeleteModal from "@/components/users/userDeleteModal.vue"

@@ -1,16 +1,20 @@
+# 빌드 컨텍스트는 저장소 루트입니다: docker build -f client/Dockerfile .
 # 빌드 환경 (Builder)
 FROM node:24-slim AS builder
 
 WORKDIR /src
 
 COPY package.json yarn.lock ./
+COPY client/package.json client/
+COPY admin/package.json admin/
+COPY api-client/package.json api-client/
 
 RUN apt-get update \
     && rm -rf /var/lib/apt/lists/* \
-    && yarn install
+    && yarn install --frozen-lockfile
 
 COPY . .
-RUN yarn postinstall && yarn build
+RUN yarn workspace scfs-miraepass-front postinstall && yarn workspace scfs-miraepass-front build
 
 # 실행 환경 (Runner)
 FROM node:24-slim
@@ -19,7 +23,7 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-COPY --from=builder /src/.output ./.output
+COPY --from=builder /src/client/.output ./.output
 
 RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*

@@ -4,8 +4,8 @@
 ## 🔒 개발 환경설정
 ```bash
 # Git clone
-git clone https://git.rldn.xyz/scfs.miraepass/backend.git
-cd backend
+git clone https://github.com/scfs-miraepass/MIRAE-PASS.git
+cd MIRAE-PASS/server
 
 # 필요 라이브러리 설치및 환경 구성
 uv sync

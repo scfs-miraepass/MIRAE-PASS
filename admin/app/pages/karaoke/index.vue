@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { UserPermission, KaraokeStatus, type KaraokeResponse } from '@/client'
+import { UserPermission, KaraokeStatus, type KaraokeResponse } from '@miraepass/api-client'
 import type { TableColumn } from '@nuxt/ui'
 import { karaokeTimeLabel, karaokeStatusLabel, karaokeStatusColor, todayDateString } from '@/utils/karaoke'
 

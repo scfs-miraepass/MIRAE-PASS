@@ -1,4 +1,4 @@
-import type { User } from "@/client";
+import type { User } from "@miraepass/api-client";
 import { useStorage } from '@vueuse/core'
 
 export const useSession = () => useStorage<User | undefined>("session.user", undefined, undefined, {

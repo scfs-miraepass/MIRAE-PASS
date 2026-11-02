@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Motion } from "motion-v";
-import type { UserType } from "@/client";
+import type { UserType } from "@miraepass/api-client";
 
 definePageMeta({
     layout: false,

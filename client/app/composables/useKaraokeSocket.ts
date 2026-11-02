@@ -1,4 +1,4 @@
-import { type User, KaraokeStatus } from "@/client";
+import { type User, KaraokeStatus } from "@miraepass/api-client";
 
 // 백엔드 KaraokeBidHistoryItem과 동일한 형태. WS 전용 응답이라 OpenAPI 스펙에는 포함되지 않는다.
 export interface KaraokeSocketBid {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { KaraokePartyDetail, User } from "@/client";
+import type { KaraokePartyDetail, User } from "@miraepass/api-client";
 import { karaokeErrorMessage } from "@/utils/karaoke";
 import KaraokeHeader from "~/components/karaoke/header.vue";
 import LeaderCard from "~/components/karaoke/party/leaderCard.vue";

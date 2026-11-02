@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { NavigationMenuItem } from '@nuxt/ui'
-import { UserPermission } from '@/client'
+import { UserPermission } from '@miraepass/api-client'
 
 const session = useSession()
 const open = ref(false)

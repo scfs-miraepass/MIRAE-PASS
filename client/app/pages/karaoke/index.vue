@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { KaraokeResponse } from "@/client";
+import type { KaraokeResponse } from "@miraepass/api-client";
 import KaraokeHeader from "~/components/karaoke/header.vue";
 import KaraokeList from "~/components/karaoke/list/list.vue";
 

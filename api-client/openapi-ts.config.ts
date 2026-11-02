@@ -2,7 +2,7 @@ import { defineConfig } from "@hey-api/openapi-ts";
 
 export default defineConfig({
     input: "http://localhost:8000/openapi.json",
-    output: "app/client",
+    output: "src/gen",
     plugins: [
         {
             name: "@hey-api/typescript",
@@ -10,7 +10,7 @@ export default defineConfig({
         },
         {
             name: "@hey-api/client-ofetch",
-            runtimeConfigPath: "@/client.config",
+            runtimeConfigPath: "./src/client.config",
         },
         {
             name: "@hey-api/sdk",

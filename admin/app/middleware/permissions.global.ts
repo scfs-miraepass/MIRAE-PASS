@@ -1,4 +1,4 @@
-import type { UserPermission } from "@/client";
+import type { UserPermission } from "@miraepass/api-client";
 import type { RouteLocationNormalized } from "#vue-router";
 
 const consoleLog = (message: string, ...args: any[]) => {

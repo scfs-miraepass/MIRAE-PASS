@@ -1,3 +1,18 @@
+# client, admin 이미지의 빌드 컨텍스트(저장소 루트)용. server는 server/.dockerignore를 사용합니다.
+.git
+server
+docs
+**/node_modules
+**/.nuxt
+**/.nuxt-*
+**/.output
+**/dist
+**/.gen
+**/*.log
+**/.DS_Store
+**/.env
+**/.env.*
+
 ### NuxtJS ###
 # Generated dirs
 dist

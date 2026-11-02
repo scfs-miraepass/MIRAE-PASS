@@ -1,4 +1,4 @@
-import { KaraokeStatus } from '@/client'
+import { KaraokeStatus } from '@miraepass/api-client'
 
 /**
  * 로컬 타임존 기준 오늘 날짜를 "YYYY-MM-DD"로 반환한다.

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { KaraokeFinalBidResponse, KaraokePartyDetail, KaraokeResponse } from "@/client";
-import { KaraokeStatus } from "@/client";
+import type { KaraokeFinalBidResponse, KaraokePartyDetail, KaraokeResponse } from "@miraepass/api-client";
+import { KaraokeStatus } from "@miraepass/api-client";
 import { karaokeTimeLabel, calcDutchPay, karaokeErrorMessage, KARAOKE_BID_UNIT } from "@/utils/karaoke";
 import KaraokeHeader from "~/components/karaoke/header.vue";
 import AuctionResult from "~/components/karaoke/detail/result.vue";

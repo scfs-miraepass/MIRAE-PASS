@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { StampsList } from "@/client";
+import type { StampsList } from "@miraepass/api-client";
 
 definePageMeta({
     permissions: [ UserPermission.VIEW_STAMP ]

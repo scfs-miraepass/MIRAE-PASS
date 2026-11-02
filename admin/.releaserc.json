@@ -1,4 +1,5 @@
 {
+  "tagFormat": "admin-v${version}",
   "branches": [
     "master",
     { "name": "dev", "prerelease": "dev" }

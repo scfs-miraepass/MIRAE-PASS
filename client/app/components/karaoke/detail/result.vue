@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { KaraokeFinalBidResponse } from "@/client";
+import type { KaraokeFinalBidResponse } from "@miraepass/api-client";
 
 defineProps<{
     finalBid: KaraokeFinalBidResponse | null;

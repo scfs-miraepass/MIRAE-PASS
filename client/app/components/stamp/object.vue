@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import Icon from "./icon.vue";
-import type { StampsList } from "@/client";
+import type { StampsList } from "@miraepass/api-client";
 
 const { time } = defineProps<StampsList>();
 

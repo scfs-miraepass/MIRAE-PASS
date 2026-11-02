@@ -6,22 +6,22 @@
 ---
 ```bash
 # Git clone
-git clone https://git.rldn.xyz/scfs.miraepass/dashboard.git
-cd front
+git clone https://github.com/scfs-miraepass/MIRAE-PASS.git
+cd MIRAE-PASS
 
-# 필요 라이브러리 설치및 환경 구성
+# 필요 라이브러리 설치및 환경 구성 (저장소 루트에서 실행)
 yarn install
 
 # 개발 환경 실행
-yarn dev
+yarn dev:admin
 ```
 
 ## ✨ 명령어 및 개발 가이드
 ---
-`http://localhost:8000/openapi.json`는 백엔드 서버의 openapi.json 파일입니다. 개발시 주소가 다를 경우 주소를 수정해주세요.
+SDK는 [`api-client`](../api-client) 패키지에서 관리합니다. 저장소 루트에서 생성하세요.
 ### SDK 생성
 ```bash
-npx @hey-api/openapi-ts -i http://localhost:8000/openapi.json -o app/sdk -c @hey-api/client-ofetch
+yarn sdk-gen
 ```
 
 ### 버전 지정
