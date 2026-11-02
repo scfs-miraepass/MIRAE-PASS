@@ -1,0 +1,670 @@
+from datetime import datetime, timedelta
+from enum import StrEnum
+from math import ceil
+from typing import Any
+from zoneinfo import ZoneInfo
+
+from fastapi import APIRouter, HTTPException, Query, Response, status
+from pydantic import BaseModel, Field
+from sqlmodel import col, func, select
+
+from app.core import LoginDep, ServiceClient
+from app.core.redis_keys import BoundKey, Keys
+from app.schemas.core import SchemaCore
+from app.schemas import PointHistory, PointHistoryType, UserPermission, Users, UserType
+from app.schemas.response import ErrorResponse, ResponseModel
+
+router = APIRouter(prefix="/point", tags=["users", "point"])
+client = ServiceClient()
+TEACHER_POINT_LIMIT = 1000
+STUDENT_POINT_LIMIT = 1000
+MAX_PAGE_LIMIT = 100
+WEEKLY_RANKING_TIMEZONE = ZoneInfo("Asia/Seoul")
+POINT_LIMIT_TIMEZONE = ZoneInfo("Asia/Seoul")
+
+
+class RankingPeriod(StrEnum):
+    total = "total"
+    weekly = "weekly"
+
+
+class PointOperation(BaseModel):
+    target_user_id: int
+    amount: int = Field(..., gt=0, description="처리할 포인트")
+    change_type: PointHistoryType | None = Field(None, description="포인트를 처리하는 이유의 종류")
+    memo: str | None = Field(None, description="포인트를 처리하는 이유")
+
+
+class GetLimitResponse(BaseModel):
+    limit: int
+    target_limit: int
+
+
+class RankingResponse(BaseModel):
+    id: int = Field(description="고유 ID. 교사, 서비스의 경우 자동생성. 학생의 경우 학번 사용")
+    name: str = Field(description="이름")
+    grade: int | None = Field(description="학년")
+    number: int | None = Field(description="반")
+    total_point: int = Field(description="누적 포인트")
+    rank: int = Field(description="현재 순위")
+
+
+type LimitReservation = tuple[BoundKey, datetime, int]
+
+
+def _grant_limit_key(user_id: int) -> tuple[BoundKey, datetime]:
+    """교사의 이번 주(월요일 0시 시작) 지급 한도 Key와 만료 시각"""
+    now = datetime.now(POINT_LIMIT_TIMEZONE)
+    week_start = (now - timedelta(days=now.weekday())).replace(hour=0, minute=0, second=0, microsecond=0)
+    return Keys.PointLimit.GRANT(user_id=user_id, week=week_start.date().isoformat()), week_start + timedelta(days=7)
+
+
+def _student_limit_key(user_id: int) -> tuple[BoundKey, datetime]:
+    """학생의 오늘 수령 한도 Key와 만료 시각"""
+    day_start = datetime.now(POINT_LIMIT_TIMEZONE).replace(hour=0, minute=0, second=0, microsecond=0)
+    return Keys.PointLimit.STUDENT(user_id=user_id, date=day_start.date().isoformat()), day_start + timedelta(days=1)
+
+
+async def _remaining_limit(key: BoundKey, limit: int) -> int:
+    used = await client.redis.get(key)
+    return max(0, limit - (used or 0))
+
+
+async def _reserve_limit(key: BoundKey, expire_at: datetime, limit: int, amount: int, *, partial: bool = False) -> int:
+    """
+    한도에서 amount만큼을 원자적으로 사용 처리합니다.
+
+    Args:
+        partial: True이면 남은 한도만큼만 사용하고, False이면 한도를 넘는 경우 아무것도 사용하지 않습니다.
+
+    Returns:
+        int: 실제로 사용 처리된 양
+    """
+    used = await client.redis.incrby(key, amount, expire_at=expire_at)
+    excess = min(amount, max(0, used - limit))
+    if excess == 0:
+        return amount
+
+    rollback = excess if partial else amount
+    await client.redis.incrby(key, -rollback, expire_at=expire_at)
+    return amount - rollback
+
+
+async def _release_limits(reservations: list[LimitReservation]):
+    for key, expire_at, amount in reservations:
+        if amount > 0:
+            await client.redis.incrby(key, -amount, expire_at=expire_at)
+
+
+@router.get(
+    "/limit/{target_user_id}",
+    responses={
+        200: {"description": "정상적으로 처리됨"},
+        401: {
+            "model": ErrorResponse,
+            "description": "세션이 만료되었거나 유효하지 않음",
+        },
+        403: {
+            "model": ErrorResponse,
+            "description": "권한이 없음",
+        },
+    },
+    response_model=ResponseModel[GetLimitResponse],
+    status_code=status.HTTP_200_OK,
+    summary="포인트 지급 한도 조회",
+    description="현재 로그인한 자기자신의과 지급하려는 대상의 포인트 지급 한도를 조회합니다.",
+)
+async def get_limit(auth_data: LoginDep, target_user_id: int):
+    user, _ = auth_data
+    student_limit = await _remaining_limit(_student_limit_key(target_user_id)[0], STUDENT_POINT_LIMIT)
+    if user.has_permission(UserPermission.NO_LIMIT_POINT):
+        return ResponseModel[GetLimitResponse](
+            success=True,
+            data=GetLimitResponse(limit=TEACHER_POINT_LIMIT, target_limit=student_limit),
+        )
+
+    limit = await _remaining_limit(_grant_limit_key(user.id)[0], TEACHER_POINT_LIMIT)
+
+    return ResponseModel[GetLimitResponse](success=True, data=GetLimitResponse(limit=limit, target_limit=student_limit))
+
+
+@router.get(
+    "/limit",
+    responses={
+        200: {"description": "정상적으로 처리됨"},
+        401: {
+            "model": ErrorResponse,
+            "description": "세션이 만료되었거나 유효하지 않음",
+        },
+        403: {
+            "model": ErrorResponse,
+            "description": "권한이 없음",
+        },
+    },
+    response_model=ResponseModel[int],
+    status_code=status.HTTP_200_OK,
+    summary="포인트 지급 본인 한도 조회",
+    description="현재 로그인한 자기자신의 포인트 지급 한도를 조회합니다.",
+)
+async def get_limit_session(
+    auth_data: LoginDep,
+):
+    user, _ = auth_data
+    if user.has_permission(UserPermission.NO_LIMIT_POINT):
+        return ResponseModel[int](success=True, data=TEACHER_POINT_LIMIT)
+    limit = await _remaining_limit(_grant_limit_key(user.id)[0], TEACHER_POINT_LIMIT)
+
+    return ResponseModel[int](success=True, data=limit)
+
+
+@router.post(
+    "/grant",
+    responses={
+        204: {"description": "정상적으로 지급이 되었음"},
+        401: {
+            "model": ErrorResponse,
+            "description": "세션이 만료되었거나 유효하지 않음",
+        },
+        403: {
+            "model": ErrorResponse,
+            "description": "권한이 없음",
+        },
+        404: {
+            "model": ErrorResponse,
+            "description": "지급할 학생을 찾을 수 없음",
+        },
+        429: {
+            "model": ErrorResponse,
+            "description": "주간 포인트 지급 한도를 초과할 경우 발생합니다. 관리자 계정의 경우 한도가 적용되지 않습니다.",
+        },
+    },
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="포인트 지급",
+    description="특정 유저에게 포인트를 지급합니다. (교사 또는 관리자 전용)",
+)
+async def grant_points(
+    operation: PointOperation,
+    auth_data: LoginDep,
+):
+    user, _ = auth_data
+
+    if not user.has_permission(UserPermission.GRANT_POINT):
+        client.logs.service_point.warning(
+            f"Unauthorized grant attempt. UserID: {user.id}, Role: {user.type}, Admin: {user.is_admin}"
+        )
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Permission denied.",
+        )
+
+    no_limit = user.has_permission(UserPermission.NO_LIMIT_POINT)
+    grant_key, grant_expire = _grant_limit_key(user.id)
+    student_key, student_expire = _student_limit_key(operation.target_user_id)
+
+    # 한도는 지급 전에 원자적으로 먼저 사용 처리하고, 이후 처리에 실패하면 되돌립니다.
+    # (조회 후 저장하는 방식은 동시 요청시 한도를 초과해 지급될 수 있음)
+    reservations: list[LimitReservation] = []
+    if not no_limit:
+        if not await _reserve_limit(grant_key, grant_expire, TEACHER_POINT_LIMIT, operation.amount):
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail="The teacher's weekly point limit has been exceeded.",
+            )
+        reservations.append((grant_key, grant_expire, operation.amount))
+
+    if not await _reserve_limit(student_key, student_expire, STUDENT_POINT_LIMIT, operation.amount):
+        await _release_limits(reservations)
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="The target user's daily point limit has been exceeded.",
+        )
+    reservations.append((student_key, student_expire, operation.amount))
+
+    try:
+        async with client.session:
+            target_user = await client.get_user(operation.target_user_id, lock=True)
+            if target_user is None:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Target user not found.")
+
+            reason = f"{user.name} 선생님" if user.type == UserType.teacher else user.name
+
+            await target_user.point_grant(
+                amount=operation.amount,
+                reason=reason,
+                memo=operation.memo,
+                type=operation.change_type,
+            )
+
+            # 교사가 포인트를 지급하는 경우, 교사에게도 지급
+            # 한도가 있는 교사는 위에서 이미 주간 한도를 사용했으므로 그대로 지급하고,
+            # 한도가 없는 교사는 지급은 무제한이지만 본인 보상은 주간 한도 내에서만 받습니다.
+            if user.type == UserType.teacher:
+                back_amount = operation.amount
+                if no_limit:
+                    back_amount = await _reserve_limit(
+                        grant_key, grant_expire, TEACHER_POINT_LIMIT, operation.amount, partial=True
+                    )
+                    reservations.append((grant_key, grant_expire, back_amount))
+
+                if back_amount > 0:
+                    await user.point_grant(
+                        amount=back_amount,
+                        reason=f"{target_user.name} 포인트 지급",
+                        type=PointHistoryType.grant,
+                        memo=operation.memo,
+                    )
+    except BaseException:
+        await _release_limits(reservations)
+        raise
+
+
+@router.post(
+    "/deduct",
+    response_model=ResponseModel[int],
+    responses={
+        204: {"description": "정상적으로 차감이 되었음"},
+        401: {
+            "model": ErrorResponse,
+            "description": "세션이 만료되었거나 유효하지 않음",
+        },
+        403: {
+            "model": ErrorResponse,
+            "description": "권한이 없음",
+        },
+        404: {
+            "model": ErrorResponse,
+            "description": "차감할 학생을 찾을 수 없음",
+        },
+        400: {
+            "model": ErrorResponse,
+            "description": "포인트 부족",
+        },
+    },
+    status_code=status.HTTP_200_OK,
+    summary="포인트 차감",
+    description="특정 유저의 포인트를 차감합니다. (서비스 유저 또는 관리자 전용)",
+)
+async def deduct_points(
+    operation: PointOperation,
+    auth_data: LoginDep,
+):
+    user, _ = auth_data
+
+    if not user.has_permission(UserPermission.DEDUCT_POINT):
+        client.logs.service_point.warning(
+            f"Unauthorized deduct attempt. UserID: {user.id}, Role: {user.type}, Admin: {user.is_admin}"
+        )
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Permission denied. Only service users or admins can deduct points.",
+        )
+
+    async with client.session:
+        target_user = await client.get_user(operation.target_user_id, lock=True)
+        if target_user is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Target user not found.")
+
+        try:
+            await target_user.point_deduct(
+                amount=operation.amount,
+                reason=user.name,
+                memo=operation.memo,
+                type=operation.change_type,
+            )
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Insufficient point balance.",
+            )
+
+    return ResponseModel[int](success=True, data=target_user.point)
+
+
+@router.get(
+    "/history",
+    response_model=ResponseModel[list[PointHistory]],
+    responses={
+        200: {"description": "정상처리"},
+        401: {
+            "model": ErrorResponse,
+            "description": "세션이 만료되었거나 유효하지 않음",
+        },
+        403: {
+            "model": ErrorResponse,
+            "description": "권한 없음",
+        },
+    },
+    status_code=status.HTTP_200_OK,
+    summary="포인트 기록",
+    description="현재 로그인한 자기자신의 포인트 기록을 조회합니다.",
+)
+async def get_history_list(
+    response: Response,
+    auth_data: LoginDep,
+    limit: int = Query(20, ge=1, le=MAX_PAGE_LIMIT, description=f"페이지 당 데이터 갯수 (최대 {MAX_PAGE_LIMIT})"),
+    offset: int = Query(0, ge=0),
+):
+    user, _ = auth_data
+
+    if not user.has_permission(UserPermission.VIEW_POINT_HISTORY):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Permission denied.",
+        )
+
+    # 1. 총 개수 조회 (캐싱 적용)
+    count_cache_key = Keys.PointHistory.COUNT(user_id=user.id)
+    cached_count = await client.redis.get(count_cache_key)
+
+    async with client.session as session:
+        if cached_count is not None:
+            count = int(cached_count)
+        else:
+            # Cache Miss: DB 조회
+            query = select(func.count()).select_from(PointHistory).where(PointHistory.user_id == user.id)
+            result = await session.execute(query)
+            count = result.scalar() or 0
+            # 캐시 저장 (TTL: 1일)
+            await client.redis.set(count_cache_key, count)
+
+        # 2. 히스토리 목록 조회
+        history_ver = await client.redis.get_version(Keys.PointHistory.VERSION(user_id=user.id))
+        history_cache_key = Keys.PointHistory.PAGE(user_id=user.id, ver=history_ver, limit=limit, offset=offset)
+        cached_history = await client.redis.get(history_cache_key)
+
+        if cached_history is not None:
+            historys = [PointHistory(**item) for item in cached_history]
+            response.headers["X-CACHED"] = "true"
+        else:
+            response.headers["X-CACHED"] = "false"
+            query = (
+                select(PointHistory)
+                .where(PointHistory.user_id == user.id)
+                .order_by(col(PointHistory.created_at).desc())
+                .limit(limit)
+                .offset(offset)
+            )
+            result = await session.execute(query)
+            historys = list(result.scalars().all())
+            # 캐시 저장 (TTL: 1일)
+            history_data = [item.model_dump() for item in historys]
+            await client.redis.set(history_cache_key, history_data)
+
+    max_page = str(ceil(count / limit)) if limit > 0 else "1"
+    response.headers["X-MAX-PAGE"] = max_page
+
+    return ResponseModel[list[PointHistory]](success=True, data=historys)
+
+
+@router.get(
+    "/history/{target_id}",
+    response_model=ResponseModel[PointHistory],
+    responses={
+        200: {"description": "정상처리"},
+        404: {
+            "model": ErrorResponse,
+            "description": "포인트 기록을 찾을 수 없음",
+        },
+        401: {
+            "model": ErrorResponse,
+            "description": "세션이 만료되었거나 유효하지 않음",
+        },
+        403: {
+            "model": ErrorResponse,
+            "description": "포인트 기록을 볼 권한이 없습니다.",
+        },
+    },
+    status_code=status.HTTP_200_OK,
+    summary="특정 포인트 기록",
+    description="특정한 포인트 기록의 데이터를 가져옵니다. 자기자신의 기록만 가져올 수 있습니다",
+)
+async def get_history(auth_data: LoginDep, target_id: int):
+    user, _ = auth_data
+
+    if not user.has_permission(UserPermission.VIEW_POINT_HISTORY):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Permission denied.",
+        )
+
+    async with client.session:
+        history = await client.get_history(target_id, cache=True)
+        if history is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Point history not found")
+
+    if history.user_id != user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Permission denied.")
+
+    return ResponseModel[PointHistory](success=True, data=history)
+
+
+async def _get_ranking(
+    user_type: UserType,
+    period: str,
+    response: Response,
+    limit: int = 20,
+    offset: int = 0,
+):
+    if period == RankingPeriod.weekly:
+        week_start, week_end, week_key = _get_weekly_ranking_period()
+    else:
+        week_start = week_end = None
+        week_key = "all"
+
+    type_str = "student" if user_type == UserType.student else "teacher"
+    count_cache_key = Keys.Ranking.COUNT(type=type_str)
+    ranking_ver = await client.redis.get_version(Keys.Ranking.VERSION(type=type_str))
+    ranking_cache_key = Keys.Ranking.PAGE(
+        type=type_str, ver=ranking_ver, period=period, week=week_key, limit=limit, offset=offset
+    )
+
+    conditions: Any = [Users.type == user_type]
+    if user_type == UserType.teacher:
+        conditions.append(col(Users.permissions).op("&")(UserPermission.NO_LIMIT_POINT.value) == 0)
+
+    async with client.session as session:
+        cached_count = await client.redis.get(count_cache_key)
+
+        if cached_count is not None:
+            count = int(cached_count)
+        else:
+            query = select(func.count()).select_from(Users).where(*conditions)
+            result = await session.execute(query)
+            count = result.scalar() or 0
+            await client.redis.set(count_cache_key, count)
+
+        cached_ranking = await client.redis.get(ranking_cache_key)
+
+        if cached_ranking is not None:
+            rankings = [RankingResponse(**item) for item in cached_ranking]
+        else:
+            if period == RankingPeriod.weekly:
+                # 차감(사용) 기록은 제외하고 해당 주에 획득한 포인트만 합산
+                weekly_points = (
+                    select(
+                        PointHistory.user_id,
+                        func.sum(PointHistory.changed_amount).label("weekly_point"),
+                    )
+                    .where(
+                        PointHistory.created_at >= week_start,
+                        PointHistory.created_at < week_end,
+                        PointHistory.changed_amount > 0,
+                    )
+                    .group_by(col(PointHistory.user_id))
+                    .subquery()
+                )
+                ranking_point = func.coalesce(weekly_points.c.weekly_point, 0)
+            else:
+                weekly_points = None
+                ranking_point = col(Users.total_point)
+
+            # 서브쿼리 없이 Users 모델 전체와 rank를 바로 선택 (SQLModel / Pydantic 경고 방지 및 성능 개선)
+            query = select(
+                Users,
+                ranking_point.label("ranking_point"),
+                func.dense_rank().over(order_by=ranking_point.desc()).label("rank"),
+            )
+            if weekly_points is not None:
+                query = query.outerjoin(weekly_points, weekly_points.c.user_id == Users.id)
+            # 페이지네이션 시 동일 포인트의 정렬이 변경되지 않도록 tie-breaker (id) 추가
+            query = (
+                query.where(*conditions).order_by(ranking_point.desc(), col(Users.id).asc()).limit(limit).offset(offset)
+            )
+
+            result = await session.execute(query)
+            rankings = [
+                RankingResponse(
+                    rank=rank,
+                    id=user.id,
+                    name=user.name,
+                    total_point=ranking_point,
+                    grade=user.grade,
+                    number=user.number,
+                )
+                for user, ranking_point, rank in result.all()
+            ]
+
+            ranking_data = [item.model_dump() for item in rankings]
+            await client.redis.set(ranking_cache_key, ranking_data)
+
+    max_page = str(ceil(count / limit)) if limit > 0 else "1"
+    response.headers["X-MAX-PAGE"] = max_page
+
+    return ResponseModel[list[RankingResponse]](success=True, data=rankings)
+
+
+def _get_weekly_ranking_period() -> tuple[datetime, datetime, str]:
+    now = SchemaCore.now().astimezone(WEEKLY_RANKING_TIMEZONE)
+    week_start = (now - timedelta(days=now.weekday())).replace(hour=0, minute=0, second=0, microsecond=0)
+    week_end = week_start + timedelta(days=7)
+    db_week_start = week_start.astimezone(SchemaCore.timezone)
+    db_week_end = week_end.astimezone(SchemaCore.timezone)
+    return db_week_start, db_week_end, week_start.date().isoformat()
+
+
+@router.get(
+    "/ranking",
+    response_model=ResponseModel[list[RankingResponse]],
+    responses={
+        200: {"description": "정상 처리"},
+        400: {
+            "model": ErrorResponse,
+            "description": "지원하지 않는 랭킹 대상",
+        },
+        403: {
+            "model": ErrorResponse,
+            "description": "권한이 없음",
+        },
+    },
+    status_code=status.HTTP_200_OK,
+    summary="포인트 랭킹 조회",
+    description="유저 타입과 기간을 기준으로 포인트 랭킹을 조회합니다.",
+)
+async def get_ranking(
+    auth: LoginDep,
+    response: Response,
+    user_type: UserType = Query(UserType.student, alias="type", description="랭킹 대상 (student, teacher)"),
+    period: RankingPeriod = Query(RankingPeriod.total, description="랭킹 기간 (total, weekly)"),
+    limit: int = Query(20, ge=1, le=MAX_PAGE_LIMIT, description=f"페이지 당 데이터 갯수 (최대 {MAX_PAGE_LIMIT})"),
+    offset: int = Query(0, ge=0),
+):
+    user, _ = auth
+    if not user.has_permission(UserPermission.VIEW_RANK):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Permission denied.")
+
+    if user_type not in (UserType.student, UserType.teacher):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="type must be student or teacher.",
+        )
+
+    return await _get_ranking(user_type, period, response, limit, offset)
+
+
+@router.get(
+    "/ranking/student",
+    response_model=ResponseModel[list[RankingResponse]],
+    responses={
+        200: {"description": "정상 처리"},
+        403: {
+            "model": ErrorResponse,
+            "description": "권한이 없음",
+        },
+    },
+    status_code=status.HTTP_200_OK,
+    summary="학생 포인트 랭킹 조회",
+    description="학생들의 누적 포인트를 기준으로 랭킹을 조회합니다. `/point/ranking?type=student`를 사용하세요.",
+    deprecated=True,
+)
+async def get_student_ranking(
+    auth: LoginDep,
+    response: Response,
+    limit: int = Query(20, ge=1, le=MAX_PAGE_LIMIT),
+    offset: int = Query(0, ge=0),
+):
+    user, _ = auth
+    if not user.has_permission(UserPermission.VIEW_RANK):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Permission denied.")
+
+    return await _get_ranking(UserType.student, RankingPeriod.total, response, limit, offset)
+
+
+@router.get(
+    "/ranking/teacher",
+    response_model=ResponseModel[list[RankingResponse]],
+    responses={
+        200: {"description": "정상 처리"},
+        403: {
+            "model": ErrorResponse,
+            "description": "권한이 없음",
+        },
+    },
+    status_code=status.HTTP_200_OK,
+    summary="교사 포인트 랭킹 조회",
+    description="교사들의 누적 포인트를 기준으로 랭킹을 조회합니다. `/point/ranking?type=teacher`를 사용하세요.",
+    deprecated=True,
+)
+async def get_teacher_ranking(
+    auth: LoginDep,
+    response: Response,
+    limit: int = Query(20, ge=1, le=MAX_PAGE_LIMIT),
+    offset: int = Query(0, ge=0),
+):
+    user, _ = auth
+    if not user.has_permission(UserPermission.VIEW_RANK):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Permission denied.")
+
+    return await _get_ranking(UserType.teacher, RankingPeriod.total, response, limit, offset)
+
+
+@router.get(
+    "/{target_user_id}",
+    response_model=ResponseModel[int],
+    responses={
+        200: {"description": "정상 처리"},
+        404: {"model": ErrorResponse, "description": "유저를 찾을 수 없음"},
+        403: {
+            "model": ErrorResponse,
+            "description": "권한이 없음",
+        },
+    },
+    status_code=status.HTTP_200_OK,
+    summary="포인트 조회",
+    description="특정 유저의 현재 포인트를 조회합니다.",
+)
+async def get_point_balance(
+    target_user_id: int,
+    auth_data: LoginDep,
+):
+    user, _ = auth_data
+    if not user.has_permission(UserPermission.VIEW_USER_POINT):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Permission denied.",
+        )
+
+    user = await client.get_user(target_user_id, cache=True)
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    return ResponseModel[int](success=True, data=user.point)
