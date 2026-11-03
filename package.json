@@ -8,6 +8,7 @@
   "workspaces": [
     "client",
     "admin",
+    "docs",
     "api-client"
   ],
   "scripts": {
@@ -16,10 +17,13 @@
     "run:docker": "docker compose -f docker/docker-compose.dev.yml up --remove-orphans",
     "dev:client": "yarn workspace scfs-miraepass-front dev",
     "dev:admin": "yarn workspace scfs-miraepass-dashboard dev",
+    "dev:docs": "yarn workspace scfs-miraepass-docs dev",
     "build:client": "yarn workspace scfs-miraepass-front build",
     "build:admin": "yarn workspace scfs-miraepass-dashboard build",
+    "build:docs": "yarn workspace scfs-miraepass-docs build",
     "typecheck:client": "yarn workspace scfs-miraepass-front nuxt typecheck",
     "typecheck:admin": "yarn workspace scfs-miraepass-dashboard typecheck",
+    "typecheck": "uv run --project server pre-commit run -a",
     "sdk-gen": "yarn workspace @miraepass/api-client sdk-gen"
   },
   "devDependencies": {
