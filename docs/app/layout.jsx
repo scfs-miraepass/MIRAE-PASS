@@ -13,9 +13,26 @@ export const metadata = {
     description: '순천미래과학고등학교 교내 포인트 시스템 MIRAEPASS 문서'
 }
 
+const logo_style = {
+    display: 'flex',
+    alignItems: 'center'
+}
+
+const logo = (
+    <div style={logo_style}>
+        <img src="/logo.svg" alt="logo" width="25" height="25" />
+        <p style={{
+            marginLeft: '6px',
+            fontWeight: 600,
+            fontSize: '1.25rem',
+            lineHeight: 'calc(1.75 / 1.25)'
+        }}>MIRAEPASS</p>
+    </div>
+)
+
 const navbar = (
     <Navbar
-        logo={<b>MIRAEPASS</b>}
+        logo={logo}
         projectLink={REPOSITORY_URL}
     />
 )
@@ -26,7 +43,6 @@ export default async function RootLayout({ children }) {
         <html
             lang="ko"
             dir="ltr"
-            // next-themes 권장 설정
             suppressHydrationWarning
         >
         <Head />
