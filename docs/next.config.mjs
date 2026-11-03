@@ -5,7 +5,9 @@ const withNextra = nextra({
     search: {
         codeblocks: false
     },
-    contentDirBasePath: '/'
+    defaultShowCopyCode: true,
+    contentDirBasePath: '/',
+
 })
 
 export default withNextra({
