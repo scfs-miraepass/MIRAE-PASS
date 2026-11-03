@@ -35,5 +35,9 @@
     "@semantic-release/release-notes-generator": "^14.1.1",
     "semantic-release": "^25.0.9",
     "semver": "^7.8.5"
+  },
+  "resolutions": {
+    "nextra/zod": "4.3.6",
+    "nextra-theme-docs/zod": "4.3.6"
   }
 }
