@@ -8,8 +8,7 @@ export default {
             toc: false,
             breadcrumb: false,
             pagination: false,
-            timestamp: false,
-            typesetting: 'article'
+            timestamp: false
         }
     },
     docs: {
