@@ -2,3 +2,7 @@
 @import 'nextra-theme-docs/style.css';
 
 @variant dark (&:where(.dark *));
+
+:root {
+    --content-full: calc(100vh - var(--nextra-navbar-height, 4rem))
+}

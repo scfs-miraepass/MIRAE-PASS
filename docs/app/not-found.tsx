@@ -6,7 +6,7 @@ export const metadata = {
 
 export default function NotFound() {
     return (
-        <main className="flex min-h-[calc(100vh-var(--nextra-navbar-height,4rem))] flex-col items-center justify-center gap-4 px-6 py-16 text-center">
+        <main className="flex min-h-(--content-full) flex-col items-center justify-center gap-4 px-6 py-16 text-center">
             <p className="m-0 text-[clamp(4.5rem,15vw,8rem)] leading-none font-extrabold tracking-[-0.04em] text-[hsl(var(--nextra-primary-hue)_var(--nextra-primary-saturation)_var(--nextra-primary-lightness,45%))]">
                 404
             </p>
