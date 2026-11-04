@@ -6,5 +6,6 @@ export default {
         title: '가이드 및 참고'
     },
     concept: '개념',
-    architecture: '아키텍쳐'
+    architecture: '아키텍쳐',
+    'install-docker': 'Docker 설치 가이드'
 }
