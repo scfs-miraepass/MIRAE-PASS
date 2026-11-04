@@ -1,6 +1,7 @@
 import { Footer, LastUpdated, Layout, Navbar } from 'nextra-theme-docs'
 import { Head, Search } from 'nextra/components'
 import { getPageMap } from 'nextra/page-map'
+import localFont from 'next/font/local'
 import './globals.css'
 
 const REPOSITORY_URL = 'https://github.com/scfs-miraepass/MIRAE-PASS'
@@ -38,11 +39,19 @@ const navbar = (
 )
 const footer = <Footer>Apache-2.0 {new Date().getFullYear()} © 임영재(rldn12134@rldn.xyz), 위임 순천미래과학고등학교(MIRAEPASS)</Footer>
 
+const pretendard = localFont({
+  src: './fonts/PretendardVariable.woff2',
+  display: 'swap',
+  weight: '45 920',
+  variable: '--font-pretendard',
+});
+
 export default async function RootLayout({ children }) {
     return (
         <html
             lang="ko"
             dir="ltr"
+            className={pretendard.variable}
             suppressHydrationWarning
         >
             <Head />

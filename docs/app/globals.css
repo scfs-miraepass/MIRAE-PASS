@@ -1,8 +1,14 @@
-@import 'tailwindcss';
-@import 'nextra-theme-docs/style.css';
+@import "tailwindcss";
+@import "nextra-theme-docs/style.css";
 
-@variant dark (&:where(.dark *));
+@custom-variant dark (&:where(.dark *));
 
 :root {
-    --content-full: calc(100vh - var(--nextra-navbar-height, 4rem))
+    --content-full: calc(100vh - var(--nextra-navbar-height, 4rem));
+    --x-default-font-family: var(--font-pretendard);
+}
+
+@theme {
+    --font-sans: var(--x-default-font-family);
+    --font-mono: var(--x-default-font-family);
 }
