@@ -6,6 +6,9 @@ export const generateStaticParams = generateStaticParamsFor('mdxPath')
 export async function generateMetadata(props: Pick<PageProps<'/[[...mdxPath]]'>, 'params'>) {
     const params = await props.params
     const { metadata } = await importPage(params.mdxPath)
+    if (!params.mdxPath?.length) {
+        return { ...metadata, title: { absolute: 'MIRAEPASS Docs' } }
+    }
     return metadata
 }
 
