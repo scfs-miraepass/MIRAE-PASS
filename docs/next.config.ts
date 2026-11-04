@@ -12,5 +12,14 @@ const withNextra = nextra({
 
 export default withNextra({
     reactStrictMode: true,
-    agentRules: false
+    agentRules: false,
+    async redirects() {
+        return [
+            {
+                source: '/docs',
+                destination: '/docs/getting-started/introduction',
+                permanent: false
+            }
+        ]
+    }
 })

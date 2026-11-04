@@ -1,0 +1,102 @@
+---
+title: 설치
+---
+
+import { Callout, Steps } from 'nextra/components'
+
+# 설치
+
+GitHub Container Registry에 올라간 이미지와 Docker Compose로 미래패스를 서버에 설치합니다.
+
+## 요구 사항
+
+- Docker Engine과 Docker Compose v2 (`docker compose` 명령)
+- 외부에서 접속할 도메인과 HTTPS 인증서 (리버스 프록시용, [구성](/docs/getting-started/config#리버스-프록시) 참고)
+- 이미지를 받을 수 있는 인터넷 연결 (`ghcr.io`, Docker Hub)
+
+## 설치하기
+
+<Steps>
+
+### 작업 폴더 만들기
+
+`docker-compose.yml`과 `.env`를 둘 폴더를 만듭니다. 데이터베이스 파일(`data/`)과 서버 로그(`logs/`)도 이 폴더 아래에 생깁니다.
+
+```bash
+mkdir miraepass && cd miraepass
+```
+
+### 설정 파일 받기
+
+저장소의 `docker` 폴더에서 운영용 Compose 파일과 환경 변수 예제를 받습니다.
+
+```bash
+curl -fsSLo docker-compose.yml https://raw.githubusercontent.com/scfs-miraepass/MIRAE-PASS/master/docker/docker-compose.yml
+curl -fsSLo .env https://raw.githubusercontent.com/scfs-miraepass/MIRAE-PASS/master/docker/example.env
+```
+
+### 환경 변수 작성하기
+
+`.env`를 열어 데이터베이스 비밀번호를 채웁니다. 두 값은 비워 둘 수 없습니다.
+
+```dotenv filename=".env"
+DB_ROOT_PASSWORD=루트_비밀번호
+DB_PASSWORD=서비스_비밀번호
+DB_USERNAME=miraepass
+DB_DATABASE_NAME=miraepass
+```
+
+나머지 값은 [구성](/docs/getting-started/config#환경-변수)에서 설명합니다.
+
+<Callout type="warning">
+`DB_ROOT_PASSWORD`와 `DB_PASSWORD`는 MySQL이 **처음 실행될 때만** 적용됩니다.
+`data/` 폴더가 만들어진 뒤에 비밀번호를 바꾸려면 MySQL 안에서 직접 바꿔야 합니다.
+</Callout>
+
+### 실행하기
+
+```bash
+docker compose up -d
+```
+
+`server`는 `database`와 `redis`의 헬스 체크가 통과한 뒤에 시작합니다.
+시작할 때 `alembic upgrade head`로 데이터베이스 스키마를 자동으로 만들거나 최신으로 올립니다.
+
+### 상태 확인하기
+
+```bash
+docker compose ps
+docker compose logs -f server
+```
+
+브라우저에서 `http://서버주소:3000`에 접속해 로그인 화면이 나오면 설치가 끝난 것입니다.
+관리자 대시보드는 `http://서버주소:3000/admin/` 입니다.
+
+<Callout type="warning">
+운영 모드(`DEBUG=false`)에서는 로그인 쿠키에 `Secure` 속성이 붙어 **HTTPS에서만 로그인이 유지됩니다.**
+`http://서버주소:3000`으로는 화면만 확인하고, 실제 로그인은 [리버스 프록시](/docs/getting-started/config#리버스-프록시)로 HTTPS를 붙인 뒤에 하세요.
+</Callout>
+
+</Steps>
+
+## 설치 후 할 일
+
+설치 직후에는 사용자가 한 명도 없습니다. [구성](/docs/getting-started/config)에서 아래 작업을 이어서 진행하세요.
+
+1. [사용자 등록하기](/docs/getting-started/config#사용자-등록)
+2. [관리자 권한 부여하기](/docs/getting-started/config#관리자-권한-부여)
+3. [리버스 프록시와 HTTPS 설정하기](/docs/getting-started/config#리버스-프록시)
+
+## 생성되는 파일
+
+```
+miraepass/
+├── docker-compose.yml
+├── .env
+├── data/     # MySQL 데이터 (database 컨테이너의 /var/lib/mysql)
+└── logs/     # 서버 로그 (server 컨테이너의 /app/logs)
+```
+
+<Callout type="info">
+`data/` 폴더가 곧 데이터베이스입니다. 이 폴더를 지우면 모든 사용자와 포인트 기록이 사라집니다. [백업](/docs/development/deploy#백업)을 참고하세요.
+</Callout>

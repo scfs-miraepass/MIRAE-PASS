@@ -1,0 +1,239 @@
+---
+title: 구성
+---
+
+import { Callout, Steps } from 'nextra/components'
+
+# 구성
+
+## 환경 변수
+
+운영 환경에서는 `docker-compose.yml`과 같은 폴더의 `.env`에 적습니다. `.env`는 `server`와 `database` 컨테이너가 함께 읽습니다.
+
+### 데이터베이스
+
+| 변수 | 기본값 | 설명 |
+| --- | --- | --- |
+| `DB_ROOT_PASSWORD` | (필수) | MySQL `root` 비밀번호 |
+| `DB_PASSWORD` | (필수) | 서비스 계정 비밀번호 |
+| `DB_USERNAME` | `miraepass` | 서비스 계정 이름 |
+| `DB_DATABASE_NAME` | `miraepass` | 데이터베이스 이름 |
+
+Compose는 이 값으로 `DATABASE_URL`을 `mysql+aiomysql://{DB_USERNAME}:{DB_PASSWORD}@database:3306/{DB_DATABASE_NAME}` 형태로 만들어 `server`에 넘겨줍니다.
+
+### 서버
+
+| 변수 | 기본값 | 설명 |
+| --- | --- | --- |
+| `ALLOWED_ORIGINS` | (필수) | CORS 허용 출처. 쉼표로 여러 개 적습니다. 예: `https://pass.example.com,https://admin.example.com` |
+| `DATABASE_URL` | Compose가 생성 | 외부 MySQL을 쓸 때 지정합니다. `mysql+aiomysql://` 형식이어야 합니다. |
+| `REDIS_URL` | `redis://redis:6379` | 외부 Redis를 쓸 때 지정합니다. |
+| `DEBUG` | `false` | 디버그 모드. 운영에서는 끄세요. |
+| `DATABASE_DEBUG` | `false` | 실행되는 SQL을 로그에 출력합니다. |
+
+<Callout type="info">
+웹 앱과 관리자 페이지는 모두 `client`를 거쳐 같은 출처에서 API를 호출합니다. 다른 도메인에서 API를 직접 호출하지 않는다면 `ALLOWED_ORIGINS`를 서비스 도메인으로 좁혀 두는 것이 좋습니다.
+</Callout>
+
+### 세부 설정 (JSON 형식)
+
+데이터베이스 연결 풀과 로그인 세션 설정은 **JSON 형식으로만** 바꿀 수 있습니다.
+
+| 변수 | 키 | 기본값 | 설명 |
+| --- | --- | --- | --- |
+| `DATABASE` | `POOL_SIZE` | `10` | 연결 풀 크기 |
+| | `MAX_OVERFLOW` | `20` | 풀을 넘어 추가로 열 수 있는 연결 수 |
+| | `POOL_TIMEOUT` | `30` | 연결을 기다리는 최대 시간(초) |
+| `SERVICE_SESSION` | `COOKIE_NAME` | `session_id` | 세션 쿠키 이름 |
+| | `EXPIRE_SECONDS` | `604800` (7일) | 로그인 유지 시간(초) |
+
+```dotenv filename=".env"
+DATABASE={"POOL_SIZE": 20, "MAX_OVERFLOW": 40}
+SERVICE_SESSION={"EXPIRE_SECONDS": 2592000}
+```
+
+<Callout type="warning">
+`example.env`에 주석으로 있는 `DB_POOL_SIZE`, `SERVICE_SESSION_EXPIRE_SECONDS` 같은 이름은 서버에 적용되지 않습니다. 위의 JSON 형식을 사용하세요.
+</Callout>
+
+### 웹 앱 (`client`)
+
+`client` 컨테이너에는 `.env`가 연결되어 있지 않습니다. 필요하면 `docker-compose.yml`의 `client`에 `environment`를 추가합니다.
+
+| 변수 | 설명 |
+| --- | --- |
+| `NUXT_PUBLIC_UMAMI_SERVER` | [Umami](https://umami.is) 방문 통계 서버 주소 |
+| `NUXT_PUBLIC_UMAMI_ID` | Umami 웹사이트 ID |
+| `NUXT_API_ORIGIN` | 노래방 경매 WebSocket을 중계할 백엔드 주소. 기본값 `http://server:8000` |
+
+```yaml filename="docker-compose.yml"
+services:
+  client:
+    environment:
+      NUXT_PUBLIC_UMAMI_SERVER: https://umami.example.com
+      NUXT_PUBLIC_UMAMI_ID: 00000000-0000-0000-0000-000000000000
+```
+
+환경 변수를 바꾼 뒤에는 `docker compose up -d`로 컨테이너를 다시 만들어야 적용됩니다.
+
+## 리버스 프록시
+
+`client`는 HTTP `3000` 포트만 엽니다. 외부에는 Nginx 같은 리버스 프록시로 HTTPS를 붙여 공개하세요.
+PWA 설치와 보안 쿠키를 위해 HTTPS가 필요하고, 노래방 경매가 WebSocket을 쓰므로 **Upgrade 헤더를 넘겨줘야** 합니다.
+
+```nginx filename="/etc/nginx/conf.d/miraepass.conf"
+server {
+    listen 443 ssl;
+    server_name pass.example.com;
+
+    ssl_certificate     /etc/letsencrypt/live/pass.example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/pass.example.com/privkey.pem;
+
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+
+        # 노래방 경매 WebSocket
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+리버스 프록시가 같은 서버에 있다면 `docker-compose.yml`의 포트를 `"127.0.0.1:3000:3000"`으로 바꿔 3000 포트가 외부에 직접 열리지 않게 하세요.
+
+## 사용자 등록
+
+미래패스에는 회원가입이 없습니다. 관리자가 사용자를 먼저 등록하고, 사용자는 **처음 로그인할 때 비밀번호를 직접 정합니다.**
+
+사용자 ID는 아래 규칙으로 정해집니다.
+
+| 유형 | ID 규칙 | 예시 |
+| --- | --- | --- |
+| 학생 (`student`) | 학년 + 반 + 번호 두 자리 | 1학년 2반 3번 → `1203` |
+| 교사 (`teacher`) | 4000번부터 빈 번호 | `4000`, `4001`, … |
+| 서비스 (`service`) | 5000번부터 빈 번호 | `5000`, … |
+
+<Callout type="warning">
+비밀번호가 없는 계정은 그 ID를 아는 누구나 먼저 비밀번호를 정할 수 있습니다. 사용자를 등록한 뒤에는 가능한 빨리 각자 로그인해 비밀번호를 정하도록 안내하세요.
+</Callout>
+
+### 엑셀로 한 번에 등록하기
+
+학년 초처럼 많은 사용자를 한 번에 등록할 때 사용합니다.
+
+<Steps>
+
+### 엑셀 파일 준비하기
+
+첫 번째 시트의 첫 행을 열 이름으로 씁니다.
+
+- `student.xlsx`: `학년`, `반`, `번호`, `이름`
+- `teacher.xlsx`: `이름`
+
+### 컨테이너로 복사하기
+
+```bash
+docker compose cp student.xlsx server:/app/tools/student.xlsx
+docker compose cp teacher.xlsx server:/app/tools/teacher.xlsx
+```
+
+<Callout type="error">
+`server` 이미지에는 저장소의 `server/tools/*.xlsx`가 그대로 들어 있습니다. 파일을 복사하지 않고 실행하면 이미지에 들어 있는 명단이 등록되니, 반드시 실제 명단으로 덮어쓴 뒤 실행하세요.
+</Callout>
+
+### 가져오기
+
+```bash
+docker compose exec server uv run python tools/import_users.py
+```
+
+이미 있는 학생(같은 ID)과 교사(같은 이름)는 건너뜁니다.
+
+</Steps>
+
+### 한 명씩 등록하기
+
+관리자 대시보드(`/admin/`)의 사용자 메뉴에서 추가하거나, CLI를 사용합니다.
+
+```bash
+# 학생
+docker compose exec server uv run python tools/cli.py add-user --name 홍길동 --user-type student --grade 1 --number 2 --student-no 3
+
+# 교사
+docker compose exec server uv run python tools/cli.py add-user --name 김선생 --user-type teacher
+```
+
+## 관리자 권한 부여
+
+관리자 대시보드에 들어가려면 관리자 권한이 필요합니다. 다른 사용자의 권한은 관리자 대시보드에서 바꿀 수 있지만, **첫 관리자는 데이터베이스에서 직접 지정**해야 합니다.
+
+<Steps>
+
+### 권한 값 확인하기
+
+권한은 비트 플래그(정수)로 저장됩니다.
+
+| 권한 묶음 | 값 |
+| --- | --- |
+| 학생 (`STUDENT`) | `1458624` |
+| 교사 (`TEACHER`) | `1493442` |
+| 관리자 (`ADMIN`) | `1713680` |
+
+### 권한 더하기
+
+기존 권한은 유지하고 관리자 권한을 더합니다. 아래는 ID `4000`인 교사에게 관리자 권한을 주는 예시입니다.
+
+```bash
+docker compose exec database sh -c \
+  'mysql -u root -p"$MYSQL_ROOT_PASSWORD" "$MYSQL_DATABASE" -e "UPDATE users SET permissions = permissions | 1713680 WHERE id = 4000;"'
+```
+
+### 캐시 지우기
+
+서버는 사용자 정보를 Redis에 캐시합니다. 바뀐 권한이 바로 적용되도록 해당 사용자의 캐시를 지웁니다.
+
+```bash
+docker compose exec server uv run python tools/cli.py redis-delete user:item:4000
+```
+
+이제 `https://도메인/admin/`에 로그인할 수 있습니다.
+
+</Steps>
+
+## 관리 CLI
+
+`server` 컨테이너 안의 `tools/cli.py`로 운영 작업을 할 수 있습니다. 모든 명령은 아래 형태로 실행합니다.
+
+```bash
+docker compose exec server uv run python tools/cli.py <명령> [옵션]
+```
+
+| 명령 | 설명 |
+| --- | --- |
+| `add-user` | 사용자 추가 |
+| `list-users` | 사용자 목록 (`--user-type`, `--limit`) |
+| `user-info` | 사용자 정보 조회 (`--user-id`) |
+| `delete-user` | 사용자 삭제 (`--user-id`, `-f`로 확인 생략) |
+| `reset-password` | 비밀번호 초기화. 다음 로그인 때 새로 정합니다. 로그인된 세션도 모두 끊깁니다. |
+| `manage-point` | 포인트 지급(양수)·차감(음수) (`--user-id`, `--amount`, `--reason`) |
+| `point-history` | 포인트 내역 조회 (`--user-id`, `--limit`) |
+| `delete-point-history` | 포인트 내역 삭제 (`--history-id`) |
+| `redis-keys` | Redis 키 목록 |
+| `redis-get` / `redis-delete` | Redis 키 조회·삭제 |
+| `redis-delete-pattern` | 패턴과 일치하는 Redis 키 삭제 (예: `'user:item:*'`) |
+
+각 명령의 옵션은 `--help`로 확인할 수 있습니다.
+
+## 로그
+
+서버 로그는 작업 폴더의 `logs/`에 파일로 남습니다. 실시간으로 보려면 아래 명령을 사용합니다.
+
+```bash
+docker compose logs -f server
+```
