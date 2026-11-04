@@ -36,14 +36,31 @@ title: 소개
 
 
 
-## 구성 요소
-미래패스는 다섯 개의 [컨테이너](/docs/concept/docker#Container)로 동작합니다.
+## 기술 스택
 
-| 서비스     | 컨테이너           | 역할                                                         |
-|------------|--------------------|--------------------------------------------------------------|
-| `client`   | `miraepass_client` | 학생·교사가 사용하는 웹 앱(PWA). 유일하게 외부로 공개됩니다. |
-| `admin`    | `miraepass_admin`  | 관리자 대시보드. `/admin` 경로로 제공됩니다.                 |
-| `server`   | `miraepass_server` | 백엔드 API                                                   |
-| `database` | `miraepass_mysql`  | 사용자, 포인트, 노래방 경매 등 데이터 저장                   |
-| `redis`    | `miraepass_redis`  | 로그인 세션, 캐시, 노래방 경매 실시간 메시지                 |
+### 학생·교사용 웹 앱(`client`) / 관리자 대시보드(`admin`)
+- **프레임워크:** [Nuxt](https://nuxt.com), TypeScript
+- **UI:** [Nuxt UI](https://ui.nuxt.com), [TailwindCSS](https://tailwindcss.com)
+- **PWA:** [Vite PWA](https://vite-pwa-org.netlify.app)를 이용해 앱처럼 설치하여 사용할 수 있습니다.
+- **API 클라이언트:** [Hey API](https://heyapi.dev) (자세한 사용은 [API 문서](/api)를 참고하세요)
+- **패키지 관리:** Yarn(Workspaces)
+
+[//]: # (TODO: API 문서 링크 넣을 것)
+
+### Server
+- **프레임워크:** [FastAPI](https://fastapi.tiangolo.com), Python 3.14
+- **ORM 및 마이그레이션:** [SQLModel](https://sqlmodel.tiangolo.com), [SQLAlchemy](https://www.sqlalchemy.org)(비동기), [Alembic](https://alembic.sqlalchemy.org)
+- **인증:** 세션 기반 로그인이며, 비밀번호는 Argon2로 해싱합니다.
+- **스케줄러:** [APScheduler](https://apscheduler.readthedocs.io)로 주기적인 작업을 처리합니다.
+- **패키지 관리:** [uv](https://docs.astral.sh/uv/)
+
+#### Database
+- **MySQL:** 사용자, 포인트, 노래방 경매 등 데이터를 저장합니다.
+- **Valkey(Redis 호환):** 로그인 세션, 캐시, 노래방 경매 실시간 메시지를 처리합니다.
+
+### 인프라 및 개발 도구
+- **배포:** Docker Compose로 모든 서비스를 실행하며, 이미지는 GitHub Container Registry(GHCR)에 배포됩니다.
+- **코드 검사:** [pre-commit](https://pre-commit.com)으로 커밋 전에 Ruff(백엔드)와 타입 검사(프론트엔드)를 실행합니다.
+- **릴리즈:** [semantic-release](https://semantic-release.gitbook.io)와 GitHub Actions로 버전 관리와 릴리즈를 자동화합니다.
+- **문서:** 이 문서는 [Nextra](https://nextra.site)(Next.js)로 작성되었습니다.
 
