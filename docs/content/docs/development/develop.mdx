@@ -1,16 +1,12 @@
----
-title: 개발 환경
----
+import { Steps, Tabs, Table } from 'nextra/components'
 
-import { Callout, Steps, Tabs } from 'nextra/components'
+# 개발 환경 구성
 
-# 개발 환경
-
-소스 코드를 받아 내 컴퓨터에서 미래패스를 실행하는 방법입니다.
+직접 코드를 받아 개발을 위한 환경 구성을 설명합니다.
 
 ## 요구 사항
 
-- [Node.js](https://nodejs.org) 24 이상 (저장소의 `.nvmrc` 참고)
+- [Node.js](https://nodejs.org) 24 이상
 - [uv](https://docs.astral.sh/uv/) (Python 3.14는 uv가 알아서 설치합니다)
 - Docker (MySQL·Redis를 띄우거나 전체를 컨테이너로 실행할 때)
 
@@ -24,116 +20,144 @@ corepack enable
 yarn install
 ```
 
-`yarn install`은 `client`, `admin`, `docs`, `api-client` 워크스페이스를 한 번에 설치하고, 커밋 검사용 pre-commit 훅도 설치합니다.
-
 ## 실행하기
 
-<Tabs items={['전체를 Docker로', '직접 실행']}>
-<Tabs.Tab>
+<Tabs items={['Docker', '직접 실행']}>
+    <Tabs.Tab>
 
-소스 코드로 이미지를 빌드해 운영과 같은 구성으로 실행합니다.
+        소스 코드로 이미지를 빌드해 운영과 같은 구성으로 실행합니다.
 
-```bash
-cp docker/example.env docker/.env   # DB_ROOT_PASSWORD, DB_PASSWORD 채우기
-yarn run:docker
-```
+        ```bash
+        cp docker/example.env docker/.env # DB_ROOT_PASSWORD, DB_PASSWORD 채우기
+        yarn run:docker
+        ```
 
-`http://localhost:3000`으로 접속합니다. 코드를 고친 뒤에는 이미지를 다시 빌드해야 하므로, 화면을 자주 고치는 작업에는 **직접 실행**이 편합니다.
+        [http://localhost:3000](http://localhost:3000)으로 접속합니다. <br />
+        코드를 고친 뒤에는 이미지를 다시 빌드해야 하므로, 화면을 자주 고치는 작업에는 **직접 실행**이 편합니다.
 
-</Tabs.Tab>
-<Tabs.Tab>
+    </Tabs.Tab>
+    <Tabs.Tab>
 
-<Steps>
+        <Steps>
 
-### MySQL과 Redis 실행하기
+            ### MySQL과 Redis 실행하기
 
-이미 설치된 MySQL·Redis가 있다면 그것을 써도 됩니다. 없다면 Docker로 띄웁니다.
+            이미 설치된 MySQL·Redis가 있다면 그것을 써도 됩니다. 없다면 Docker로 띄웁니다.
 
-```bash
-docker run -d --name miraepass-mysql -p 3306:3306 \
-  -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=miraepass \
-  -e MYSQL_USER=miraepass -e MYSQL_PASSWORD=miraepass mysql
-docker run -d --name miraepass-redis -p 6379:6379 valkey/valkey
-```
+            ```bash
+            docker run -d --name miraepass-mysql -p 3306:3306 \
+              -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=miraepass \
+              -e MYSQL_USER=miraepass -e MYSQL_PASSWORD=miraepass mysql
+            docker run -d --name miraepass-redis -p 6379:6379 valkey/valkey
+            ```
 
-### 백엔드 실행하기
+            ### 백엔드 실행하기
 
-```bash
-cd server
-uv sync
-cp example.env .env
-```
+            ```bash
+            cd server
+            uv sync
+            cp example.env .env
+            ```
 
-`.env`를 채웁니다. 로컬에서는 HTTP로 접속하므로 `DEBUG=true`로 두어야 로그인 쿠키가 유지됩니다.
+            `.env`를 채웁니다. 로컬에서는 HTTP로 접속하므로 `DEBUG=true`로 두어야 로그인 쿠키가 유지됩니다.
 
-```dotenv filename="server/.env"
-DATABASE_URL=mysql+aiomysql://miraepass:miraepass@localhost:3306/miraepass
-REDIS_URL=redis://localhost:6379
-DEBUG=true
-ALLOWED_ORIGINS=*
-```
+            ```dotenv filename="server/.env"
+            DATABASE_URL=mysql+aiomysql://miraepass:miraepass@localhost:3306/miraepass
+            REDIS_URL=redis://localhost:6379
+            DEBUG=true
+            ALLOWED_ORIGINS=*
+            ```
 
-```bash
-uv run alembic upgrade head
-uv run fastapi dev            # http://localhost:8000, API 문서는 /docs
-```
+            ```bash
+            uv run alembic upgrade head
+            uv run fastapi dev            # http://localhost:8000, API 문서는 /docs
+            ```
 
-### 테스트 사용자 만들기
+            ### 테스트 사용자 만들기
 
-```bash
-uv run python tools/create_test_users.py
-```
+            ```bash
+            uv run python tools/create_test_users.py
+            ```
 
-학생 `1101`~`1105`, 교사, 서비스 계정이 하나씩 만들어집니다. 처음 로그인할 때 비밀번호를 정합니다.
+            학생 `1101`~`1105`, 교사, 서비스 계정이 하나씩 만들어집니다. 처음 로그인할 때 비밀번호를 정합니다.
 
-### 프론트엔드 실행하기
+            ### 프론트엔드 실행하기
 
-저장소 루트에서 실행합니다.
+            저장소 루트에서 실행합니다.
 
-```bash
-yarn dev:client                                              # http://localhost:3000
-yarn workspace scfs-miraepass-dashboard dev --port 5234      # 관리자
-```
+            ```bash
+            yarn dev:client     # Client 실행
+            yarn dev:admin      # Admin 실행
+            ```
+            개발 환경에서 Client와 Admin 동시 실행은 불가능 합니다.
 
-`client`는 `/api`를 `localhost:8000`으로, `/admin`을 `localhost:5234`로 넘겨주므로 `http://localhost:3000/admin/`에서 관리자 페이지도 볼 수 있습니다.
+        </Steps>
 
-</Steps>
-
-</Tabs.Tab>
+    </Tabs.Tab>
 </Tabs>
 
 ## 자주 쓰는 명령어
 
-| 명령 | 설명 |
-| --- | --- |
-| `yarn dev:client` / `yarn dev:admin` / `yarn dev:docs` | 개발 서버 실행 |
-| `yarn build:client` / `yarn build:admin` / `yarn build:docs` | 빌드 |
-| `yarn typecheck:client` / `yarn typecheck:admin` | 타입 검사 |
-| `yarn typecheck` | pre-commit 검사를 전체 파일에 실행 |
-| `yarn sdk-gen` | 백엔드 OpenAPI로 `@miraepass/api-client` 다시 생성 |
-| `uv run alembic revision --autogenerate -m "메시지"` | 마이그레이션 생성 (`server`에서) |
+<Table className="mt-5">
+    <thead>
+        <Table.Tr>
+            <Table.Th>명령어</Table.Th>
+            <Table.Th>설명</Table.Th>
+        </Table.Tr>
+    </thead>
+    <tbody>
+        <Table.Tr>
+            <Table.Td>`yarn dev:client`</Table.Td>
+            <Table.Td rowspan={3}>개발 서버 실행</Table.Td>
+        </Table.Tr>
+        <Table.Tr>
+            <Table.Td>`yarn dev:admin`</Table.Td>
+        </Table.Tr>
+        <Table.Tr>
+            <Table.Td>`yarn dev:docs`</Table.Td>
+        </Table.Tr>
 
-## SDK 다시 만들기
+        <Table.Tr>
+            <Table.Td>`yarn typecheck:client`</Table.Td>
+            <Table.Td rowspan={2}>Client · Admin 타입 검사</Table.Td>
+        </Table.Tr>
+        <Table.Tr>
+            <Table.Td>`yarn typecheck:admin`</Table.Td>
+        </Table.Tr>
 
-API를 바꿨다면 백엔드(`http://localhost:8000`)를 켠 상태에서 SDK를 다시 생성합니다.
+        <Table.Tr>
+            <Table.Td>`yarn typecheck`</Table.Td>
+            <Table.Td>전체 프로젝트 타입, 스타일 검사</Table.Td>
+        </Table.Tr>
 
-```bash
-yarn sdk-gen
-```
+        <Table.Tr>
+            <Table.Td>`yarn sdk-gen`</Table.Td>
+            <Table.Td>Server OpenAPI 기반으로 `@miraepass/api-client` 생성</Table.Td>
+        </Table.Tr>
+    </tbody>
+</Table>
 
-`../../../../api-client/src/gen`은 자동 생성 폴더이니 직접 고치지 마세요.
-
-## 커밋 규칙
-
-[Conventional Commits](https://www.conventionalcommits.org/ko/v1.0.0/)를 따릅니다. 커밋 타입이 곧 다음 버전을 정하므로([배포](/docs/development/deploy#릴리스-흐름) 참고) 정확히 적어 주세요.
-
-```
-<type>(<scope>): <description>
-```
-
-- `type`: `feat`, `fix`, `perf`, `docs`, `style`, `refactor`, `test`, `build`, `ci`, `chore`, `revert`
-- `scope`: `client`, `server`, `admin`, `sdk`, `docs`
-
-<Callout type="info">
-커밋할 때 pre-commit이 `server`는 ruff로, `client`·`admin`은 타입 검사로 확인합니다. ruff가 파일을 고쳐 커밋이 멈추면 고쳐진 파일을 다시 `git add`하고 커밋하세요.
-</Callout>
+### 데이터베이스 관련
+데이터베이스 관련된 명령어는 `server`에서 사용해야 합니다.
+<Table className="mt-5">
+    <thead>
+    <Table.Tr>
+        <Table.Th>명령어</Table.Th>
+        <Table.Th>설명</Table.Th>
+    </Table.Tr>
+    </thead>
+    <tbody>
+        <Table.Tr>
+            <Table.Td>`uv run alembic revision --autogenerate -m "메시지"`</Table.Td>
+            <Table.Td>마이그레이션 생성</Table.Td>
+        </Table.Tr>
+        <Table.Tr>
+            <Table.Td>`uv run alembic upgrade head`</Table.Td>
+            <Table.Td>마이그레이션 적용</Table.Td>
+        </Table.Tr>
+        <Table.Tr>
+            <Table.Td>`uv run alembic downgrade -1`</Table.Td>
+            <Table.Td>마이그레이션 롤백</Table.Td>
+        </Table.Tr>
+    </tbody>
+</Table>
