@@ -1,6 +1,7 @@
 export default {
     'getting-started': '시작하기',
-    development: '개발하기',
+    'manage': '운영',
+    development: '개발',
     ___: {
         type: 'separator',
         title: '가이드 및 참고'
