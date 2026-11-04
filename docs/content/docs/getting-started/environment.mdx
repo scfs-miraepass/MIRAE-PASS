@@ -1,0 +1,69 @@
+import { Callout } from 'nextra/components'
+
+# 환경 변수
+
+<Callout type="warning">
+    환경 변수를 바꾼 뒤에는 `docker compose up -d`로 컨테이너를 다시 만들어야 적용됩니다.
+</Callout>
+
+### 데이터베이스
+
+| 변수               | 기본값      | 설명                  |
+|--------------------|-------------|-----------------------|
+| `DB_ROOT_PASSWORD` | (필수)      | MySQL `root` 비밀번호 |
+| `DB_PASSWORD`      | (필수)      | 서비스 계정 비밀번호  |
+| `DB_USERNAME`      | `miraepass` | 서비스 계정 이름      |
+| `DB_DATABASE_NAME` | `miraepass` | 데이터베이스 이름     |
+
+### 서버
+
+| 변수              | 기본값               | 설명                                                                                              |
+|-------------------|----------------------|---------------------------------------------------------------------------------------------------|
+| `ALLOWED_ORIGINS` | (필수)               | CORS 허용 출처. 쉼표로 여러 개 적습니다. 예: `https://pass.example.com,https://admin.example.com` |
+| `DATABASE_URL`    | Compose가 생성       | 외부 MySQL을 쓸 때 지정합니다. `mysql+aiomysql://` 형식이어야 합니다.                             |
+| `REDIS_URL`       | `redis://redis:6379` | 외부 Redis를 쓸 때 지정합니다.                                                                    |
+| `DEBUG`           | `false`              | 디버그 모드. 운영에서는 끄세요.                                                                   |
+| `DATABASE_DEBUG`  | `false`              | 실행되는 SQL을 로그에 출력합니다.                                                                 |
+
+<Callout type="info">
+웹 앱과 관리자 페이지는 모두 `client`를 거쳐 같은 출처에서 API를 호출합니다. 다른 도메인에서 API를 직접 호출하지 않는다면 `ALLOWED_ORIGINS`를 서비스 도메인으로 좁혀 두는 것이 좋습니다.
+</Callout>
+
+### 세부 설정 (JSON 형식)
+
+데이터베이스 연결 풀과 로그인 세션 설정은 **JSON 형식으로만** 바꿀 수 있습니다.
+
+| 변수              | 키               | 기본값         | 설명                                |
+|-------------------|------------------|----------------|-------------------------------------|
+| `DATABASE`        | `POOL_SIZE`      | `10`           | 연결 풀 크기                        |
+|                   | `MAX_OVERFLOW`   | `20`           | 풀을 넘어 추가로 열 수 있는 연결 수 |
+|                   | `POOL_TIMEOUT`   | `30`           | 연결을 기다리는 최대 시간(초)       |
+| `SERVICE_SESSION` | `COOKIE_NAME`    | `session_id`   | 세션 쿠키 이름                      |
+|                   | `EXPIRE_SECONDS` | `604800` (7일) | 로그인 유지 시간(초)                |
+
+```dotenv filename=".env"
+DATABASE={"POOL_SIZE": 20, "MAX_OVERFLOW": 40}
+SERVICE_SESSION={"EXPIRE_SECONDS": 2592000}
+```
+
+<Callout type="warning">
+`example.env`에 주석으로 있는 `DB_POOL_SIZE`, `SERVICE_SESSION_EXPIRE_SECONDS` 같은 이름은 서버에 적용되지 않습니다. 위의 JSON 형식을 사용하세요.
+</Callout>
+
+### 웹 앱 (`client`)
+
+`client` 컨테이너에는 `.env`가 연결되어 있지 않습니다. 필요하면 `docker-compose.yml`의 `client`에 `environment`를 추가합니다.
+
+| 변수                       | 설명                                                                    |
+|----------------------------|-------------------------------------------------------------------------|
+| `NUXT_PUBLIC_UMAMI_SERVER` | [Umami](https://umami.is) 방문 통계 서버 주소                           |
+| `NUXT_PUBLIC_UMAMI_ID`     | Umami 웹사이트 ID                                                       |
+| `NUXT_API_ORIGIN`          | 노래방 경매 WebSocket을 중계할 백엔드 주소. 기본값 `http://server:8000` |
+
+```yaml filename="docker-compose.yml"
+services:
+  client:
+    environment:
+      NUXT_PUBLIC_UMAMI_SERVER: https://umami.example.com
+      NUXT_PUBLIC_UMAMI_ID: 00000000-0000-0000-0000-000000000000
+```
