@@ -1,0 +1,251 @@
+import { Callout } from 'nextra/components'
+
+# 포인트
+
+포인트 지급, 차감, 기록, 랭킹과 관련된 API입니다.
+
+| 방법 | 경로 | 설명 | 필요한 권한 |
+| --- | --- | --- | --- |
+| `GET` | `/point/limit` | [내 지급 한도 조회](#내-지급-한도-조회) | 로그인 |
+| `GET` | `/point/limit/{target_user_id}` | [지급 한도 조회](#지급-한도-조회) | 로그인 |
+| `POST` | `/point/grant` | [포인트 지급](#포인트-지급) | `GRANT_POINT` |
+| `POST` | `/point/deduct` | [포인트 차감](#포인트-차감) | `DEDUCT_POINT` |
+| `GET` | `/point/{target_user_id}` | [다른 유저의 포인트 조회](#다른-유저의-포인트-조회) | `VIEW_USER_POINT` |
+| `GET` | `/point/history` | [내 포인트 기록](#내-포인트-기록) | `VIEW_POINT_HISTORY` |
+| `GET` | `/point/history/{target_id}` | [포인트 기록 하나 보기](#포인트-기록-하나-보기) | `VIEW_POINT_HISTORY` |
+| `GET` | `/point/ranking` | [포인트 랭킹](#포인트-랭킹) | `VIEW_RANK` |
+
+## 지급 한도
+
+포인트가 너무 많이 풀리지 않도록 두 가지 한도가 있습니다.
+
+| 한도 | 크기 | 초기화 시점 |
+| --- | --- | --- |
+| **교사의 주간 지급 한도** | 한 교사가 일주일 동안 지급할 수 있는 포인트 **1,000점** | 매주 월요일 0시 (한국 시간) |
+| **학생의 일일 수령 한도** | 한 학생이 하루 동안 받을 수 있는 포인트 **1,000점** | 매일 0시 (한국 시간) |
+
+- `NO_LIMIT_POINT` 권한이 있으면 **교사의 주간 지급 한도**가 적용되지 않습니다. 단, **학생의 일일 수령 한도**는 그대로 적용됩니다.
+- 교사가 학생에게 포인트를 지급하면, **교사도 같은 만큼의 포인트를 받습니다.** (기록 종류 `grant`)
+  `NO_LIMIT_POINT` 권한이 있는 교사는 지급 자체는 무제한이지만, 자신이 받는 포인트는 주간 한도(1,000점) 안에서만 받습니다.
+
+## 내 지급 한도 조회
+
+`GET /point/limit` · SDK `getLimitSessionPointLimitGet`
+
+로그인한 교사가 이번 주에 **앞으로 더 지급할 수 있는** 포인트를 조회합니다.
+
+**응답** `200`
+
+```json
+{ "success": true, "data": 650 }
+```
+
+## 지급 한도 조회
+
+`GET /point/limit/{target_user_id}` · SDK `getLimitPointLimitTargetUserIdGet`
+
+로그인한 교사의 남은 주간 한도와, **지급하려는 학생**이 오늘 더 받을 수 있는 포인트를 함께 조회합니다.
+지급 화면에서 "최대 몇 점까지 줄 수 있는지" 보여줄 때 사용합니다.
+
+| 위치 | 이름 | 타입 | 필수 | 설명 |
+| --- | --- | --- | --- | --- |
+| 경로 | `target_user_id` | 숫자 | ○ | 지급하려는 유저의 ID |
+
+**응답** `200`
+
+```json
+{ "success": true, "data": { "limit": 650, "target_limit": 900 } }
+```
+
+| 항목 | 설명 |
+| --- | --- |
+| `limit` | 나(교사)의 남은 주간 지급 한도 |
+| `target_limit` | 대상 학생의 남은 일일 수령 한도 |
+
+실제로 지급할 수 있는 최대 포인트는 두 값 중 **더 작은 값**입니다.
+
+```ts
+const req = await $API.getLimitPointLimitTargetUserIdGet({ path: { target_user_id: 1101 } })
+const max = Math.min(req.data!.data.limit, req.data!.data.target_limit)
+```
+
+## 포인트 지급
+
+`POST /point/grant` · SDK `grantPointsPointGrantPost`
+
+특정 유저에게 포인트를 지급합니다.
+
+| 위치 | 이름 | 타입 | 필수 | 설명 |
+| --- | --- | --- | --- | --- |
+| 본문 | `target_user_id` | 숫자 | ○ | 포인트를 받을 유저의 ID |
+| 본문 | `amount` | 숫자 | ○ | 지급할 포인트 (1 이상) |
+| 본문 | `memo` | 문자 | | 지급 이유 (예: `"수업 참여"`). 학생의 포인트 기록에 표시됩니다. |
+| 본문 | `change_type` | [기록 종류](#기록-종류) | | 기록 종류를 직접 지정할 때 사용합니다. |
+
+**응답** `204` — 본문이 없습니다.
+
+| 오류 | 이유 |
+| --- | --- |
+| `403` | `GRANT_POINT` 권한이 없습니다. |
+| `404` | 받을 유저가 없습니다. |
+| `429` | 교사의 주간 지급 한도 또는 학생의 일일 수령 한도를 넘었습니다. |
+
+```ts
+const req = await $API.grantPointsPointGrantPost({
+    body: { target_user_id: 1101, amount: 50, memo: "수업 참여" },
+})
+if (req.response?.status === 429) {
+    alert("지급 한도를 초과했습니다.")
+}
+```
+
+## 포인트 차감
+
+`POST /point/deduct` · SDK `deductPointsPointDeductPost`
+
+특정 유저의 포인트를 차감합니다. 매점, 카페에서 학생이 포인트로 결제할 때 서비스 계정이 사용합니다.
+[포인트 지급](#포인트-지급)과 보내는 값이 같으며, `amount`만큼 포인트가 줄어듭니다.
+
+**응답** `200` — 차감한 뒤 **남은 포인트**를 돌려줍니다.
+
+```json
+{ "success": true, "data": 70 }
+```
+
+| 오류 | 이유 |
+| --- | --- |
+| `400` | 유저의 포인트가 부족합니다. |
+| `403` | `DEDUCT_POINT` 권한이 없습니다. |
+| `404` | 대상 유저가 없습니다. |
+
+```ts
+await $API.deductPointsPointDeductPost({
+    body: { target_user_id: 1101, amount: 30, memo: "아이스티" },
+})
+```
+
+## 다른 유저의 포인트 조회
+
+`GET /point/{target_user_id}` · SDK `getPointBalancePointTargetUserIdGet`
+
+특정 유저가 지금 가지고 있는 포인트를 조회합니다. 결제 전 잔액을 확인할 때 사용합니다.
+
+**응답** `200`
+
+```json
+{ "success": true, "data": 120 }
+```
+
+| 오류 | 이유 |
+| --- | --- |
+| `403` | `VIEW_USER_POINT` 권한이 없습니다. |
+| `404` | 해당 유저가 없습니다. |
+
+## 내 포인트 기록
+
+`GET /point/history` · SDK `getHistoryListPointHistoryGet`
+
+로그인한 유저의 포인트 기록을 **최신순**으로 가져옵니다. 응답 헤더 `X-MAX-PAGE`에 전체 페이지 수가 들어 있습니다.
+
+| 위치 | 이름 | 타입 | 기본값 | 설명 |
+| --- | --- | --- | --- | --- |
+| 쿼리 | `limit` | 숫자 | 20 | 가져올 개수 (1~100) |
+| 쿼리 | `offset` | 숫자 | 0 | 건너뛸 개수 |
+
+**응답** `200`
+
+```json
+{
+    "success": true,
+    "data": [
+        {
+            "id": 532,
+            "user_id": 1101,
+            "changed_amount": -30,
+            "reason": "미래카페",
+            "memo": "아이스티",
+            "type": "cafe",
+            "created_at": "2026-11-04T12:40:11+09:00"
+        }
+    ]
+}
+```
+
+| 항목 | 설명 |
+| --- | --- |
+| `changed_amount` | 바뀐 포인트입니다. 받으면 양수, 사용하면 음수입니다. |
+| `reason` | 누가 처리했는지입니다. (예: `"김교사 선생님"`, `"미래카페"`) |
+| `memo` | 왜 처리했는지입니다. 없을 수 있으며, 없으면 화면에 `reason`을 대신 표시합니다. |
+| `type` | [기록 종류](#기록-종류)입니다. |
+
+```ts
+const req = await $API.getHistoryListPointHistoryGet({ query: { limit: 20, offset: 0 } })
+const histories = req.data?.data ?? []
+const maxPage = Number(req.response?.headers.get("X-MAX-PAGE"))
+```
+
+## 포인트 기록 하나 보기
+
+`GET /point/history/{target_id}` · SDK `getHistoryPointHistoryTargetIdGet`
+
+기록 ID로 포인트 기록 하나를 가져옵니다. **자신의 기록만** 볼 수 있으며, 다른 사람의 기록은 `404`로 응답합니다.
+
+## 포인트 랭킹
+
+`GET /point/ranking` · SDK `getRankingPointRankingGet`
+
+**누적 포인트(`total_point`)** 가 많은 순서로 랭킹을 가져옵니다.
+
+| 위치 | 이름 | 타입 | 기본값 | 설명 |
+| --- | --- | --- | --- | --- |
+| 쿼리 | `type` | `student` \| `teacher` | `student` | 학생 랭킹 또는 교사 랭킹 |
+| 쿼리 | `period` | `total` \| `weekly` | `total` | 전체 기간 또는 이번 주(월요일 0시부터) |
+| 쿼리 | `limit` | 숫자 | 20 | 가져올 개수 (1~100) |
+| 쿼리 | `offset` | 숫자 | 0 | 건너뛸 개수 |
+
+**응답** `200`
+
+```json
+{
+    "success": true,
+    "data": [
+        { "id": 2304, "name": "홍길동", "grade": 2, "number": 3, "total_point": 1520, "rank": 1 },
+        { "id": 1101, "name": "김미래", "grade": 1, "number": 1, "total_point": 1380, "rank": 2 }
+    ]
+}
+```
+
+| 오류 | 이유 |
+| --- | --- |
+| `400` | `type`에 `student`, `teacher`가 아닌 값을 넣었습니다. |
+| `403` | `VIEW_RANK` 권한이 없습니다. |
+
+```ts
+import { RankingPeriod } from "@miraepass/api-client"
+
+await $API.getRankingPointRankingGet({
+    query: { type: "student", period: RankingPeriod.WEEKLY, limit: 10 },
+})
+```
+
+<Callout type="warning">
+    `GET /point/ranking/student`와 `GET /point/ranking/teacher`는 **더 이상 사용하지 않는(deprecated)** API입니다.
+    대신 `GET /point/ranking?type=student`, `GET /point/ranking?type=teacher`를 사용합니다.
+</Callout>
+
+## 기록 종류
+
+포인트 기록의 `type` 값은 다음 중 하나입니다.
+
+| 값 | 의미 |
+| --- | --- |
+| `teacher` | 교사가 지급 |
+| `grant` | 학생에게 포인트를 지급한 교사가 받은 보상 |
+| `cafe` | 카페에서 사용 |
+| `food` | 음식 구매에 사용 |
+| `etc` | 기타 |
+| `quest` | 퀘스트 완료 보상 |
+| `stamp` | 스탬프 발급 보상 |
+| `stamp_bonus` | 스탬프 보너스 |
+| `karaoke_bid` | 노래방 경매 입찰에 사용 |
+| `karaoke_cancel` | 노래방 경매 입찰 취소로 돌려받음 |

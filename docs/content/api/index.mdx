@@ -1,5 +1,56 @@
----
-title: API
----
+import { Callout, Cards } from 'nextra/components'
 
-asdf
+# API 소개
+
+<Callout type="info">
+    API가 무엇인지에 대해서는 [API 이해하기](/docs/concept/api)를 확인해주세요.
+</Callout>
+
+이 문서는 미래패스 **서버(Server)의 API**와, 그 API를 편하게 쓰도록 만든 **SDK(`@miraepass/api-client`)** 를 설명합니다.
+
+## 미래패스의 구조
+
+```text
+┌──────────────┐   요청(Request)    ┌──────────────┐     ┌─────────┐
+│ Client/Admin │ ─────────────────▶ │    Server    │ ──▶ │  MySQL  │
+│  (Nuxt 화면)  │ ◀───────────────── │  (FastAPI)   │ ──▶ │  Redis  │
+└──────────────┘   응답(Response)   └──────────────┘     └─────────┘
+```
+
+- **Server**는 Python의 [FastAPI](https://fastapi.tiangolo.com)로 만들어져 있으며, `server/app/router/endpoints` 폴더에 API가 정의되어 있습니다.
+- **MySQL**은 유저, 포인트 기록, 퀘스트 같은 데이터를 오래 보관하는 저장소입니다.
+- **Redis**는 로그인 정보나 자주 조회하는 데이터를 잠깐 보관하는 빠른 저장소입니다.
+
+## 서버 주소
+
+| 환경 | API 주소 | 설명 |
+| --- | --- | --- |
+| 서버에 직접 접속 | `http://localhost:8000` | `uv run fastapi dev`로 실행한 개발 서버입니다. |
+| 화면(Client)을 거쳐 접속 | `/api` | Client가 `/api/...`로 받은 요청을 서버로 대신 전달(프록시)합니다. |
+
+예를 들어 화면에서 `/api/auth/login`으로 요청을 보내면, 실제로는 서버의 `/auth/login`이 처리합니다.
+SDK는 기본 주소가 `/api/`로 설정되어 있으므로, 화면 코드에서는 주소를 신경 쓸 필요가 없습니다.
+
+## API를 직접 눌러 보기
+
+서버를 실행하면 **API 문서 화면이 자동으로 만들어집니다.** 코드를 한 줄도 쓰지 않고 API를 직접 호출해 볼 수 있습니다.
+
+| 주소 | 내용 |
+| --- | --- |
+| [http://localhost:8000/docs](http://localhost:8000/docs) | **Swagger UI** — 버튼을 눌러 API를 직접 실행할 수 있는 화면입니다. |
+| [http://localhost:8000/redoc](http://localhost:8000/redoc) | **ReDoc** — 읽기 편하게 정리된 문서 화면입니다. |
+| [http://localhost:8000/openapi.json](http://localhost:8000/openapi.json) | **OpenAPI 명세** — 모든 API를 기계가 읽을 수 있게 적은 파일이며, SDK를 만들 때 사용됩니다. |
+
+<Callout type="info">
+    서버 실행 방법은 [개발 환경 구성](/docs/development/develop) 문서를 참고합니다.
+    Swagger UI에서 로그인 API(`POST /auth/login`)를 먼저 실행하면 쿠키가 저장되어, 이후 로그인이 필요한 API도 바로 시험해 볼 수 있습니다.
+</Callout>
+
+## 다음으로 읽을 문서
+
+<Cards>
+    <Cards.Card title="요청과 응답" href="/api/basics" arrow />
+    <Cards.Card title="권한" href="/api/permissions" arrow />
+    <Cards.Card title="SDK 사용하기" href="/api/sdk" arrow />
+    <Cards.Card title="API 목록" href="/api/auth" arrow />
+</Cards>

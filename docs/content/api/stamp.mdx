@@ -1,0 +1,94 @@
+import { Callout } from 'nextra/components'
+
+# 스탬프
+
+**스탬프**는 교내 행사 부스를 체험하면 받는 도장입니다. 스탬프를 받으면 포인트도 함께 지급됩니다.
+
+| 방법 | 경로 | 설명 | 필요한 권한 |
+| --- | --- | --- | --- |
+| `GET` | `/stamp` | [내 스탬프 목록](#내-스탬프-목록) | `VIEW_STAMP` |
+| `POST` | `/stamp` | [스탬프 발급](#스탬프-발급) | `GIVE_STAMP` |
+
+## 스탬프 종류
+
+| 값 | 서버 이름 |
+| --- | --- |
+| `보석 십자수` | `BOOTH_1` |
+| `페이스 페인팅` | `BOOTH_2` |
+| `수학, 스트링아트` | `BOOTH_3` |
+| `일러스트` | `BOOTH_4` |
+| `주짓수` | `BOOTH_5` |
+| `플리마켓` | `BOOTH_6` |
+| `환경 퀴즈` | `BOOTH_7` |
+| `분리수거 챌린지` | `BOOTH_8` |
+| `인권 키링` | `BOOTH_9` |
+| `인권 나무` | `BOOTH_10` |
+| `문제 다트` | `BOOTH_11` |
+| `암호표 해독` | `BOOTH_12` |
+| `학교 폭력 예방` | `BOOTH_13` |
+
+API로 주고받을 때는 **한글 값**(`"보석 십자수"` 등)을 사용합니다. SDK에서는 `StampType` 상수로 사용할 수 있습니다.
+
+<Callout type="info">
+    부스 이름은 행사에 따라 바뀔 수 있으며, `server/app/schemas/stamp.py`의 `StampType`에서 수정합니다.
+    수정한 뒤에는 데이터베이스 마이그레이션과 [SDK 다시 만들기](/api/sdk#sdk-다시-만들기)가 필요합니다.
+</Callout>
+
+## 내 스탬프 목록
+
+`GET /stamp` · SDK `getUserStampsStampGet`
+
+로그인한 유저의 스탬프 현황을 가져옵니다. **모든 스탬프 종류**가 목록에 들어 있으며, `have`로 받았는지 구분합니다.
+
+**응답** `200`
+
+```json
+{
+    "success": true,
+    "data": [
+        { "stamp": "BOOTH_1", "name": "보석 십자수", "have": true, "time": "2026-11-03T10:12:00+09:00" },
+        { "stamp": "BOOTH_2", "name": "페이스 페인팅", "have": false, "time": null }
+    ]
+}
+```
+
+| 항목 | 설명 |
+| --- | --- |
+| `stamp` | 서버에서 사용하는 이름입니다. |
+| `name` | 화면에 보여줄 부스 이름입니다. |
+| `have` | 받았으면 `true`입니다. |
+| `time` | 받은 시간입니다. 받지 않았으면 `null`입니다. |
+
+```ts
+const req = await $API.getUserStampsStampGet()
+const count = req.data?.data.filter((s) => s.have).length ?? 0
+console.log(`스탬프 ${count}개를 모았습니다.`)
+```
+
+## 스탬프 발급
+
+`POST /stamp` · SDK `createStampStampPost`
+
+부스 담당자가 학생에게 스탬프를 발급합니다. 발급과 동시에 학생에게 **50 포인트**가 지급됩니다.
+같은 종류의 스탬프는 한 번만 받을 수 있습니다.
+
+| 위치 | 이름 | 타입 | 필수 | 설명 |
+| --- | --- | --- | --- | --- |
+| 본문 | `user_id` | 숫자 | ○ | 스탬프를 받을 유저의 ID |
+| 본문 | `stamp_type` | [스탬프 종류](#스탬프-종류) | ○ | 발급할 스탬프 |
+
+**응답** `204` — 본문이 없습니다.
+
+| 오류 | 이유 |
+| --- | --- |
+| `403` | `GIVE_STAMP` 권한이 없습니다. |
+| `404` | 받을 유저가 없습니다. |
+| `409` | 이미 같은 스탬프를 받았습니다. |
+
+```ts
+import { StampType } from "@miraepass/api-client"
+
+await $API.createStampStampPost({
+    body: { user_id: 1101, stamp_type: StampType.보석_십자수 },
+})
+```

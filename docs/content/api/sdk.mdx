@@ -1,0 +1,326 @@
+import { Callout, Steps, FileTree } from 'nextra/components'
+
+# SDK 사용하기
+
+## SDK란?
+
+**SDK(Software Development Kit)** 는 API를 편하게 쓰도록 미리 만들어 둔 **도구 모음**입니다.
+
+API를 직접 호출하는 것은 **주문서를 손으로 쓰는 것**과 같습니다. 주소를 틀리게 적거나, 숫자 자리에 글자를 쓰는 실수를 하기 쉽습니다.
+SDK는 **키오스크**와 같으며, 정해진 버튼만 누르면 올바른 주문서가 자동으로 만들어집니다.
+
+```ts
+// SDK 없이 직접 호출하는 경우
+const res = await fetch("/api/point/grant", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ target_user_id: 1101, amount: 50 }),
+});
+
+// SDK를 사용하는 경우
+const res = await $API.grantPointsPointGrantPost({
+    body: { target_user_id: 1101, amount: 50 },
+});
+```
+
+SDK를 사용하면 다음과 같은 장점이 있습니다.
+
+- **자동 완성**: 편집기가 사용할 수 있는 함수와 값의 이름을 알려줍니다.
+- **타입 검사**: `amount`에 글자를 넣는 등의 실수를 코드를 실행하기 전에 미리 알려줍니다.
+- **입력 검사**: 요청을 보내기 전에 값이 올바른지 한 번 더 검사합니다.
+
+미래패스의 SDK 이름은 **`@miraepass/api-client`** 이며, 저장소의 `api-client` 폴더에 있습니다.
+
+## SDK는 자동으로 만들어집니다
+
+SDK의 코드는 사람이 직접 작성하지 않습니다.
+서버가 제공하는 **OpenAPI 명세**(`/openapi.json`)를 [Hey API](https://heyapi.dev)라는 도구가 읽어서 **자동으로 만들어 냅니다.**
+
+```text
+서버 코드 (FastAPI)  ──▶  openapi.json  ──▶  Hey API  ──▶  api-client/src/gen/*.ts
+```
+
+그래서 서버의 API가 바뀌면 SDK를 **다시 만들어야** 합니다. 방법은 아래의 [SDK 다시 만들기](#sdk-다시-만들기)를 참고합니다.
+
+<FileTree>
+    <FileTree.Folder name="api-client" defaultOpen>
+        <FileTree.File name="package.json" />
+        <FileTree.File name="openapi-ts.config.ts" />
+        <FileTree.Folder name="src" defaultOpen>
+            <FileTree.File name="client.config.ts" />
+            <FileTree.Folder name="gen" defaultOpen>
+                <FileTree.File name="index.ts" />
+                <FileTree.File name="sdk.gen.ts" />
+                <FileTree.File name="types.gen.ts" />
+                <FileTree.File name="zod.gen.ts" />
+                <FileTree.File name="schemas.gen.ts" />
+                <FileTree.File name="client.gen.ts" />
+                <FileTree.Folder name="client" />
+                <FileTree.Folder name="core" />
+            </FileTree.Folder>
+        </FileTree.Folder>
+    </FileTree.Folder>
+</FileTree>
+
+| 파일 | 역할 |
+| --- | --- |
+| `openapi-ts.config.ts` | SDK를 어떻게 만들지 정하는 **설정 파일**입니다. |
+| `src/client.config.ts` | 요청을 보낼 **기본 주소**(`/api/`) 등 실행 설정입니다. 직접 수정할 수 있습니다. |
+| `src/gen/sdk.gen.ts` | API를 호출하는 **함수**들이 들어 있습니다. (`MiraepassApi` 클래스) |
+| `src/gen/types.gen.ts` | `User`, `Posts` 같은 **데이터의 모양(타입)** 과 `UserPermission` 같은 **상수**가 들어 있습니다. |
+| `src/gen/zod.gen.ts` | 값이 올바른지 **검사하는 규칙**이 들어 있습니다. |
+| `src/gen/client`, `core` | 실제로 요청을 주고받는 내부 코드입니다. |
+
+<Callout type="error">
+    `src/gen` 폴더 안의 파일은 **직접 수정하면 안 됩니다.** SDK를 다시 만들 때마다 모두 지워지고 새로 만들어지므로, 수정한 내용이 사라집니다.
+</Callout>
+
+## 시작하기
+
+Client와 Admin에는 이미 SDK가 연결되어 있으며, `$API`라는 이름으로 어디서든 사용할 수 있습니다.
+
+```ts filename="client/app/composables/api.ts"
+import { MiraepassApi } from "@miraepass/api-client"
+
+export const $API = new MiraepassApi()
+```
+
+새로운 프로젝트(워크스페이스)에서 사용하려면 `package.json`에 SDK를 추가한 뒤 `yarn install`을 실행합니다.
+
+```json filename="package.json"
+{
+    "dependencies": {
+        "@miraepass/api-client": "workspace:*"
+    }
+}
+```
+
+## 함수 이름 읽는 법
+
+SDK 함수의 이름은 **"하는 일 + 경로 + 방법"** 을 이어 붙여 만들어집니다.
+
+| 함수 이름 | 하는 일 | 경로 | 방법 |
+| --- | --- | --- | --- |
+| `loginAuthLoginPost` | login | `/auth/login` | POST |
+| `getPostsPostsGet` | get posts | `/posts` | GET |
+| `grantPointsPointGrantPost` | grant points | `/point/grant` | POST |
+
+노래방 경매 API는 이름을 짧게 지정해 두었으므로 `getKaraokeList`, `createKaraokeBid`처럼 하는 일만 적혀 있습니다.
+각 API의 SDK 함수 이름은 [API 목록](/api/auth)의 각 문서에 적혀 있습니다.
+
+<Callout type="info">
+    편집기에서 `$API.`까지 입력하면 사용할 수 있는 함수 목록이 나타나며, 함수 위에 마우스를 올리면 한글 설명을 볼 수 있습니다.
+</Callout>
+
+## 값 넣어서 호출하기
+
+[요청과 응답](/api/basics#보내는-값의-세-가지-위치)에서 설명한 세 가지 위치에 맞춰 `path`, `query`, `body`에 값을 넣습니다.
+
+```ts
+// 경로 값: GET /posts/12
+await $API.getPostPostsPostIdGet({ path: { post_id: 12 } })
+
+// 쿼리: GET /posts?page=2&size=10
+await $API.getPostsPostsGet({ query: { page: 2, size: 10 } })
+
+// 본문: POST /auth/login
+await $API.loginAuthLoginPost({ body: { id: 1101, password: "1234" } })
+
+// 여러 개를 함께: PATCH /posts/12
+await $API.updatePostPostsPostIdPatch({
+    path: { post_id: 12 },
+    body: { title: "수정된 제목" },
+})
+
+// 아무 값도 필요 없는 경우: GET /auth
+await $API.getCurrentUserAuthGet()
+```
+
+## 결과 확인하기
+
+SDK 함수는 **기다려야(`await`)** 결과가 나오며, 결과에는 다음 값이 들어 있습니다.
+
+| 값 | 설명 |
+| --- | --- |
+| `data` | **성공했을 때** 서버가 보낸 응답 본문입니다. 실패하면 `undefined`입니다. |
+| `error` | **실패했을 때** 서버가 보낸 오류 내용입니다. 성공하면 `undefined`입니다. |
+| `response` | 상태 코드, 헤더 등 응답 전체 정보입니다. |
+| `request` | 보낸 요청의 정보입니다. |
+
+<Callout type="warning">
+    서버의 응답 본문 자체가 `{ success, data }` 모양이므로, **실제 데이터는 `data.data`** 에 들어 있습니다. 처음 사용할 때 자주 헷갈리는 부분입니다.
+</Callout>
+
+```ts
+const req = await $API.getCurrentUserAuthGet()
+
+if (req.error) {
+    // 실패: req.error는 { success: false, message: "..." } 모양입니다.
+    console.log("실패 이유:", req.error.message)
+    console.log("상태 코드:", req.response?.status) // 예: 401
+    return
+}
+
+// 성공: req.data는 { success: true, data: User } 모양입니다.
+const user = req.data.data
+console.log(`${user.name}님의 포인트는 ${user.point}점입니다.`)
+```
+
+### 응답 헤더 읽기
+
+`X-MAX-PAGE` 같은 [응답 헤더](/api/basics#응답-헤더)는 `response.headers`에서 읽습니다.
+
+```ts
+const req = await $API.getHistoryListPointHistoryGet({ query: { limit: 20, offset: 0 } })
+
+const maxPage = Number(req.response?.headers.get("X-MAX-PAGE"))
+const isCached = req.response?.headers.get("X-CACHED") === "true"
+```
+
+### 실패하면 바로 멈추기 (`throwOnError`)
+
+`if (req.error)`로 매번 확인하는 대신, 실패하면 **예외를 던지도록(throw)** 할 수 있습니다.
+이 경우 결과에 `error`가 없으므로 `data`를 바로 사용할 수 있습니다.
+
+```ts
+try {
+    const req = await $API.getCurrentUserAuthGet({ throwOnError: true })
+    console.log(req.data.data.name) // 성공이 보장됩니다.
+} catch (error) {
+    console.log("요청 실패", error)
+}
+```
+
+### 요청 취소하기
+
+페이지를 벗어나 더 이상 결과가 필요 없을 때는 `signal`로 요청을 취소할 수 있습니다.
+
+```ts
+const controller = new AbortController()
+$API.getKaraokeList({ query: { limit: 20 }, signal: controller.signal })
+
+controller.abort() // 요청 취소
+```
+
+## 입력 값 자동 검사
+
+SDK는 요청을 보내기 **전에** [Zod](https://zod.dev)라는 도구로 값을 검사합니다.
+예를 들어 게시글 목록의 `size`는 최대 100이므로, `size: 500`을 넣으면 서버에 요청을 보내지 않고 바로 `error`를 돌려줍니다.
+이 경우 `req.response`는 `undefined`이며, `req.error`에는 Zod의 검사 결과가 들어 있습니다.
+
+```ts
+const req = await $API.getPostsPostsGet({ query: { size: 500 } })
+
+if (req.error && !req.response) {
+    console.log("서버에 보내기 전에 막혔습니다.", req.error)
+}
+```
+
+서버가 보낸 응답도 같은 방식으로 검사하므로, 서버와 SDK의 버전이 맞지 않으면 성공한 요청도 `error`가 될 수 있습니다.
+이때는 [SDK를 다시 만들어야](#sdk-다시-만들기) 합니다.
+
+## 타입과 상수 사용하기
+
+SDK는 데이터의 **모양(타입)** 과 **정해진 값(상수)** 도 함께 제공합니다.
+
+```ts
+import {
+    type User,
+    type Posts,
+    UserType,
+    UserPermission,
+    KaraokeStatus,
+    PointHistoryType,
+} from "@miraepass/api-client"
+
+// 타입: 변수에 어떤 모양의 데이터가 들어가는지 알려줍니다.
+const user = ref<User | null>(null)
+
+// 상수: 글자를 직접 쓰는 대신 상수를 사용하면 오타를 막을 수 있습니다.
+if (user.value?.type === UserType.STUDENT) { /* ... */ }
+if (karaoke.status === KaraokeStatus.IN_PROGRESS) { /* ... */ }
+```
+
+| 상수 | 값 |
+| --- | --- |
+| `UserType` | `student`, `teacher`, `service` |
+| `KaraokeStatus` | `Pending`(대기), `In_Progress`(진행 중), `Confirmed`(종료) |
+| `PointHistoryType` | `teacher`, `cafe`, `food`, `etc`, `grant`, `quest`, `stamp`, `stamp_bonus`, `karaoke_bid`, `karaoke_cancel` |
+| `RankingPeriod` | `total`(전체), `weekly`(이번 주) |
+| `StampType` | 스탬프 종류 (`"보석 십자수"`, `"페이스 페인팅"` 등) |
+| `UserPermission` | [권한](/api/permissions) 숫자 값 |
+
+### 권한 확인하기
+
+유저의 `permissions` 숫자에 특정 권한이 들어 있는지는 **`&` 연산**으로 확인합니다.
+`&`는 두 숫자에서 **둘 다 켜진 스위치만** 남기는 연산입니다.
+
+```ts
+import { UserPermission } from "@miraepass/api-client"
+
+const canGrant =
+    (user.permissions & UserPermission.GRANT_POINT) === UserPermission.GRANT_POINT
+```
+
+Client에는 이를 쉽게 해주는 `hasPermission` 함수가 준비되어 있습니다.
+
+```ts filename="client/app/utils/permission.ts"
+hasPermission(user.permissions, UserPermission.GRANT_POINT)
+
+// 둘 다 있어야 함 (AND)
+hasPermission(user.permissions, [UserPermission.GRANT_POINT, UserPermission.VIEW_RANK])
+
+// 하나만 있어도 됨 (OR)
+hasPermission(user.permissions, { or: [UserPermission.MANAGE_USER, UserPermission.MANAGE_POST] })
+```
+
+## SDK에 없는 것: WebSocket
+
+노래방 경매의 **실시간 최고가 알림**(`/karaoke/{karaoke_id}/ws`)은 **WebSocket**으로 동작합니다.
+WebSocket은 OpenAPI 명세에 포함되지 않으므로 **SDK 함수가 만들어지지 않으며**, 브라우저의 `WebSocket`으로 직접 연결해야 합니다.
+자세한 내용은 [노래방 경매 - 실시간 경매 정보](/api/karaoke#실시간-경매-정보-websocket)를 참고합니다.
+
+## SDK 생성하기
+
+서버의 API를 추가하거나 수정했다면, 아래 순서로 SDK를 다시 만듭니다.
+
+<Steps>
+
+### 서버 실행하기
+
+SDK는 `http://localhost:8000/openapi.json`을 읽어서 만들어지므로, **서버가 실행 중이어야** 합니다.
+
+```bash
+cd server
+uv run fastapi dev
+```
+
+### SDK 생성하기
+
+다른 터미널을 열고, 저장소 루트에서 실행합니다.
+
+```bash
+yarn sdk-gen
+```
+
+`api-client/src/gen` 폴더의 파일이 새로 만들어집니다.
+
+### 확인하기
+
+타입 검사를 실행해, 바뀐 API 때문에 깨진 화면 코드가 없는지 확인합니다.
+
+```bash
+yarn typecheck:client
+yarn typecheck:admin
+```
+
+### 커밋하기
+
+서버 코드와 새로 만들어진 SDK 파일을 **함께** 커밋합니다.
+
+</Steps>
+
+<Callout type="info">
+    SDK 함수의 이름은 서버 코드의 **함수 이름**에서 만들어집니다.
+    서버에서 `@router.get(..., operation_id="get_karaoke_list")`처럼 `operation_id`를 지정하면 SDK 함수 이름을 `getKaraokeList`처럼 짧게 만들 수 있습니다.
+</Callout>
