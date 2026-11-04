@@ -22,79 +22,75 @@ yarn install
 
 ## 실행하기
 
-<Tabs items={['Docker', '직접 실행']}>
-    <Tabs.Tab>
+### Docker
+소스 코드로 이미지를 빌드해 운영과 같은 구성으로 실행합니다.
 
-        소스 코드로 이미지를 빌드해 운영과 같은 구성으로 실행합니다.
+```bash
+cp docker/example.env docker/.env # DB_ROOT_PASSWORD, DB_PASSWORD 채우기
+yarn run:docker
+```
 
-        ```bash
-        cp docker/example.env docker/.env # DB_ROOT_PASSWORD, DB_PASSWORD 채우기
-        yarn run:docker
-        ```
+[http://localhost:3000](http://localhost:3000)으로 접속합니다. <br />
+코드를 고친 뒤에는 이미지를 다시 빌드해야 하므로, 화면을 자주 고치는 작업에는 **직접 실행**이 편합니다.
 
-        [http://localhost:3000](http://localhost:3000)으로 접속합니다. <br />
-        코드를 고친 뒤에는 이미지를 다시 빌드해야 하므로, 화면을 자주 고치는 작업에는 **직접 실행**이 편합니다.
 
-    </Tabs.Tab>
-    <Tabs.Tab>
 
-        <Steps>
+### 직접 실행
 
-            ### MySQL과 Redis 실행하기
+<Steps>
 
-            이미 설치된 MySQL·Redis가 있다면 그것을 써도 됩니다. 없다면 Docker로 띄웁니다.
+    #### MySQL과 Redis 실행하기
 
-            ```bash
-            docker run -d --name miraepass-mysql -p 3306:3306 \
-              -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=miraepass \
-              -e MYSQL_USER=miraepass -e MYSQL_PASSWORD=miraepass mysql
-            docker run -d --name miraepass-redis -p 6379:6379 valkey/valkey
-            ```
+    이미 설치된 MySQL·Redis가 있다면 그것을 써도 됩니다. 없다면 Docker로 띄웁니다.
 
-            ### 백엔드 실행하기
+    ```bash
+    docker run -d --name miraepass-mysql -p 3306:3306 \
+    -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=miraepass \
+    -e MYSQL_USER=miraepass -e MYSQL_PASSWORD=miraepass mysql
+    docker run -d --name miraepass-redis -p 6379:6379 valkey/valkey
+    ```
 
-            ```bash
-            cd server
-            uv sync
-            cp example.env .env
-            ```
+    #### 백엔드 실행하기
 
-            `.env`를 채웁니다. 로컬에서는 HTTP로 접속하므로 `DEBUG=true`로 두어야 로그인 쿠키가 유지됩니다.
+    ```bash
+    cd server
+    uv sync
+    cp example.env .env
+    ```
 
-            ```dotenv filename="server/.env"
-            DATABASE_URL=mysql+aiomysql://miraepass:miraepass@localhost:3306/miraepass
-            REDIS_URL=redis://localhost:6379
-            DEBUG=true
-            ALLOWED_ORIGINS=*
-            ```
+    `.env`를 채웁니다. 로컬에서는 HTTP로 접속하므로 `DEBUG=true`로 두어야 로그인 쿠키가 유지됩니다.
 
-            ```bash
-            uv run alembic upgrade head
-            uv run fastapi dev            # http://localhost:8000, API 문서는 /docs
-            ```
+    ```dotenv filename="server/.env"
+    DATABASE_URL=mysql+aiomysql://miraepass:miraepass@localhost:3306/miraepass
+    REDIS_URL=redis://localhost:6379
+    DEBUG=true
+    ALLOWED_ORIGINS=*
+    ```
 
-            ### 테스트 사용자 만들기
+    ```bash
+    uv run alembic upgrade head
+    uv run fastapi dev            # http://localhost:8000, API 문서는 /docs
+    ```
 
-            ```bash
-            uv run python tools/create_test_users.py
-            ```
+    #### 테스트 사용자 만들기
 
-            학생 `1101`~`1105`, 교사, 서비스 계정이 하나씩 만들어집니다. 처음 로그인할 때 비밀번호를 정합니다.
+    ```bash
+    uv run python tools/create_test_users.py
+    ```
 
-            ### 프론트엔드 실행하기
+    학생 `1101`~`1105`, 교사, 서비스 계정이 하나씩 만들어집니다. 처음 로그인할 때 비밀번호를 정합니다.
 
-            저장소 루트에서 실행합니다.
+    #### 프론트엔드 실행하기
 
-            ```bash
-            yarn dev:client     # Client 실행
-            yarn dev:admin      # Admin 실행
-            ```
-            개발 환경에서 Client와 Admin 동시 실행은 불가능 합니다.
+    저장소 루트에서 실행합니다.
 
-        </Steps>
+    ```bash
+    yarn dev:client     # Client 실행
+    yarn dev:admin      # Admin 실행
+    ```
+    개발 환경에서 Client와 Admin 동시 실행은 불가능 합니다.
 
-    </Tabs.Tab>
-</Tabs>
+</Steps>
 
 ## 자주 쓰는 명령어
 
