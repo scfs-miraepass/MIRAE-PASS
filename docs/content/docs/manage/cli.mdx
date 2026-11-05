@@ -1,0 +1,248 @@
+import { Callout } from 'nextra/components'
+
+# CLI 관리 도구
+
+**CLI 관리 도구**는 관리자 페이지를 거치지 않고 사용자, 포인트, Redis를 직접 다루는 명령어 도구입니다.<br />
+데이터베이스와 Redis에 바로 접근하므로 `server`와 같은 환경(환경 변수, 네트워크)에서 실행해야 합니다.
+
+## 실행하기
+
+### Docker로 운영 중일 때
+
+`server` 컨테이너 안에서 실행합니다.
+
+```bash
+cd miraepass
+docker compose exec server uv run python tools/cli.py --help
+```
+
+### 개발 환경에서
+
+`server` 디렉토리에서 실행합니다. `.env`가 설정되어 있어야 합니다.
+
+```bash
+cd server
+uv run python tools/cli.py --help
+```
+
+아래 예시에서는 `cli`를 위 명령(`docker compose exec server uv run python tools/cli.py` 등)의 줄임말로 씁니다.<br />
+각 명령의 자세한 옵션은 `cli <명령> --help`로 확인할 수 있습니다.
+
+<Callout type="info">
+    명령 이름과 옵션은 모두 케밥 케이스(`add-user`, `--user-type`)로 적습니다.
+</Callout>
+
+## 명령 요약
+
+| 명령 | 설명 |
+| --- | --- |
+| [`add-user`](#add-user) | 사용자 추가 |
+| [`list-users`](#list-users) | 사용자 목록 조회 |
+| [`user-info`](#user-info) | 사용자 상세 정보 조회 |
+| [`delete-user`](#delete-user) | 사용자 삭제 |
+| [`reset-password`](#reset-password) | 비밀번호 초기화 |
+| [`manage-point`](#manage-point) | 포인트 지급/차감 |
+| [`point-history`](#point-history) | 포인트 내역 조회 |
+| [`delete-point-history`](#delete-point-history) | 포인트 내역 삭제 및 포인트 되돌리기 |
+| [`redis-keys`](#redis-keys) | 프로젝트의 Redis Key 목록 |
+| [`redis-get`](#redis-get) | Redis 값 조회 |
+| [`redis-delete`](#redis-delete) | Redis 키 삭제 |
+| [`redis-delete-pattern`](#redis-delete-pattern) | 패턴과 일치하는 Redis 키 삭제 |
+
+## 사용자
+
+### add-user
+
+새로운 사용자를 추가합니다. 추가된 사용자는 비밀번호가 없는 상태이며, 첫 로그인 때 비밀번호를 설정합니다.
+
+| 옵션 | 필수 | 설명 |
+| --- | --- | --- |
+| `--name` | O | 사용자 이름 |
+| `--user-type` | O | `student`, `teacher`, `service` 중 하나 |
+| `--grade` | 학생만 | 학년 |
+| `--number` | 학생만 | 반 |
+| `--student-no` | 학생만 | 번호 |
+
+사용자 ID는 유형에 따라 자동으로 정해집니다.
+
+| 유형 | ID 규칙 | 예시 |
+| --- | --- | --- |
+| `student` | `학년` + `반` + `번호(2자리)` | 1학년 3반 5번 → `1305` |
+| `teacher` | `4000`부터 비어 있는 첫 번호 | `4000`, `4001`, ... |
+| `service` | `5000`부터 비어 있는 첫 번호 | `5000`, `5001`, ... |
+
+```bash
+# 학생 추가 (1학년 3반 5번 → ID 1305)
+cli add-user --name 홍길동 --user-type student --grade 1 --number 3 --student-no 5
+
+# 교사 추가
+cli add-user --name 김선생 --user-type teacher
+
+# 서비스 계정 추가
+cli add-user --name 매점 --user-type service
+```
+
+<Callout type="warning">
+    `--number`는 **반**, `--student-no`는 **번호**입니다. 헷갈리지 않도록 주의하세요.<br />
+    학생은 세 값이 모두 필요하며, 같은 ID의 학생이 이미 있으면 추가되지 않습니다.
+</Callout>
+
+### list-users
+
+사용자 목록을 ID, 유형, 이름, 포인트, 관리자 여부와 함께 보여줍니다.
+
+| 옵션 | 기본값 | 설명 |
+| --- | --- | --- |
+| `--user-type` | 전체 | `student`, `teacher`, `service`로 필터링 |
+| `--limit` | `50` | 표시할 최대 사용자 수 |
+
+```bash
+cli list-users --user-type teacher --limit 100
+```
+
+### user-info
+
+특정 사용자의 이름, 유형, 학년/반(학생), 현재 포인트, 누적 포인트, 관리자 여부를 보여줍니다.
+
+```bash
+cli user-info --user-id 1305
+```
+
+### delete-user
+
+사용자를 삭제하고, 관련 캐시를 지우고, 로그인된 모든 세션을 로그아웃시킵니다.
+
+| 옵션 | 설명 |
+| --- | --- |
+| `--user-id` | 삭제할 사용자 ID (필수) |
+| `--force`, `-f` | 확인 프롬프트 없이 삭제 |
+
+```bash
+cli delete-user --user-id 1305
+```
+
+<Callout type="error">
+    삭제는 되돌릴 수 없습니다. 중요한 데이터라면 먼저 [백업](/docs/getting-started/update#백업)해 두세요.
+</Callout>
+
+### reset-password
+
+사용자의 비밀번호를 비우고, 로그인된 모든 세션을 로그아웃시킵니다.<br />
+사용자는 다음 로그인 때 새 비밀번호를 설정하게 됩니다. 비밀번호를 잊은 사용자에게 사용합니다.
+
+| 옵션 | 설명 |
+| --- | --- |
+| `--user-id` | 비밀번호를 초기화할 사용자 ID (필수) |
+| `--force`, `-f` | 확인 프롬프트 없이 초기화 |
+
+```bash
+cli reset-password --user-id 1305
+```
+
+## 포인트
+
+### manage-point
+
+사용자에게 포인트를 지급하거나 차감합니다. 포인트 내역도 함께 기록됩니다.
+
+| 옵션 | 필수 | 설명 |
+| --- | --- | --- |
+| `--user-id` | O | 대상 사용자 ID |
+| `--amount` | O | 양수면 지급, 음수면 차감 |
+| `--reason` | O | 변경 사유 (내역에 표시됨) |
+| `--history-type` | | 내역 유형 (기본값 `etc`) |
+
+`--history-type`에는 다음 값을 쓸 수 있습니다.
+
+| 값 | 의미 |
+| --- | --- |
+| `teacher` | 교사 지급 |
+| `cafe` | 음료 구매 |
+| `food` | 음식 구매 |
+| `etc` | 기타 |
+| `grant` | 학생 포인트 지급에 대한 교사 포인트 지급 |
+| `quest` | 퀘스트 보상 |
+| `stamp` | 스탬프 발급 |
+| `stamp_bonus` | 스탬프 보너스 |
+| `karaoke_bid` | 노래방 예약 입찰 |
+| `karaoke_cancel` | 노래방 예약 취소 |
+
+```bash
+# 100 포인트 지급
+cli manage-point --user-id 1305 --amount 100 --reason "행사 참여 보상"
+
+# 50 포인트 차감
+cli manage-point --user-id 1305 --amount -50 --reason "잘못 지급된 포인트 회수"
+```
+
+<Callout type="info">
+    음수 값은 `--amount -50`처럼 옵션 바로 뒤에 적습니다. 보유 포인트보다 많이 차감하려고 하면 오류가 나고 아무것도 바뀌지 않습니다.
+</Callout>
+
+### point-history
+
+포인트 내역을 최신순으로 보여줍니다. 내역 ID는 [`delete-point-history`](#delete-point-history)에서 사용합니다.
+
+| 옵션 | 기본값 | 설명 |
+| --- | --- | --- |
+| `--user-id` | 전체 | 특정 사용자의 내역만 보기 |
+| `--limit` | `20` | 표시할 내역 수 |
+
+```bash
+cli point-history --user-id 1305 --limit 50
+```
+
+### delete-point-history
+
+포인트 내역을 삭제하고, 그 내역만큼 사용자의 포인트를 되돌립니다.<br />
+지급 내역을 삭제하면 현재 포인트와 누적 포인트가 함께 줄고, 차감 내역을 삭제하면 현재 포인트가 다시 늘어납니다.
+
+| 옵션 | 설명 |
+| --- | --- |
+| `--history-id` | 삭제할 포인트 내역 ID (필수) |
+| `--force`, `-f` | 확인 프롬프트 없이 삭제 |
+
+```bash
+cli delete-point-history --history-id 42
+```
+
+## Redis
+
+Redis에는 로그인 세션과 캐시가 저장됩니다. 아래 명령은 디버깅용이며, 키 이름을 검증하지 않고 그대로 사용합니다.
+
+### redis-keys
+
+프로젝트에서 사용하는 Redis Key의 이름, 템플릿, TTL, 설명을 보여줍니다. (`server/app/core/redis_keys.py` 기준)
+
+```bash
+cli redis-keys
+```
+
+### redis-get
+
+키의 값을 JSON 형식으로 보여줍니다. 키는 옵션이 아니라 인자로 적습니다.
+
+```bash
+cli redis-get user:item:1305
+```
+
+### redis-delete
+
+키 하나를 삭제합니다. 키가 없어도 오류가 나지 않습니다.
+
+```bash
+cli redis-delete user:item:1305
+```
+
+### redis-delete-pattern
+
+패턴과 일치하는 키를 모두 삭제하고, 삭제한 개수를 보여줍니다.<br />
+셸이 `*`를 해석하지 않도록 패턴을 따옴표로 감싸 주세요.
+
+```bash
+cli redis-delete-pattern 'point_history:*'
+```
+
+<Callout type="warning">
+    `session:*`을 지우면 모든 사용자가 로그아웃됩니다. 캐시 키는 지워도 다음 요청 때 데이터베이스에서 다시 채워집니다.
+</Callout>
