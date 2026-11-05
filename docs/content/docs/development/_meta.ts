@@ -3,5 +3,6 @@ export default {
     convention: '',
     server: '',
     frontend: '',
-    deploy: ''
+    deploy: '',
+    ai: ''
 }
