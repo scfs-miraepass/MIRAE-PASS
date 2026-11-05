@@ -4,5 +4,5 @@ export default {
     server: '',
     frontend: '',
     deploy: '',
-    ai: ''
+    ai: '생성형 인공지능'
 }
