@@ -17,4 +17,10 @@ export default {
             toc: false,
         },
     },
+    "install-git": {
+        title: "Git 설치 가이드",
+        theme: {
+            toc: false,
+        },
+    },
 };
