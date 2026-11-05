@@ -1,4 +1,7 @@
 export default {
+    index: {
+        display: "hidden"
+    },
     "getting-started": "시작하기",
     manage: "운영",
     development: "개발",
