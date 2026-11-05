@@ -5,9 +5,8 @@
     "private": true,
     "scripts": {
         "dev": "next",
-        "build": "next build",
-        "start": "next start",
-        "postbuild": "pagefind --site .next/server/app --output-path out/_pagefind"
+        "build": "next build && pagefind --site .next/server/app --output-path out/_pagefind",
+        "start": "npx serve out"
     },
     "dependencies": {
         "@tailwindcss/postcss": "^4.3.4",

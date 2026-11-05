@@ -3,6 +3,7 @@ import { Head, Search } from 'nextra/components'
 import { getPageMap } from 'nextra/page-map'
 import localFont from 'next/font/local'
 import './globals.css'
+import logoImage from '../public/logo.svg'
 
 const REPOSITORY_URL = 'https://github.com/scfs-miraepass/MIRAE-PASS'
 
@@ -21,7 +22,7 @@ const logo_style = {
 
 const logo = (
     <div style={logo_style}>
-        <img src="/logo.svg" alt="logo" width="25" height="25" />
+        <img src={logoImage.src} alt="logo" width="25" height="25" />
         <p style={{
             marginLeft: '6px',
             fontWeight: 600,

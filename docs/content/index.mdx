@@ -3,9 +3,10 @@ title: 홈
 ---
 
 import { Cards } from 'nextra/components'
+import banner from '../public/banner.png'
 
 <div className="min-h-(--content-full) flex flex-col">
-    <img src="/banner.png" className="rounded-xl shadow-lg/20 h-[50vh] w-full object-cover" />
+    <img src={banner.src} className="rounded-xl shadow-lg/20 h-[50vh] w-full object-cover" />
 
     <div className="flex-1 flex flex-col items-center justify-center mb-4 pb-[5%]">
         <h2 className="tracking-tight text-slate-900 dark:text-slate-100 font-bold mt-2 text-4xl text-center">MIRAEPASS</h2>

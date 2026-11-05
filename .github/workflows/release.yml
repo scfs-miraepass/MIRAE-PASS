@@ -5,6 +5,10 @@ on:
     branches:
       - master
       - dev
+    # 문서만 바뀐 push는 docs.yml에서 따로 배포하므로 릴리즈를 건너뜁니다.
+    paths-ignore:
+      - 'docs/**'
+      - '.github/workflows/docs.yml'
   workflow_dispatch:
     inputs:
       manual_version:
