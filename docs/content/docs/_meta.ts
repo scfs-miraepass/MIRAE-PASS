@@ -7,7 +7,7 @@ export default {
         title: "가이드 및 참고",
     },
     concept: "개념",
-    architecture: "아키텍쳐",
+    architecture: "",
     "install-docker": {
         title: "Docker 설치 가이드",
         theme: {
