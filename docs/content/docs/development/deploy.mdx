@@ -1,3 +1,5 @@
+import { Callout } from 'nextra/components'
+
 # 배포
 
 미래패스는 GitHub Actions가 버전을 정하고 Docker 이미지를 빌드해 올립니다.
@@ -11,6 +13,11 @@
    - 릴리스할 커밋이 없으면 여기서 끝나고 이미지도 빌드하지 않습니다.
 2. **버전 반영**: `client`, `admin`, `server`의 버전을 한 번에 올리고 `HANGELOG.md`와 함께 `chore(release): x.y.z [skip ci]` 커밋과 `vx.y.z` 태그를 만듭니다.
 3. **이미지 빌드**: 새 태그를 기준으로 세 이미지를 빌드해 GitHub Container Registry에 올립니다.
+<Callout type="important">
+    `dev`에서 `master`으로 Push가 되면 정식 릴리즈가 됩니다.<br />
+    정식 릴리즈 뒤, `master`에서 릴리즈 커밋이 푸시된 이후 `dev`을 Rebase 해야합니다.<br />
+    기본적으로 그룹 및 리포지토리 주인이 강제로 Rebase 할 수 있도록 권한이 있습니다.
+</Callout>
 
 ## 이미지와 태그
 
