@@ -401,11 +401,12 @@ def serialize_dt(self, dt: Any, _info):
 
 ### 마이그레이션
 
-모델을 바꿨다면 마이그레이션을 만들고, 생성된 파일을 **반드시 열어서 확인**합니다. 이름은 다음 릴리스 버전과 순번으로 짓습니다.
+모델을 바꿨다면 마이그레이션을 만들고, 생성된 파일을 **반드시 열어서 확인**합니다. 이름은 다음 릴리스 버전으로 짓습니다.<br />
+마이그레이션은 `dev` 브랜치로 Push 될때, 기존에 있는 마이그레이션과 합쳐 하나의 파일로 만듭니다.
 
 ```bash
 cd server
-uv run alembic revision --autogenerate -m "v1.15.0_1"
+uv run alembic revision --autogenerate -m "v1.15.0"
 uv run alembic upgrade head
 ```
 
@@ -534,3 +535,8 @@ class UserPermission(IntFlag):
 - [ ] 데이터를 바꾸는 코드에서 캐시 이벤트를 호출했다.
 - [ ] API가 바뀌었다면 `yarn sdk-gen`으로 SDK를 다시 만들고 함께 커밋했다.
 - [ ] 커밋 메시지는 `feat(server): ...`, `fix(server): ...` 형식이다. ([커밋 메시지](/docs/development/convention#커밋-메시지))
+
+## 머지 전 체크리스트
+`dev` 브랜치로 푸시전 확인해야 하는 목록
+
+- [ ] 데이터베이스 마이그레이션이 발생한 경우, 기존에 있는 마이그레이션과 병합을 해야합니다.

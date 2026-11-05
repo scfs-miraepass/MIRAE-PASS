@@ -168,8 +168,8 @@ scope에는 바뀐 영역을 적습니다: `server`, `client`, `admin`, `sdk`, `
 
 ### 마이그레이션 이름
 
-Alembic 마이그레이션 메시지는 해당 릴리스 버전과 순번으로 짓습니다.
-
+Alembic 마이그레이션 메시지는 해당 릴리스 버전으로 짓습니다.
 ```bash
-uv run alembic revision --autogenerate -m "v1.14.0_1"
+uv run alembic revision --autogenerate -m "v1.14.0"
 ```
+데이터베이스 마이그레이션에 대한 내용은 [백엔드 개발 가이드](/docs/development/server#마이그레이션)를 확인하세요.
