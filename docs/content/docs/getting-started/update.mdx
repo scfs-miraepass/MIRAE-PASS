@@ -56,4 +56,14 @@ docker compose exec database sh -c 'mysqldump -u root -p"$MYSQL_ROOT_PASSWORD" "
 docker compose exec -T database sh -c 'mysql -u root -p"$MYSQL_ROOT_PASSWORD" "$MYSQL_DATABASE"' < backup-2026-11-04.sql
 ```
 
-Redis에는 로그인 세션과 캐시만 있으므로 백업하지 않아도 됩니다. Redis가 초기화되면 모든 사용자가 다시 로그인해야 합니다.
+Redis에는 로그인 세션, 캐시, **포인트 한도 집계**(교사의 주간 지급 한도, 학생의 하루 획득 포인트)가 있습니다. 따로 백업하지는 않지만, Redis가 초기화되면 아래와 같은 영향이 있습니다.
+
+- 모든 사용자가 다시 로그인해야 합니다.
+- 이번 주 지급 한도와 오늘 획득 포인트 집계가 0부터 다시 계산됩니다. 이미 한도를 다 쓴 교사도 다시 지급할 수 있게 됩니다.
+- 캐시는 자동으로 다시 만들어지므로 문제가 없습니다.
+
+<Callout type="warning">
+    `redis` 컨테이너에는 데이터 볼륨이 연결되어 있지 않아, **컨테이너가 새로 만들어지면 Redis가 초기화됩니다.**
+    `docker compose pull`로 새 Valkey 이미지를 받은 뒤 `docker compose up -d`를 실행하는 경우도 여기에 해당합니다.
+    학기 중에는 주말 등 한도 집계 영향이 적은 시간에 업데이트하세요. 자세한 내용은 [자주 사용하는 명령어](/docs/manage/command#redis-데이터가-유지되는-경우)를 참고하세요.
+</Callout>
