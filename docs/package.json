@@ -1,0 +1,28 @@
+{
+    "name": "scfs-miraepass-docs",
+    "version": "1.14.1",
+    "type": "module",
+    "private": true,
+    "scripts": {
+        "dev": "next",
+        "build": "next build && pagefind --site .next/server/app --output-path out/_pagefind",
+        "start": "npx serve out"
+    },
+    "dependencies": {
+        "@tailwindcss/postcss": "^4.3.4",
+        "next": "^16.4.4",
+        "nextra": "^4.6.1",
+        "nextra-theme-docs": "^4.6.1",
+        "postcss": "^8.5.32",
+        "react": "^19.3.1",
+        "react-dom": "^19.3.1",
+        "tailwindcss": "^4.3.4"
+    },
+    "devDependencies": {
+        "@types/mdx": "^2.0.14",
+        "@types/node": "^26.6.6",
+        "@types/react": "^19.3.0",
+        "pagefind": "^1.6.0",
+        "typescript": "^7.0.2"
+    }
+}

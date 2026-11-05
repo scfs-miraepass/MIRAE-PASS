@@ -1,0 +1,175 @@
+import { FileTree, Callout } from 'nextra/components'
+
+# 프로젝트 구조와 컨벤션
+
+저장소의 폴더 구성과 코드를 작성할 때 지켜야 할 규칙을 설명합니다.
+
+## 프로젝트 구조
+
+하나의 저장소에서 백엔드, 프론트엔드, 문서를 함께 관리합니다.<br />
+프론트엔드와 문서는 Yarn Workspaces로, 백엔드는 uv로 의존성을 관리합니다.
+
+<FileTree>
+    <FileTree.Folder name="MIRAE-PASS" defaultOpen>
+        <FileTree.Folder name=".github" />
+        <FileTree.Folder name="server" open={false} />
+        <FileTree.Folder name="client" open={false} />
+        <FileTree.Folder name="admin" open={false} />
+        <FileTree.Folder name="api-client" open={false} />
+        <FileTree.Folder name="docs" open={false} />
+        <FileTree.Folder name="docker" />
+    </FileTree.Folder>
+</FileTree>
+
+| 폴더 | 설명 |
+| --- | --- |
+| `server` | FastAPI 백엔드 |
+| `client` | 학생·교사·서비스 계정이 쓰는 Nuxt 앱 (PWA) |
+| `admin` | 관리자 대시보드 Nuxt 앱 |
+| `api-client` | 백엔드 OpenAPI로 생성한 TypeScript SDK (`@miraepass/api-client`) |
+| `docs` | 이 문서 사이트 (Nextra) |
+| `docker` | 운영·개발용 Docker Compose 구성 |
+| `.github` | 릴리스 및 Docker 이미지 배포 워크플로 |
+
+### 백엔드 (`server`)
+
+계층형 구조를 따릅니다. 라우터는 요청 검증과 응답만 맡고, 비즈니스 로직은 서비스 계층에 둡니다.
+
+<FileTree>
+    <FileTree.Folder name="server" defaultOpen>
+        <FileTree.Folder name="alembic" defaultOpen>
+            <FileTree.Folder name="versions" />
+        </FileTree.Folder>
+        <FileTree.Folder name="app" defaultOpen>
+            <FileTree.Folder name="core" defaultOpen>
+                <FileTree.Folder name="service" />
+            </FileTree.Folder>
+            <FileTree.Folder name="router" defaultOpen>
+                <FileTree.Folder name="endpoints" />
+            </FileTree.Folder>
+            <FileTree.Folder name="schemas" />
+        </FileTree.Folder>
+        <FileTree.Folder name="tools" />
+    </FileTree.Folder>
+</FileTree>
+
+| 폴더 | 설명 |
+| --- | --- |
+| `app/router` | API 라우터 (Controller 계층). `endpoints/`에 도메인별 파일을 두고 `__init__.py`에서 등록합니다. |
+| `app/core` | 설정, DB·Redis 연결, 인증·세션, 로그인 의존성(`LoginDep`), Redis Key, 캐시 이벤트 등 공통 기반 |
+| `app/core/service` | 도메인별 비즈니스 로직 (Service 계층) |
+| `app/schemas` | SQLModel 테이블 모델, 요청·응답 모델, 공통 응답 규격(`ResponseModel`) |
+| `alembic/versions` | DB 마이그레이션 |
+| `tools` | 사용자 일괄 등록, 테스트 계정 생성 등 운영용 스크립트 |
+
+### 프론트엔드 (`client`, `admin`)
+
+두 앱 모두 Nuxt 4의 `app/` 디렉터리 구조를 사용합니다.
+
+<FileTree>
+    <FileTree.Folder name="client" defaultOpen>
+        <FileTree.Folder name="app" defaultOpen>
+            <FileTree.Folder name="assets" />
+            <FileTree.Folder name="components" />
+            <FileTree.Folder name="composables" />
+            <FileTree.Folder name="layouts" />
+            <FileTree.Folder name="middleware" />
+            <FileTree.Folder name="pages" />
+            <FileTree.Folder name="utils" />
+        </FileTree.Folder>
+        <FileTree.Folder name="server" />
+        <FileTree.Folder name="public" />
+    </FileTree.Folder>
+</FileTree>
+
+| 폴더 | 설명 |
+| --- | --- |
+| `app/pages` | 파일 기반 라우팅. 폴더 구조가 곧 URL이 됩니다. |
+| `app/components` | 화면(도메인)별 폴더로 나눈 컴포넌트 |
+| `app/composables` | SDK 인스턴스(`$API`), 로그인·세션 상태 등 공용 로직 |
+| `app/middleware` | 모든 페이지에 적용되는 인증·권한 검사 |
+| `app/layouts` | 페이지 공통 레이아웃 |
+| `app/utils` | 권한 상수 등 유틸 함수 |
+| `app/assets` | CSS 등 빌드에 포함되는 리소스 |
+| `server` | Nitro 서버 라우트 (`client`의 노래방 경매 WebSocket 프록시) |
+| `public` | 폰트, 아이콘, PWA 이미지 등 정적 파일 |
+
+### API 클라이언트 (`api-client`)
+
+<FileTree>
+    <FileTree.Folder name="api-client" defaultOpen>
+        <FileTree.Folder name="src" defaultOpen>
+            <FileTree.Folder name="gen" />
+        </FileTree.Folder>
+    </FileTree.Folder>
+</FileTree>
+
+`src/gen`은 `yarn sdk-gen`이 만드는 폴더입니다. 직접 고치지 않고, 백엔드 API를 바꾼 뒤 다시 생성합니다.
+
+## 코드 컨벤션
+
+코드 스타일과 개발 규칙은 영역별 문서에 정리되어 있습니다.
+
+| 문서 | 대상 |
+| --- | --- |
+| [백엔드 개발 가이드](/docs/development/server) | `server` — 라우터 · 서비스 · DB · 캐시 · 권한 |
+| [프론트엔드 개발 가이드](/docs/development/frontend) | `client`, `admin` — API 호출 · 세션 · 권한 · UI |
+
+### 커밋 전 검사
+
+`yarn install` 시 pre-commit 훅이 함께 설치됩니다. 커밋할 때 바뀐 파일에 따라 다음 검사가 자동으로 실행됩니다.
+
+| 대상 | 검사 |
+| --- | --- |
+| `server/` | `ruff check --fix`, `ruff format` |
+| `client/` | `yarn typecheck:client` |
+| `admin/` | `yarn typecheck:admin` |
+
+전체를 한 번에 검사하려면 `yarn typecheck`를 실행합니다.
+
+## Git 컨벤션
+
+### 브랜치
+
+| 브랜치 | 용도 |
+| --- | --- |
+| `master` | 정식 릴리스. 푸시되면 버전이 올라가고 Docker 이미지가 배포됩니다. |
+| `dev` | 개발 통합 브랜치. 푸시되면 `x.y.z-dev.n` 프리릴리스가 만들어집니다. |
+| `feat/*`, `fix/*`, `docs/*` | 작업 브랜치. `dev`로 PR을 보냅니다. |
+
+### 커밋 메시지
+
+[Conventional Commits](https://www.conventionalcommits.org/ko/) 형식을 따르며, 설명은 한국어로 씁니다.
+
+```text
+<type>(<scope>): <설명>
+```
+
+```text
+feat(client): 노래방 파티 초대 화면 추가
+fix(server): stamp iso포멧에 맞지 않는 문제 해결
+docs(docs): 개발 환경 구성 문서 추가
+```
+
+| type    | 의미          | 버전 변화                   |
+|---------|---------------|-----------------------------|
+| `feat`  | 새 기능       | minor (`1.13.0` → `1.14.0`) |
+| `fix`   | 버그 수정     | patch (`1.14.0` → `1.14.1`) |
+| `docs`  | 문서          | 없음                        |
+| `ci`    | 워크플로 변경 | 없음                        |
+| `chore` | 그 밖의 잡일  | 없음                        |
+| `wip`   | 작업 중       | 없음                        |
+
+scope에는 바뀐 영역을 적습니다: `server`, `client`, `admin`, `sdk`, `docs`.
+
+<Callout type="warning">
+    버전과 `CHANGELOG.md`는 semantic-release가 커밋 메시지를 읽어 자동으로 관리합니다. `package.json`, `pyproject.toml`의 버전을 직접 수정하지 마세요.
+</Callout>
+
+### 마이그레이션 이름
+
+Alembic 마이그레이션 메시지는 해당 릴리스 버전으로 짓습니다.
+```bash
+uv run alembic revision --autogenerate -m "v1.14.0"
+```
+데이터베이스 마이그레이션에 대한 내용은 [백엔드 개발 가이드](/docs/development/server#마이그레이션)를 확인하세요.

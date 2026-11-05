@@ -1,5 +1,5 @@
 <p align="center">
-<img src="docs/static/banner.png">
+<img src="docs/public/banner.png">
 </p>
 <h2 align="center">MIRAEPASS</h2>
 <h4 align="center">순천미래과학고등학교의 26년도에 사용하는 교내 자체 포인트 시스템</h4>

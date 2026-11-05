@@ -1,0 +1,45 @@
+---
+title: API
+---
+
+import { Callout } from 'nextra/components'
+
+# API 이해하기
+
+<Callout type="info">
+    영상으로 이해하기
+    <iframe
+        width="560"
+        height="315"
+        src="https://www.youtube-nocookie.com/embed/ckSdPNKM2pY?si=Sm20GFiskAVIA5_3"
+        title="YouTube video player"
+        frameBorder="0"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+        referrerPolicy="strict-origin-when-cross-origin"
+        allowFullScreen
+        className="rounded-lg my-2"
+    />
+</Callout>
+
+## API란 무엇인가?
+
+**API(Application Programming Interface)** 는 프로그램끼리 대화하는 **정해진 약속**입니다.
+
+식당을 예로 들어 보겠습니다.
+
+| 식당 | 미래패스 |
+| --- | --- |
+| 손님 | 화면 프로그램 (Client, Admin) |
+| 메뉴판 | **API 목록** |
+| 주문서 | **요청(Request)** |
+| 주방 | **서버(Server)** |
+| 나온 음식 | **응답(Response)** |
+
+손님은 주방에 직접 들어가 요리하지 않습니다. 메뉴판을 보고 정해진 방식으로 주문하면, 주방이 요리를 만들어 가져다줍니다.
+미래패스의 화면 프로그램도 마찬가지이며, 데이터베이스를 직접 건드리지 않고 **"이 학생에게 포인트 50점을 지급해 주세요"** 와 같은 요청을 서버에 보내고 결과를 받아 화면에 보여줍니다.
+
+이렇게 나누어 두면 다음과 같은 장점이 있습니다.
+
+- **안전합니다.** 포인트를 지급할 수 있는지, 한도를 넘지 않았는지는 서버가 한 곳에서 검사합니다.
+- **재사용할 수 있습니다.** 학생용 화면(Client)과 관리자 화면(Admin)이 같은 API를 함께 사용합니다.
+- **나눠서 개발할 수 있습니다.** 화면을 만드는 사람은 API 문서만 보고 개발할 수 있습니다.

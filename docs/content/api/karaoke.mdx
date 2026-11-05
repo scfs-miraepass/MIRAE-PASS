@@ -1,0 +1,455 @@
+import { Callout, Steps } from 'nextra/components'
+
+# 노래방 경매
+
+교내 노래방을 사용할 시간대를 **포인트 경매**로 예약하는 기능입니다. 가장 많은 포인트를 건 사람(또는 파티)이 그 시간대를 사용하게 됩니다.
+
+## 용어 정리
+
+| 용어 | 뜻 |
+| --- | --- |
+| **경매(예약)** | 특정 날짜, 특정 교시의 노래방 사용권입니다. 서버에서는 `Karaoke`라고 부릅니다. |
+| **입찰** | "이 시간대에 포인트를 이만큼 걸겠습니다"라고 신청하는 것입니다. |
+| **최고가** | 지금까지의 입찰 중 가장 높은 금액입니다. |
+| **낙찰** | 경매가 끝났을 때 최고가를 건 사람이 사용권을 얻는 것입니다. |
+| **파티** | 친구들과 함께 입찰하기 위해 만든 모임입니다. 포인트를 **나누어(더치페이)** 냅니다. |
+| **파티장** | 파티를 만든 사람이며, 파티를 대표해 입찰합니다. |
+
+## 경매의 진행 순서
+
+경매는 세 가지 상태(`KaraokeStatus`)를 거칩니다. 서버가 **매분 0초**마다 시간을 확인해 상태를 자동으로 바꿉니다.
+
+```text
+  Pending  ──(시작 시간)──▶  In_Progress  ──(종료 시간)──▶  Confirmed
+  (대기 중)                  (진행 중, 입찰 가능)             (종료, 낙찰 확정)
+```
+
+<Steps>
+
+### 관리자가 경매를 만듭니다
+
+날짜, 교시, 경매 시작·종료 시간, 최소 입찰가를 정해 경매를 만듭니다. 이때 상태는 `Pending`입니다.
+
+### 시작 시간이 되면 입찰이 열립니다
+
+상태가 `In_Progress`로 바뀌며, 이때부터 입찰할 수 있습니다.
+
+### 친구와 함께라면 파티를 만듭니다 (선택)
+
+파티장이 파티를 만들고 친구를 초대합니다. 친구가 초대를 **수락**해야 파티원이 됩니다. 파티장을 포함해 **최대 4명**까지 함께할 수 있습니다.
+
+### 입찰합니다
+
+혼자라면 본인이, 파티라면 **파티장만** 입찰할 수 있습니다. 입찰하는 즉시 포인트가 빠져나갑니다.
+
+### 더 높은 입찰이 들어오면 환불됩니다
+
+다른 사람이 더 높은 금액을 걸면, 기존 최고가 입찰은 **취소되고 포인트가 자동으로 돌아옵니다.** (기록 종류 `karaoke_cancel`)
+
+### 종료 시간이 되면 낙찰됩니다
+
+상태가 `Confirmed`로 바뀌며, 그 순간의 최고가 입찰자(또는 파티)가 노래방을 사용합니다.
+
+</Steps>
+
+### 입찰 규칙
+
+- **첫 입찰**은 최소 입찰가(`min_point`) **이상**이어야 합니다.
+- **그 다음 입찰**은 현재 최고가보다 **커야** 합니다. 같은 금액으로는 최고가를 가져올 수 없습니다.
+- 파티로 입찰하면 금액을 인원수대로 나누어 각자의 포인트에서 차감합니다.
+  파티원의 몫은 **100점 단위로 내림**하고, 남는 금액은 파티장이 냅니다.
+  - 예: 3명이 1,000점을 입찰 → 파티원 각 300점, 파티장 400점
+- 한 명이라도 포인트가 부족하면 입찰할 수 없습니다. (`402` 오류)
+
+## API 목록
+
+| 방법 | 경로 | 설명 | 필요한 권한 |
+| --- | --- | --- | --- |
+| `GET` | `/karaoke` | [경매 목록](#경매-목록) | `VIEW_KARAOKE` |
+| `GET` | `/karaoke/{karaoke_id}` | [경매 조회](#경매-조회) | `VIEW_KARAOKE` |
+| `POST` | `/karaoke` | [경매 생성](#경매-생성) | `MANAGE_KARAOKE` |
+| `DELETE` | `/karaoke/{karaoke_id}` | [경매 삭제](#경매-삭제) | `MANAGE_KARAOKE` |
+| `POST` | `/karaoke/{karaoke_id}/bid` | [입찰](#입찰) | `JOIN_KARAOKE` |
+| `GET` | `/karaoke/{karaoke_id}/final-bid` | [낙찰자 조회](#낙찰자-조회) | `VIEW_KARAOKE` |
+| `POST` | `/karaoke/{karaoke_id}/party` | [파티 만들기](#파티-만들기) | `JOIN_KARAOKE` |
+| `GET` | `/karaoke/{karaoke_id}/party/me` | [내 파티 조회](#내-파티-조회) | `JOIN_KARAOKE` |
+| `GET` | `/karaoke/party/{party_id}` | [파티 조회](#파티-조회) | `JOIN_KARAOKE` |
+| `POST` | `/karaoke/party/{party_id}/invite` | [파티원 초대](#파티원-초대) | 파티장 |
+| `GET` | `/karaoke/party/invites/me` | [받은 초대 목록](#받은-초대-목록) | 로그인 |
+| `POST` | `/karaoke/party/{party_id}/action` | [초대 수락·거절](#초대-수락거절) | 초대받은 사람 |
+| `DELETE` | `/karaoke/party/{party_id}/members/{user_id}` | [파티원 강퇴](#파티원-강퇴) | 파티장 |
+| `DELETE` | `/karaoke/party/{party_id}/leave` | [파티 나가기](#파티-나가기) | 파티원 |
+| `DELETE` | `/karaoke/party/{party_id}` | [파티 해산](#파티-해산) | 파티장 |
+| `WS` | `/karaoke/{karaoke_id}/ws` | [실시간 경매 정보](#실시간-경매-정보-websocket) | `VIEW_KARAOKE` |
+
+---
+
+## 경매
+
+### 경매 정보
+
+```json
+{
+    "id": 7,
+    "date": "2026-11-10",
+    "time": 8,
+    "status": "In_Progress",
+    "start_time": "2026-11-06T09:00:00+09:00",
+    "end_time": "2026-11-07T18:00:00+09:00",
+    "min_point": 100,
+    "highest_bid": 450
+}
+```
+
+| 항목 | 설명 |
+| --- | --- |
+| `date` | 노래방을 **사용하는** 날짜입니다. |
+| `time` | 노래방을 사용하는 교시입니다. `1`~`7`은 1~7교시, `8`은 점심시간입니다. |
+| `status` | `Pending`(대기), `In_Progress`(진행 중), `Confirmed`(종료) 중 하나입니다. |
+| `start_time`, `end_time` | **경매가** 열리고 닫히는 시간입니다. 노래방 사용 시간과 다릅니다. |
+| `min_point` | 최소 입찰가입니다. |
+| `highest_bid` | 현재 최고가입니다. 진행 중인 경매에만 값이 있으며, 나머지는 `null`입니다. |
+
+### 경매 목록
+
+`GET /karaoke` · SDK `getKaraokeList`
+
+경매 목록을 **사용 날짜가 늦은 순서**로 가져옵니다. 응답 헤더 `X-MAX-PAGE`에 전체 페이지 수가 들어 있습니다.
+
+| 위치 | 이름 | 타입 | 기본값 | 설명 |
+| --- | --- | --- | --- | --- |
+| 쿼리 | `limit` | 숫자 | 20 | 가져올 개수 |
+| 쿼리 | `offset` | 숫자 | 0 | 건너뛸 개수 |
+| 쿼리 | `date` | 날짜 (`2026-11-10`) | | 특정 날짜의 경매만 가져옵니다. |
+
+```ts
+const req = await $API.getKaraokeList({ query: { limit: 20, offset: 0 } })
+```
+
+### 경매 조회
+
+`GET /karaoke/{karaoke_id}` · SDK `getKaraoke`
+
+경매 하나의 정보를 가져옵니다. 없으면 `404`로 응답합니다.
+
+### 경매 생성
+
+`POST /karaoke` · SDK `createKaraoke`
+
+새 경매를 만듭니다.
+
+| 위치 | 이름 | 타입 | 필수 | 설명 |
+| --- | --- | --- | --- | --- |
+| 본문 | `date` | 날짜 | ○ | 노래방 사용 날짜 |
+| 본문 | `time` | 숫자 | ○ | 사용 교시 (1~7, 점심시간은 8) |
+| 본문 | `start_time` | 날짜·시간 | ○ | 경매 시작 시간 |
+| 본문 | `end_time` | 날짜·시간 | ○ | 경매 종료 시간 (시작 시간보다 뒤여야 합니다) |
+| 본문 | `min_point` | 숫자 | | 최소 입찰가 (기본값 0) |
+
+**응답** `201` — 만들어진 경매 정보를 돌려줍니다.
+
+| 오류 | 이유 |
+| --- | --- |
+| `400` | 종료 시간이 시작 시간보다 빠르거나 같습니다. |
+| `403` | `MANAGE_KARAOKE` 권한이 없습니다. |
+| `409` | 같은 날짜, 같은 교시의 경매가 이미 있습니다. |
+
+```ts
+await $API.createKaraoke({
+    body: {
+        date: "2026-11-10",
+        time: 8,
+        start_time: "2026-11-06T09:00:00+09:00",
+        end_time: "2026-11-07T18:00:00+09:00",
+        min_point: 100,
+    },
+})
+```
+
+### 경매 삭제
+
+`DELETE /karaoke/{karaoke_id}` · SDK `deleteKaraoke`
+
+경매를 삭제합니다. **응답** `204` — 본문이 없습니다.
+
+### 입찰
+
+`POST /karaoke/{karaoke_id}/bid` · SDK `createKaraokeBid`
+
+진행 중인 경매에 입찰합니다. 파티에 속해 있다면 **파티장만** 입찰할 수 있으며, 파티 전체를 대표해 입찰합니다.
+
+| 위치 | 이름 | 타입 | 필수 | 설명 |
+| --- | --- | --- | --- | --- |
+| 본문 | `amount` | 숫자 | ○ | 입찰 금액 (1 이상) |
+
+**응답** `201`
+
+```json
+{
+    "success": true,
+    "data": { "id": 31, "auction_id": 7, "bidder_id": 1101, "party_id": 5, "amount": 500, "created_at": "2026-11-06T12:31:08+09:00" }
+}
+```
+
+| 오류 | 이유 |
+| --- | --- |
+| `400` | 경매가 진행 중이 아니거나, 금액이 최소 입찰가보다 작거나, 현재 최고가보다 크지 않습니다. |
+| `402` | 본인 또는 파티원의 포인트가 부족합니다. |
+| `403` | 권한이 없거나, 파티장이 아닌 파티원이 입찰했습니다. |
+| `404` | 경매가 없습니다. |
+
+```ts
+const req = await $API.createKaraokeBid({
+    path: { karaoke_id: 7 },
+    body: { amount: 500 },
+})
+if (req.error) {
+    alert(req.error.message) // 예: "입찰 금액은 현재 최고가(450)보다 커야 합니다."
+}
+```
+
+<Callout type="info">
+    노래방 경매 API의 오류 메시지(`message`)는 **한글**로 작성되어 있어, 화면에 그대로 보여줄 수 있습니다.
+</Callout>
+
+### 낙찰자 조회
+
+`GET /karaoke/{karaoke_id}/final-bid` · SDK `getKaraokeFinalBid`
+
+경매의 **마지막(최고가) 입찰**과 입찰자, 파티원 정보를 가져옵니다. 경매가 끝난 뒤 누가 낙찰받았는지 확인할 때 사용합니다.
+
+**응답** `200`
+
+```json
+{
+    "success": true,
+    "data": {
+        "id": 31,
+        "auction_id": 7,
+        "party_id": 5,
+        "amount": 500,
+        "created_at": "2026-11-06T12:31:08+09:00",
+        "bidder": { "id": 1101, "name": "홍길동", "...": "..." },
+        "members": [{ "id": 1102, "name": "김미래", "...": "..." }]
+    }
+}
+```
+
+| 오류 | 이유 |
+| --- | --- |
+| `404` | 경매가 없거나, 입찰 기록이 하나도 없습니다. |
+
+---
+
+## 파티
+
+### 파티 정보
+
+```json
+{
+    "id": 5,
+    "auction_id": 7,
+    "leader_id": 1101,
+    "dispersed": false,
+    "leader": { "id": 1101, "name": "홍길동", "...": "..." },
+    "members": [{ "id": 1102, "name": "김미래", "...": "..." }],
+    "pending_members": [{ "id": 1103, "name": "이패스", "...": "..." }]
+}
+```
+
+| 항목 | 설명 |
+| --- | --- |
+| `auction_id` | 이 파티가 참여하는 경매의 ID입니다. |
+| `leader` | 파티장입니다. |
+| `members` | 초대를 **수락한** 파티원입니다. |
+| `pending_members` | 초대를 받았지만 **아직 수락하지 않은** 사람입니다. |
+| `dispersed` | 해산된 파티이면 `true`입니다. |
+
+### 파티 만들기
+
+`POST /karaoke/{karaoke_id}/party` · SDK `createKaraokeParty`
+
+경매에 참여할 파티를 만들며, 만든 사람이 파티장이 됩니다.
+**한 경매에서는 하나의 파티에만** 속할 수 있으므로, 이미 다른 파티에 속해 있으면 만들 수 없습니다. (`400`)
+
+```ts
+const req = await $API.createKaraokeParty({ path: { karaoke_id: 7 } })
+const partyId = req.data?.data.id
+```
+
+### 내 파티 조회
+
+`GET /karaoke/{karaoke_id}/party/me` · SDK `getMyKaraokeParty`
+
+이 경매에서 내가 파티장이거나 소속된 파티의 [파티 정보](#파티-정보)를 가져옵니다. 속한 파티가 없으면 `404`로 응답합니다.
+
+### 파티 조회
+
+`GET /karaoke/party/{party_id}` · SDK `getKaraokeParty`
+
+파티 ID로 [파티 정보](#파티-정보)를 가져옵니다. 파티장, 파티원, **초대받은 사람**만 볼 수 있습니다. (그 외에는 `403`)
+받은 초대 목록에서 "누구의, 어떤 경매 파티인지" 확인할 때 사용합니다.
+
+### 파티원 초대
+
+`POST /karaoke/party/{party_id}/invite` · SDK `inviteKaraokePartyMember`
+
+파티장이 다른 유저를 파티에 초대합니다. 초대받은 사람이 [수락](#초대-수락거절)해야 파티원이 됩니다.
+
+| 위치 | 이름 | 타입 | 필수 | 설명 |
+| --- | --- | --- | --- | --- |
+| 본문 | `user_id` | 숫자 | ○ | 초대할 유저의 ID |
+
+**응답** `204` — 본문이 없습니다.
+
+| 오류 | 이유 |
+| --- | --- |
+| `400` | 해산된 파티이거나, 자기 자신을 초대했습니다. |
+| `403` | 파티장이 아닙니다. |
+| `404` | 파티나 초대할 유저가 없습니다. |
+| `409` | 이미 이 경매의 파티에 속해 있거나 초대받은 유저입니다. 또는 파티 인원(파티장 포함 4명)이 가득 찼습니다. |
+
+```ts
+await $API.inviteKaraokePartyMember({
+    path: { party_id: 5 },
+    body: { user_id: 1103 },
+})
+```
+
+### 받은 초대 목록
+
+`GET /karaoke/party/invites/me` · SDK `getMyKaraokePartyInvites`
+
+나에게 온, 아직 응답하지 않은 초대 목록을 가져옵니다.
+
+```json
+{
+    "success": true,
+    "data": [{ "party_id": 5, "user_id": 1103, "pending": true, "accepted_at": null }]
+}
+```
+
+`party_id`로 [파티 조회](#파티-조회)를 하면 누가 보낸 초대인지 알 수 있습니다.
+
+### 초대 수락·거절
+
+`POST /karaoke/party/{party_id}/action` · SDK `decideKaraokePartyInvite`
+
+받은 초대를 수락하거나 거절합니다.
+
+| 위치 | 이름 | 타입 | 필수 | 설명 |
+| --- | --- | --- | --- | --- |
+| 본문 | `accept` | 참/거짓 | ○ | `true`이면 수락, `false`이면 거절 |
+
+| 오류 | 이유 |
+| --- | --- |
+| `404` | 대기 중인 초대가 없습니다. |
+
+```ts
+await $API.decideKaraokePartyInvite({
+    path: { party_id: 5 },
+    body: { accept: true },
+})
+```
+
+### 파티원 강퇴
+
+`DELETE /karaoke/party/{party_id}/members/{user_id}` · SDK `kickKaraokePartyMember`
+
+파티장이 파티원을 내보냅니다.
+
+<Callout type="warning">
+    강퇴하면 **새로운 파티 ID**를 가진 파티가 만들어지고, 남은 인원이 그대로 옮겨집니다. (지난 입찰 기록에 당시 파티원 정보를 남기기 위해서입니다.)
+    그래서 응답으로 받은 **새 [파티 정보](#파티-정보)의 `id`를 이후 요청에 사용해야** 합니다.
+</Callout>
+
+| 오류 | 이유 |
+| --- | --- |
+| `400` | 파티장 자신을 강퇴하려고 했습니다. |
+| `403` | 파티장이 아닙니다. |
+| `404` | 파티, 유저 또는 해당 파티원이 없습니다. |
+
+### 파티 나가기
+
+`DELETE /karaoke/party/{party_id}/leave` · SDK `leaveKaraokeParty`
+
+파티원이 스스로 파티에서 나갑니다. **파티장은 나갈 수 없으며**, 대신 [파티 해산](#파티-해산)을 사용해야 합니다. (`400`)
+
+### 파티 해산
+
+`DELETE /karaoke/party/{party_id}` · SDK `disperseKaraokeParty`
+
+파티장이 파티를 없앱니다. 이미 해산된 파티이면 `400`으로 응답합니다.
+
+---
+
+## 실시간 경매 정보 (WebSocket)
+
+`WS /karaoke/{karaoke_id}/ws`
+
+경매 화면에서 최고가와 남은 시간을 **실시간으로** 보여주기 위한 연결입니다.
+
+### WebSocket이란?
+
+일반 API는 **편지**와 같습니다. 질문을 보내야만 답장이 옵니다. 최고가가 바뀌었는지 알려면 몇 초마다 계속 물어봐야 합니다.
+**WebSocket**은 **전화**와 같습니다. 한 번 연결해 두면, 서버가 새로운 소식이 생길 때마다 **먼저** 알려줍니다.
+
+### 연결하기
+
+로그인 쿠키가 있는 상태에서 연결하면 되며, SDK 함수는 없으므로 브라우저의 `WebSocket`을 직접 사용합니다.
+
+```ts
+const protocol = location.protocol === "https:" ? "wss" : "ws"
+const ws = new WebSocket(`${protocol}://${location.host}/api/karaoke/7/ws`)
+
+ws.onmessage = (event) => {
+    const message = JSON.parse(event.data)
+
+    switch (message.type) {
+        case "highest": // 최고가 정보
+            console.log("최고가:", message.data.highest_bid?.amount)
+            console.log("남은 시간(초):", message.data.remaining_time)
+            break
+        case "status": // 경매 상태 변경
+            console.log("상태:", message.data) // "In_Progress", "Confirmed"
+            break
+        case "sync": // 남은 시간 보정
+            console.log("남은 시간(초):", message.data)
+            break
+    }
+}
+```
+
+권한이 없거나 경매가 없으면 서버가 연결을 끊습니다. (종료 코드 `1008`)
+
+### 받는 메시지
+
+모든 메시지는 `{ "type": 종류, "data": 내용 }` 모양입니다.
+
+| `type` | 언제 오는가 | `data` |
+| --- | --- | --- |
+| `highest` | **연결 직후 한 번**, 새 입찰이 들어올 때, 상태가 바뀐 직후 | 최고가 입찰, 최근 입찰 5개, 남은 시간 |
+| `status` | 경매 상태가 바뀔 때 | 새 상태 (`"In_Progress"`, `"Confirmed"`) |
+| `sync` | 진행 중인 경매에서 **매분 0초**마다 | 경매 종료까지 남은 시간(초) |
+
+`highest` 메시지의 `data`는 다음과 같습니다.
+
+```json
+{
+    "highest_bid": {
+        "id": 31, "auction_id": 7, "party_id": 5, "amount": 500,
+        "created_at": "2026-11-06T12:31:08+09:00",
+        "bidder": { "id": 1101, "name": "홍길동", "...": "..." }
+    },
+    "bids_history": [ "최근 입찰 최대 5개 (위와 같은 모양)" ],
+    "remaining_time": 1820
+}
+```
+
+- `remaining_time`은 경매가 `Pending`이면 **시작까지**, `In_Progress`이면 **종료까지** 남은 시간(초)입니다.
+- 화면에서는 이 값을 받아 1초마다 1씩 줄이며 보여주고, `sync` 메시지가 오면 서버 값으로 다시 맞춥니다.
+
+<Callout type="info">
+    연결이 끊긴 동안에는 메시지를 받지 못하므로, 다시 연결되면 [경매 조회](#경매-조회) API로 최신 상태를 다시 가져오는 것이 안전합니다.
+    Client의 `client/app/composables/useKaraokeSocket.ts`에 자동 재연결까지 구현된 예시가 있습니다.
+</Callout>

@@ -1,0 +1,25 @@
+---
+title: 홈
+---
+
+import { Cards } from 'nextra/components'
+import banner from '../public/banner.png'
+
+<div className="min-h-(--content-full) flex flex-col">
+    <img src={banner.src} className="rounded-xl shadow-lg/20 h-[50vh] w-full object-cover" />
+
+    <div className="flex-1 flex flex-col items-center justify-center mb-4 pb-[5%]">
+        <h2 className="tracking-tight text-slate-900 dark:text-slate-100 font-bold mt-2 text-4xl text-center">MIRAEPASS</h2>
+        <h4 className="tracking-tight text-slate-900 dark:text-slate-100 text-2xl text-center mt-2 font-normal">순천미래과학고등학교 <br className='sm:hidden' />교내 자체 포인트 시스템</h4>
+    </div>
+</div>
+
+## 미래패스란?
+
+**미래패스(MIRAE PASS)** 는 순천미래과학고등학교 학생과 교사가 함께 사용하는 교내 포인트 시스템입니다.<br />
+교사가 학생의 활동에 포인트를 지급하면, 학생은 모은 포인트를 교내 카페·매점 이용, 노래방 예약 경매 등에 사용할 수 있습니다.
+
+<Cards>
+    <Cards.Card title="문서 보러가기" href="/docs" arrow />
+    <Cards.Card title="API 레퍼런스" href="/api" arrow />
+</Cards>

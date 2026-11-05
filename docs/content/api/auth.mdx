@@ -1,0 +1,215 @@
+---
+title: 로그인 · 인증
+---
+
+import { Callout, Steps } from 'nextra/components'
+
+# 로그인 · 인증
+
+로그인, 로그아웃, 비밀번호와 관련된 API입니다.
+
+| 방법 | 경로 | 설명 | 로그인 필요 |
+| --- | --- | --- | --- |
+| `GET` | `/auth/password/exists/{user_id}` | [비밀번호 존재 여부 확인](#비밀번호-존재-여부-확인) | ✕ |
+| `POST` | `/auth/password` | [첫 비밀번호 설정](#첫-비밀번호-설정) | ✕ |
+| `POST` | `/auth/login` | [로그인](#로그인) | ✕ |
+| `GET` | `/auth` | [내 정보 확인](#내-정보-확인) | ○ |
+| `PUT` | `/auth/password` | [비밀번호 변경](#비밀번호-변경) | ○ |
+| `POST` | `/auth/logout` | [로그아웃](#로그아웃) | ✕ |
+
+## 로그인 흐름
+
+미래패스는 관리자가 계정을 미리 만들어 두고, **처음 로그인할 때 사용자가 직접 비밀번호를 정하는** 방식입니다.
+
+<Steps>
+
+### 아이디 확인
+
+사용자가 학번(ID)을 입력하면 [비밀번호 존재 여부 확인](#비밀번호-존재-여부-확인) API로 계정이 있는지, 비밀번호가 정해져 있는지 확인합니다.
+
+### 비밀번호가 없으면 → 첫 비밀번호 설정
+
+결과가 `false`이면 처음 로그인하는 사용자이므로, [첫 비밀번호 설정](#첫-비밀번호-설정) API로 비밀번호를 정합니다.
+
+### 로그인
+
+[로그인](#로그인) API로 아이디와 비밀번호를 보내면 로그인 쿠키가 발급됩니다.
+
+### 이후 화면을 열 때마다 확인
+
+화면을 새로 열 때마다 [내 정보 확인](#내-정보-확인) API로 로그인이 유지되고 있는지 확인하고, 최신 정보(포인트 등)를 가져옵니다.
+
+</Steps>
+
+---
+
+## 비밀번호 존재 여부 확인
+
+`GET /auth/password/exists/{user_id}` · SDK `checkPasswordExistsAuthPasswordExistsUserIdGet`
+
+해당 ID의 유저가 있는지, 비밀번호가 이미 정해져 있는지 확인합니다. 로그인 화면에서 아이디를 입력받은 직후 사용합니다.
+
+| 위치 | 이름 | 타입 | 필수 | 설명 |
+| --- | --- | --- | --- | --- |
+| 경로 | `user_id` | 숫자 | ○ | 확인할 유저의 ID (학번) |
+| 쿼리 | `t` | `student` \| `teacher` \| `service` | | 유저 종류까지 확인하고 싶을 때 사용합니다. |
+
+**응답** `200` — `data`가 `true`이면 비밀번호가 있고, `false`이면 아직 정하지 않은 것입니다.
+
+```json
+{ "success": true, "data": false }
+```
+
+| 오류 | 이유 |
+| --- | --- |
+| `400` | `t`로 지정한 유저 종류와 실제 종류가 다릅니다. |
+| `404` | 해당 ID의 유저가 없습니다. |
+
+```ts
+const req = await $API.checkPasswordExistsAuthPasswordExistsUserIdGet({
+    path: { user_id: 1101 },
+    query: { t: "student" },
+})
+if (req.data?.data === false) {
+    // 첫 비밀번호 설정 화면으로 이동
+}
+```
+
+## 첫 비밀번호 설정
+
+`POST /auth/password` · SDK `changePasswordNewAuthPasswordPost`
+
+비밀번호가 없는 유저의 비밀번호를 처음으로 정합니다. 로그인하지 않은 상태에서 호출합니다.
+
+| 위치 | 이름 | 타입 | 필수 | 설명 |
+| --- | --- | --- | --- | --- |
+| 본문 | `user` | 숫자 | ○ | 유저 ID (학번) |
+| 본문 | `password` | 문자 | ○ | 새 비밀번호 |
+
+**응답** `204` — 본문이 없습니다.
+
+| 오류 | 이유 |
+| --- | --- |
+| `400` | 이미 비밀번호가 정해져 있습니다. 이때는 [비밀번호 변경](#비밀번호-변경)을 사용해야 합니다. |
+| `404` | 해당 ID의 유저가 없습니다. |
+
+```ts
+await $API.changePasswordNewAuthPasswordPost({
+    body: { user: 1101, password: "새비밀번호" },
+})
+```
+
+## 로그인
+
+`POST /auth/login` · SDK `loginAuthLoginPost`
+
+아이디와 비밀번호로 로그인합니다. 성공하면 응답에 **로그인 쿠키(`session_id`)** 가 함께 오며, 브라우저가 자동으로 보관합니다.
+
+| 위치 | 이름 | 타입 | 필수 | 설명 |
+| --- | --- | --- | --- | --- |
+| 본문 | `id` | 숫자 | ○ | 유저 ID (학번) |
+| 본문 | `password` | 문자 | ○ | 비밀번호 |
+
+**응답** `200` — 로그인한 유저의 정보를 돌려줍니다.
+
+```json
+{
+    "success": true,
+    "data": {
+        "id": 1101,
+        "type": "student",
+        "name": "홍길동",
+        "grade": 1,
+        "number": 1,
+        "point": 120,
+        "total_point": 350,
+        "permissions": 1458624,
+        "history_type": null
+    }
+}
+```
+
+| 항목 | 설명 |
+| --- | --- |
+| `id` | 고유 ID입니다. 학생은 학번, 교사는 4000번대, 서비스 계정은 5000번대입니다. |
+| `type` | 유저 종류이며, `student`(학생), `teacher`(교사), `service`(서비스) 중 하나입니다. |
+| `grade`, `number` | 학년, 반입니다. 학생이 아니면 `null`입니다. |
+| `point` | **지금 가지고 있는** 포인트입니다. 사용하면 줄어듭니다. |
+| `total_point` | 지금까지 **받은 포인트의 합계**입니다. 사용해도 줄지 않으며, 랭킹에 사용됩니다. |
+| `permissions` | [권한](/api/permissions) 숫자입니다. |
+| `history_type` | 이 유저가 포인트를 처리할 때 기록에 남는 종류입니다. (예: 카페 계정은 `cafe`) |
+
+| 오류 | 이유 |
+| --- | --- |
+| `401` | ID 또는 비밀번호가 틀렸거나, 아직 비밀번호를 정하지 않았습니다. |
+
+```ts
+const req = await $API.loginAuthLoginPost({
+    body: { id: 1101, password: "비밀번호" },
+})
+if (req.error) {
+    alert("아이디 또는 비밀번호를 확인해 주세요.")
+}
+```
+
+<Callout type="info">
+    보안을 위해 "아이디가 없음"과 "비밀번호가 틀림"을 구분하지 않고 모두 `401`로 응답합니다.
+    구분해서 알려주면 다른 사람이 어떤 학번이 가입되어 있는지 알아낼 수 있기 때문입니다.
+</Callout>
+
+## 내 정보 확인
+
+`GET /auth` · SDK `getCurrentUserAuthGet`
+
+현재 로그인한 유저의 정보를 가져옵니다. 로그인이 유지되고 있는지 확인하는 용도로도 사용합니다.
+로그인 만료일이 절반 이상 지났다면 **만료일을 자동으로 연장**합니다.
+
+**응답** `200` — [로그인](#로그인)의 응답과 같은 유저 정보를 돌려줍니다.
+
+| 오류 | 이유 |
+| --- | --- |
+| `401` | 로그인하지 않았거나, 로그인이 만료되었습니다. 로그인 화면으로 이동해야 합니다. |
+
+```ts
+const req = await $API.getCurrentUserAuthGet()
+if (req.response?.status === 401) {
+    navigateTo("/login")
+}
+```
+
+## 비밀번호 변경
+
+`PUT /auth/password` · SDK `changePasswordAuthPasswordPut`
+
+로그인한 유저가 자신의 비밀번호를 바꿉니다. 변경에 성공하면 **모든 기기에서 로그아웃**되므로, 다시 로그인해야 합니다.
+
+| 위치 | 이름 | 타입 | 필수 | 설명 |
+| --- | --- | --- | --- | --- |
+| 본문 | `old_password` | 문자 | ○ | 지금 사용 중인 비밀번호 |
+| 본문 | `new_password` | 문자 | ○ | 새 비밀번호 |
+
+**응답** `204` — 본문이 없습니다.
+
+| 오류 | 이유 |
+| --- | --- |
+| `400` | 지금 사용 중인 비밀번호가 틀렸습니다. |
+| `401` | 로그인하지 않았습니다. |
+| `404` | 아직 비밀번호를 정하지 않은 유저입니다. |
+
+```ts
+await $API.changePasswordAuthPasswordPut({
+    body: { old_password: "기존비밀번호", new_password: "새비밀번호" },
+})
+```
+
+## 로그아웃
+
+`POST /auth/logout` · SDK `logoutAuthLogoutPost`
+
+현재 기기의 로그인을 끝내고 쿠키를 삭제합니다. 이미 로그아웃된 상태에서 호출해도 오류가 나지 않습니다.
+
+**응답** `204` — 본문이 없습니다.
+
+```ts
+await $API.logoutAuthLogoutPost()
+```

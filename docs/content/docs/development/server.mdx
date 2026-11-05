@@ -1,0 +1,542 @@
+import { Callout, Steps } from 'nextra/components'
+
+# 백엔드 개발 가이드
+
+`server`(FastAPI)를 개발할 때 따라야 할 구조, 코드 스타일, 규칙을 설명합니다.<br />
+개발 환경 구성은 [개발 환경 구성](/docs/development/develop)을, 저장소 공통 규칙은 [프로젝트 구조와 컨벤션](/docs/development/convention)을 참고하세요.
+
+## 기술 스택
+
+| 구분 | 사용 기술 |
+| --- | --- |
+| 언어 | Python 3.14 이상 |
+| 웹 프레임워크 | FastAPI |
+| ORM · 모델 | SQLModel (SQLAlchemy 2.0 비동기) |
+| 데이터베이스 | MySQL (`aiomysql`) |
+| 캐시 · 세션 · Pub/Sub | Redis |
+| 마이그레이션 | Alembic |
+| 스케줄러 | APScheduler |
+| 의존성 관리 | uv |
+| 포매터 · 린터 | Ruff |
+
+## 구조
+
+계층형 구조를 따릅니다. 요청은 아래 순서로 흐릅니다.
+
+```text
+요청 → Router (app/router/endpoints) → Service (app/core/service) → Model (app/schemas) → MySQL / Redis
+```
+
+| 계층 | 위치 | 맡는 일 |
+| --- | --- | --- |
+| Router | `app/router/endpoints/{도메인}.py` | 요청 검증, 로그인·권한 확인, 서비스 호출, 응답 반환 |
+| Service | `app/core/service/{도메인}.py` | 비즈니스 로직, 트랜잭션, 캐시 무효화, 로그 |
+| Model | `app/schemas/{도메인}.py` | DB 테이블(SQLModel), Enum, 공통 응답 모델 |
+| Core | `app/core/*.py` | 설정, DB·Redis 연결, 세션, 로거, Redis Key, 캐시 이벤트 |
+
+<Callout type="info">
+    라우터는 얇게 유지합니다. 데이터를 여러 번 바꾸거나 여러 테이블을 함께 다루는 로직은 서비스 계층으로 옮기세요.
+</Callout>
+
+## 코드 스타일
+
+### 포매터 · 린터
+
+Ruff를 사용합니다. 커밋할 때 pre-commit 훅이 자동으로 실행하지만, 직접 실행할 수도 있습니다.
+
+```bash
+cd server
+uv run ruff check --fix .
+uv run ruff format --line-length 120 .
+```
+
+- 한 줄은 **120자**까지입니다.
+- 린트 규칙은 Ruff 기본값을 쓰고, `E402`, `B904`, `RUF100`, `E712`만 예외로 둡니다. (`pyproject.toml`)
+- `Depends`, `Query`, `typer.Option` 등을 기본값에 쓰는 것은 허용됩니다.
+
+### 이름 짓기
+
+| 대상 | 규칙 | 예시 |
+| --- | --- | --- |
+| 모듈 · 함수 · 변수 | `snake_case` | `point_grant`, `complete_count` |
+| 클래스 | `PascalCase` | `QuestOperation` |
+| 엔드포인트 함수 | `{동사}_{대상}` (SDK 함수 이름이 됨) | `get_quest`, `list_quests`, `create_quest` |
+| 상수 | `UPPER_SNAKE_CASE`, 모듈 맨 위에 선언 | `MAX_PAGE_LIMIT = 100` |
+| DB 테이블 모델 | **복수형** | `Users`, `Quests`, `Karaokes` |
+| 서비스 클래스 | **단수형** (모델을 감싸는 객체) | `User`, `Quest`, `Karaoke` |
+| 요청 Body 모델 | `{도메인}{동작}` | `QuestOperation`, `QuestUpdate` |
+| 권한 | `동사_목적`, 대문자 | `MANAGE_POINT`, `CREATE_QUEST` |
+| Redis Key | `{도메인}:{종류}:{파라미터...}` | `user:item:{user_id}` |
+
+### 타입 힌트
+
+- 모든 매개변수와 반환값에 타입 힌트를 붙입니다.
+- Python 3.14 문법을 사용합니다. `Optional[int]` 대신 `int | None`, `List[int]` 대신 `list[int]`, 제네릭은 `class ServiceCore[T]`처럼 씁니다.
+- 순환 import가 생기는 타입은 `if TYPE_CHECKING:` 안에서 import합니다.
+
+### 주석과 Docstring
+
+주석과 Docstring은 **한국어**로 씁니다. 공개 메서드에는 Google 스타일 Docstring을 붙이고, 발생할 수 있는 예외를 `Raises`에 적습니다.
+
+```python
+async def complete(self, user: User):
+    """
+    퀘스트 완료 처리하고, 유저에게 보상을 지급합니다.
+
+    Args:
+        user: 유저
+
+    Raises:
+        ServiceError.ExpiredError: 퀘스트가 만료되었을 경우 발생합니다.
+        ServiceError.LimitExceeded: 퀘스트 중복 참가 횟수를 모두 소진했을 경우 발생합니다.
+    """
+```
+
+코드만 보고 이유를 알기 어려운 부분(시간대 처리, 캐시 순서 등)에는 **왜** 그렇게 했는지 주석을 남깁니다.
+
+### 비동기
+
+DB 쿼리, Redis 호출, 외부 요청 등 모든 I/O는 `async`/`await`로 작성합니다. 동기 드라이버나 `time.sleep`처럼 이벤트 루프를 막는 코드는 쓰지 않습니다.
+
+## 라우터 작성하기
+
+### 파일 구성
+
+도메인마다 파일 하나를 두고, 파일 맨 위에 `router`와 `client`를 만듭니다.
+
+```python filename="app/router/endpoints/quest.py"
+from fastapi import APIRouter, HTTPException, Query, Response, status
+from pydantic import BaseModel, Field
+
+from app.core import LoginDep, ServiceClient
+from app.schemas import Quests, UserPermission
+from app.schemas.response import ErrorResponse, ResponseModel
+
+router = APIRouter(prefix="/quest", tags=["quest"])
+client = ServiceClient()
+MAX_PAGE_LIMIT = 100
+
+
+class QuestOperation(BaseModel):
+    title: str = Field(..., description="퀘스트 제목")
+    reward: int = Field(..., gt=0, description="퀘스트 보상(포인트)")
+```
+
+만든 라우터는 `app/router/__init__.py`에서 등록해야 실제로 동작합니다.
+
+```python filename="app/router/__init__.py"
+from .endpoints import admin, auth, karaoke, point, posts, quest, search, stamp
+
+router.include_router(quest.router)
+```
+
+### 엔드포인트 메타데이터
+
+데코레이터에 `response_model`, `responses`, `status_code`, `summary`, `description`을 **모두** 적습니다.<br />
+이 정보는 OpenAPI 문서가 되고, 그대로 [SDK](/api/sdk)의 함수와 타입으로 만들어집니다. 빠뜨리면 프론트엔드에서 타입이 `unknown`이 됩니다.
+
+```python
+@router.get(
+    "/{quest_id}",
+    response_model=ResponseModel[Quests],
+    responses={
+        200: {"description": "퀘스트 조회 성공"},
+        401: {"model": ErrorResponse, "description": "세션이 만료되었거나 유효하지 않음"},
+        403: {"model": ErrorResponse, "description": "권한이 없음"},
+        404: {"model": ErrorResponse, "description": "퀘스트를 찾을 수 없음"},
+    },
+    status_code=status.HTTP_200_OK,
+    summary="퀘스트 조회",
+    description="퀘스트 상세 정보를 조회합니다.",
+)
+async def get_quest(quest_id: int, auth_data: LoginDep):
+    ...
+```
+
+- 실패 응답에는 `"model": ErrorResponse`를 붙입니다.
+- 요청 Body 모델의 모든 필드에는 `Field(description=...)`과 `gt`, `ge`, `le` 같은 검증 조건을 적습니다.
+- 쿼리 파라미터는 `Query(...)`로 범위를 제한합니다.
+
+### 로그인과 권한
+
+로그인이 필요한 API는 `LoginDep`을 받습니다. 값은 `(User, session_id)` 튜플입니다.
+
+```python
+async def create_quest(operation: QuestOperation, auth_data: LoginDep):
+    user, _ = auth_data
+
+    if not user.has_permission(UserPermission.CREATE_QUEST):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Permission denied.")
+```
+
+- 권한은 사용자 유형(`user.type`)이 아니라 **권한 비트**(`has_permission`)로 확인합니다.
+- "작성자 본인 또는 관리 권한"처럼 조건이 섞이면 라우터에서 함께 확인합니다.
+
+```python
+if quest.author_id != user.id and not user.has_permission(UserPermission.MANAGE_QUEST):
+    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only the quest creator can delete this quest.")
+```
+
+### 응답
+
+정상 응답은 항상 `ResponseModel`로 감쌉니다.
+
+```python
+return ResponseModel(success=True, data=quest)
+```
+
+삭제처럼 돌려줄 값이 없는 API는 `status_code=status.HTTP_204_NO_CONTENT`로 두고 아무것도 반환하지 않습니다.
+
+### 에러 처리
+
+실패는 `HTTPException`을 던집니다. 전역 핸들러가 `{"success": false, "message": ...}` 형태(`ErrorResponse`)로 바꿔 줍니다.
+
+서비스 계층은 `HTTPException`을 던지지 않고 `app/core/error.py`의 예외를 던집니다. 라우터가 이를 받아 상태 코드로 바꿉니다.
+
+```python
+try:
+    await quest.complete(user)
+except ExpiredError:
+    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Quest is expired.")
+except LimitExceeded:
+    raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="...")
+```
+
+| 서비스 예외 | 의미 | 주로 쓰는 상태 코드 |
+| --- | --- | --- |
+| `NotFound` | 데이터를 찾을 수 없음 | `404` |
+| `Forbidden` | 권한 없음 | `403` |
+| `Conflict` | 이미 있는 데이터와 충돌 | `409` |
+| `LimitExceeded` | 횟수 · 한도 초과 | `429` 또는 `409` |
+| `ExpiredError` | 기간 만료 | `400` |
+| `PointInsufficient` | 포인트 부족 | `402` |
+| `ValueError` | 잘못된 입력 · 상태 | `400` |
+
+<Callout type="info">
+    프론트엔드는 에러의 `message`를 토스트로 그대로 보여주는 경우가 많습니다. 사용자에게 보일 수 있는 메시지는 한국어로 적어 주세요. (`karaoke` 도메인 참고. 이전에 만든 API에는 영어 메시지가 남아 있습니다.)
+</Callout>
+
+### 페이지네이션
+
+목록 API는 `limit` · `offset` 쿼리 파라미터를 받고, 전체 페이지 수를 `X-MAX-PAGE` 헤더로 알려줍니다. 캐시에서 응답했다면 `X-CACHED: true`를 붙입니다.
+
+```python
+async def list_quests(
+    response: Response,
+    auth_data: LoginDep,
+    limit: int = Query(20, ge=1, le=MAX_PAGE_LIMIT, description=f"페이지 당 데이터 갯수 (최대 {MAX_PAGE_LIMIT})"),
+    offset: int = Query(0, ge=0),
+):
+    ...
+    response.headers["X-MAX-PAGE"] = str(ceil(count / limit))
+```
+
+새 응답 헤더를 추가했다면 `app/main.py`의 CORS `expose_headers`에도 추가해야 브라우저에서 읽을 수 있습니다.
+
+## 서비스 계층
+
+### ServiceCore
+
+서비스 클래스는 `ServiceCore[모델]`을 상속해 DB 모델(`_payload`)을 감쌉니다. 모델의 필드는 서비스 객체에서 바로 읽고 쓸 수 있습니다. (`quest.title`, `user.point`)
+
+```python filename="app/core/service/quest.py"
+from typing import TYPE_CHECKING
+
+from app.schemas import Quests
+
+from ..cache_events import on_quest_changed
+from ..core import ServiceCore
+
+if TYPE_CHECKING:
+    _Type = Quests
+else:
+    _Type = object
+
+
+class Quest(ServiceCore[Quests], _Type):
+    async def delete(self):
+        """
+        퀘스트를 삭제합니다.
+        """
+        ...
+```
+
+<Callout type="info">
+    `_Type`은 IDE와 타입 검사기가 `quest.title` 같은 모델 필드를 인식하도록 하는 장치입니다. 실행 중에는 `object`가 되므로 동작에 영향을 주지 않습니다.
+</Callout>
+
+- `ServiceCore(None)`은 `None`을 반환합니다. 조회 결과를 그대로 감싸고 `if not quest:`로 확인하면 됩니다.
+- `self.session`, `self.redis`, `self.logs`로 DB · Redis · 로거에 접근합니다.
+
+### 데이터 조회하기
+
+서비스 객체는 `ServiceClient`의 `get_*` 메서드로 가져옵니다.
+
+```python
+quest = await client.get_quest(quest_id, cache=True)
+user = await client.get_user(user_id, lock=True)
+```
+
+| 옵션 | 기본값 | 설명 |
+| --- | --- | --- |
+| `cache` | `False` | Redis 캐시가 있으면 캐시에서 읽습니다. 화면에 보여주기만 할 때 사용합니다. |
+| `save_cache` | `True` | DB에서 읽은 뒤 캐시에 저장합니다. |
+| `lock` | `False` | `SELECT ... FOR UPDATE`로 행을 잠급니다. 동시에 바뀌면 안 되는 값(포인트, 입찰 등)을 수정할 때 사용하며, `cache`는 무시됩니다. |
+
+### 새 서비스 추가하기
+
+<Steps>
+
+    ### 서비스 클래스 만들기
+
+    `app/core/service/{도메인}.py`에 `ServiceCore[모델]`을 상속한 클래스를 만듭니다. 도메인이 크면 `karaoke/`처럼 패키지로 나눕니다.
+
+    ### 내보내기
+
+    `app/core/service/__init__.py`에서 import하고 `__all__`에 추가합니다.
+
+    ### 조회 메서드 추가
+
+    `app/core/client.py`의 `ServiceClient`에 `get_{도메인}()`을 추가합니다. 캐시 Key와 함께 `_get_item()`을 호출하면 됩니다.
+
+    ```python
+    async def get_quest(self, /, _id: int, *, cache: bool = False, save_cache: bool = True, lock: bool = False) -> Quest | None:
+        return await self._get_item(
+            _id=_id,
+            wrapper_cls=Quest,
+            model_cls=Quests,
+            key=Keys.Quest.ITEM(quest_id=_id),
+            cache=cache,
+            save_cache=save_cache,
+            lock=lock,
+        )
+    ```
+
+    ### 로거 추가 (선택)
+
+    도메인 전용 로그가 필요하면 `app/core/loggers.py`의 `LoggerCore`에 `service_{도메인}` 로거를 추가합니다.
+
+</Steps>
+
+### 로그
+
+서비스에서 데이터를 바꿨다면 로그를 남깁니다. 메시지는 한국어로, `{동작} - {대상}` 형식으로 씁니다.
+
+```python
+self.logs.service_quest.info(f"퀘스트 삭제 - ID {self.id}")
+self.logs.service_point.info(f"포인트 지급 - {self.name}({self.id}) +{amount} (기록 ID {history.id})")
+```
+
+| 레벨 | 사용하는 경우 |
+| --- | --- |
+| `debug` | 흐름 추적용 (스케줄러 실행, 캐시 처리 등) |
+| `info` | 데이터 생성 · 수정 · 삭제 |
+| `warning` | 동작은 하지만 확인이 필요한 상황 |
+| `exception` / `error` | 처리하지 못한 오류 (`except` 안에서는 `exception`으로 스택까지 남김) |
+
+로그는 `server/logs/`에 파일별(`server`, `database`, `service` 등)로 저장됩니다.
+
+## 데이터베이스
+
+### 세션과 트랜잭션
+
+DB 세션은 `client.session`(서비스 안에서는 `self.session`)으로 엽니다.
+
+```python
+async with client.session as session:
+    result = await session.execute(select(Quests).where(col(Quests.id) == quest_id))
+    quest = result.scalar_one_or_none()
+```
+
+- 블록이 정상적으로 끝나면 **자동으로 커밋**되고, 예외가 나면 **롤백**됩니다. 직접 `commit()`을 부르지 않아도 됩니다.
+- 이미 열린 세션 안에서 다시 `session`을 열면 **같은 세션을 재사용**합니다. 그래서 바깥 블록 안에서 호출한 서비스 메서드들은 하나의 트랜잭션으로 묶입니다.
+
+```python
+async with self.session as session:          # 트랜잭션 시작
+    await user.point_grant(amount=self.reward, ...)   # 같은 세션 사용
+    session.add(QuestCompletion(quest_id=self.id, user_id=user.id))
+# 여기서 함께 커밋 (하나라도 실패하면 모두 롤백)
+```
+
+- 서비스 객체의 값을 바꿀 때는 `session.merge(self._payload)`로 세션에 붙인 뒤 수정하고, 결과를 다시 `self._payload`에 넣습니다.
+
+```python
+async with self.session as session:
+    quest = await session.merge(self._payload)
+    quest.title = title
+self._payload = quest
+```
+
+### 쿼리
+
+SQLAlchemy 2.0 스타일(`select`, `update`, `delete`)로 작성합니다. 컬럼 비교에는 타입 검사를 위해 `col()`을 씁니다.
+
+```python
+from sqlmodel import col, select
+
+query = select(PointHistory).where(col(PointHistory.user_id) == user_id).order_by(desc(col(PointHistory.created_at)))
+```
+
+### 모델
+
+- 테이블 모델은 `app/schemas/{도메인}.py`에 `SQLModel, table=True`로 만들고, 모든 필드에 `description`을 적습니다.
+- 새 모델은 `app/schemas/__init__.py`에서 import하고 `__all__`에 추가합니다. Alembic이 `app.schemas`를 import해 모델을 찾기 때문에, 빠뜨리면 마이그레이션이 만들어지지 않습니다.
+- 자주 조회하는 컬럼과 외래 키에는 `index=True`를 붙입니다.
+
+### 날짜와 시간
+
+DB의 `DATETIME`에는 시간대 정보가 없고, DB 서버 시간대 기준으로 저장됩니다. 서버 프로세스와 DB의 시간대가 다를 수 있으므로 다음을 지킵니다.
+
+- 생성 시각 기본값은 `datetime.now(SchemaCore.timezone)`으로 만듭니다.
+- DB 값과 현재 시각을 비교할 때는 `datetime.now()` 대신 `SchemaCore.now()`와 `SchemaCore.sync_timezone(값)`을 사용합니다.
+- 응답으로 내보내는 날짜 필드는 `field_serializer`에서 `SchemaCore.sync_timezone(dt).isoformat()`으로 변환합니다.
+
+```python
+@field_serializer("created_at", "end_date")
+def serialize_dt(self, dt: Any, _info):
+    if isinstance(dt, datetime):
+        return SchemaCore.sync_timezone(dt).isoformat()
+    return dt
+```
+
+### 마이그레이션
+
+모델을 바꿨다면 마이그레이션을 만들고, 생성된 파일을 **반드시 열어서 확인**합니다. 이름은 다음 릴리스 버전으로 짓습니다.<br />
+마이그레이션은 `dev` 브랜치로 Push 될때, 기존에 있는 마이그레이션과 합쳐 하나의 파일로 만듭니다.
+
+```bash
+cd server
+uv run alembic revision --autogenerate -m "v1.15.0"
+uv run alembic upgrade head
+```
+
+<Callout type="warning">
+    Alembic 자동 생성은 컬럼 이름 변경을 "삭제 후 추가"로 만들거나, Enum · 기본값 변경을 놓치기도 합니다. 데이터가 사라지지 않는지 확인하고, 필요하면 직접 수정하세요.
+</Callout>
+
+## Redis와 캐시
+
+### Redis Key
+
+모든 Redis Key는 `app/core/redis_keys.py`의 `Keys`에 등록해서 사용합니다. 코드에 Key 문자열을 직접 쓰지 않습니다.
+
+```python filename="app/core/redis_keys.py"
+class Keys:
+    class Quest:
+        ITEM = RedisKey("quest:item:{quest_id}", ttl=HOUR, description="퀘스트(quest_id) 데이터")
+```
+
+```python
+key = Keys.Quest.ITEM(quest_id=quest.id)   # 파라미터가 빠지거나 틀리면 TypeError
+await client.redis.set(key, value)         # TTL은 Key에 정의된 값이 사용됨
+```
+
+- 이름은 `{도메인}:{종류}:{파라미터...}` 형식입니다.
+- TTL과 `description`을 반드시 적습니다.
+- 등록된 Key 목록은 `python tools/cli.py redis-keys`로 볼 수 있습니다. ([CLI 관리 도구](/docs/manage/cli#redis-keys))
+
+### 목록 캐시와 버전 Key
+
+자주 바뀌는 목록(랭킹, 포인트 기록, 게시글, 퀘스트)은 `{ver}` 파라미터를 가진 Key로 캐시합니다. 무효화할 때는 패턴 삭제 대신 버전만 올리고, 이전 캐시는 TTL로 만료되게 둡니다.
+
+```python
+ver = await client.redis.get_version(Keys.Quest.VERSION())
+key = Keys.Quest.PAGE(ver=ver, limit=limit, offset=offset)
+```
+
+`VERSION` Key의 TTL은 목록 캐시의 TTL보다 길거나 같아야 합니다.
+
+### 캐시 무효화
+
+데이터가 바뀌었을 때는 Key를 직접 지우지 않고, `app/core/cache_events.py`의 이벤트 함수를 호출합니다. 무효화 범위를 한곳에서 관리하기 위해서입니다.
+
+```python
+from app.core.cache_events import on_point_changed
+
+await on_point_changed(user.id, user.type)
+```
+
+- 새로운 종류의 변경이 생기면 `cache_events.py`에 `on_{이벤트}` 함수를 추가합니다.
+- 캐시는 **커밋이 끝난 뒤**에 지웁니다. 즉, `async with session` 블록 **밖에서** 호출합니다. 커밋 전에 지우면 다른 요청이 옛 데이터를 다시 캐시할 수 있습니다.
+
+## 권한 추가하기
+
+권한은 `app/schemas/users.py`의 `UserPermission`(IntFlag)에 정의합니다.
+
+```python
+class UserPermission(IntFlag):
+    _GIVE_STAMP = 2**5
+    GIVE_STAMP = _GIVE_STAMP | SEARCH_USER
+    """스탬프를 다른 유저에게 지급할 권한"""
+```
+
+- 이름은 `동사_목적` 형식의 대문자로 짓고, 아래에 Docstring으로 설명을 적습니다.
+- 아직 쓰지 않은 비트(`2**n`)를 사용합니다. 이미 저장된 사용자 권한 값이 바뀌므로 **기존 비트 번호는 절대 바꾸지 않습니다.**
+- 다른 권한이 꼭 함께 필요하면 `_이름`으로 비트만 정의하고, 공개 이름에 `|`로 묶습니다. (예: 스탬프 지급에는 사용자 검색 권한이 필요)
+- 권한을 추가했다면 SDK를 다시 만들고, [권한 문서](/api/permissions)도 갱신합니다.
+
+## 새 API 추가하기
+
+<Steps>
+
+    ### 모델 만들기 (필요한 경우)
+
+    `app/schemas/{도메인}.py`에 모델을 만들고 `app/schemas/__init__.py`에 등록합니다.
+
+    ### 마이그레이션
+
+    `uv run alembic revision --autogenerate -m "v{버전}_{순번}"`으로 만들고, 내용을 확인한 뒤 적용합니다.
+
+    ### 서비스 만들기 (로직이 있는 경우)
+
+    [새 서비스 추가하기](#새-서비스-추가하기)를 따릅니다. 캐시를 쓴다면 Redis Key와 캐시 이벤트도 추가합니다.
+
+    ### 라우터 만들기
+
+    `app/router/endpoints/{도메인}.py`에 엔드포인트를 만들고 `app/router/__init__.py`에 등록합니다. 메타데이터(`response_model`, `responses`, `summary`, `description`)를 빠짐없이 적습니다.
+
+    ### 확인하기
+
+    서버를 실행하고 `http://localhost:8000/docs`(Swagger UI)에서 직접 호출해 봅니다.
+
+    ### SDK 다시 만들기
+
+    서버를 켠 상태에서 저장소 루트에서 `yarn sdk-gen`을 실행합니다. 자세한 내용은 [SDK 생성하기](/api/sdk#sdk-생성하기)를 참고하세요.
+
+    ### 문서 갱신
+
+    `docs/content/api/`의 해당 도메인 문서에 새 API를 추가합니다.
+
+</Steps>
+
+## 운영 스크립트 (`tools`)
+
+`server/tools/`에는 서버 밖에서 직접 실행하는 스크립트가 있습니다.
+
+| 파일 | 설명 |
+| --- | --- |
+| `cli.py` | 사용자 · 포인트 · Redis 관리 CLI ([사용법](/docs/manage/cli)) |
+| `import_users.py` | 엑셀(`student.xlsx`, `teacher.xlsx`)로 사용자 일괄 등록 |
+| `create_test_users.py` | 개발용 테스트 계정 생성 |
+
+새 스크립트를 만들 때는 다음을 지킵니다.
+
+- `sys.path`에 `server` 디렉토리를 추가해 `app` 패키지를 import합니다.
+- `settings.debug = False`로 DB 쿼리 로그를 끕니다.
+- `client.initialize()`로 DB · Redis에 연결하고, 끝나면 `client.close()`를 호출합니다.
+- 데이터를 바꿨다면 서버 코드와 마찬가지로 캐시 이벤트를 호출합니다.
+
+## 커밋 전 체크리스트
+
+- [ ] `uv run ruff check --fix .`와 `uv run ruff format .`이 통과한다. (pre-commit 훅이 자동 실행)
+- [ ] 새 라우터를 `app/router/__init__.py`에 등록했다.
+- [ ] 응답을 `ResponseModel`로 감쌌고, 엔드포인트 메타데이터를 모두 적었다.
+- [ ] 모델을 바꿨다면 마이그레이션을 만들고 내용을 확인했다.
+- [ ] 데이터를 바꾸는 코드에서 캐시 이벤트를 호출했다.
+- [ ] API가 바뀌었다면 `yarn sdk-gen`으로 SDK를 다시 만들고 함께 커밋했다.
+- [ ] 커밋 메시지는 `feat(server): ...`, `fix(server): ...` 형식이다. ([커밋 메시지](/docs/development/convention#커밋-메시지))
+
+## 머지 전 체크리스트
+`dev` 브랜치로 푸시전 확인해야 하는 목록
+
+- [ ] 데이터베이스 마이그레이션이 발생한 경우, 기존에 있는 마이그레이션과 병합을 해야합니다.
