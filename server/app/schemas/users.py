@@ -194,6 +194,7 @@ class User(SQLModel):
 
 class Users(User, table=True):
     password: str | None = Field(description="비밀번호")
+    kiosk_password: str | None = Field(description="키오스크 결제 비밀번호")
 
     search: list[UserSearch] = Relationship(back_populates="user", passive_deletes=True)
     history: list[PointHistory] = Relationship(back_populates="user", passive_deletes=True)
