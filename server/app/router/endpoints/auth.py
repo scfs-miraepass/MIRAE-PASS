@@ -76,6 +76,45 @@ async def login(
 
 
 @router.post(
+    "/kiosk",
+    operation_id="kiosk_password_verify",
+    response_model=ResponseModel[bool],
+    responses={
+        200: {"description": "검사 결과를 응답합니다."},
+        401: {
+            "model": ErrorResponse,
+            "description": "로그인이 필요합니다.",
+        },
+        403: {"model": ErrorResponse, "description": "권한이 없습니다."},
+        404: {"model": ErrorResponse, "description": "검사하려는 유저가 존재하지 않습니다."},
+        400: {"model": ErrorResponse, "description": "키오스크 비밀번호가 설정되지 않았습니다."},
+    },
+    status_code=status.HTTP_200_OK,
+    summary="키오스크 비밀번호 검사",
+    description="특정 유저의 키오스크 비밀번호가 일치한지 응답합니다. service 타입의 사용자만 이용할 수 있습니다.",
+)
+async def kiosk_password_verify(form: LoginForm, auth_data: LoginDep):
+    user, _ = auth_data
+    if user.type != UserType.service:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Permission denied.",
+        )
+
+    user = await client.get_user(form.id, cache=True)
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    if user.kiosk_password is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No password has been set",
+        )
+
+    return ResponseModel[bool](success=verify_password(form.password, user.kiosk_password), data=user)
+
+
+@router.post(
     "/logout",
     responses={204: {"description": "정상적으로 로그아웃이 되었음"}},
     status_code=status.HTTP_204_NO_CONTENT,
