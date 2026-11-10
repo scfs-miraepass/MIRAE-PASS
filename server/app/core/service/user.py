@@ -120,7 +120,7 @@ class User(ServiceCore[Users], _Type):
             self.logs.service.info(f"{self.name}({self.id})님의 키오스크 결재용 비밀번호가 제거되었습니다.")
         async with self.session as session:
             user = await session.merge(self._payload)
-            user.password = get_password_hash(str(_new)) if isinstance(_new, int) else None
+            user.kiosk_password = get_password_hash(str(_new)) if isinstance(_new, int) else None
         self._payload = user
         await on_user_cache_changed(self.id)
 
