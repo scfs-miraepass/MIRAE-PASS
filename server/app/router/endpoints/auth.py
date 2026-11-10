@@ -111,7 +111,7 @@ async def kiosk_password_verify(form: LoginForm, auth_data: LoginDep):
             detail="No password has been set",
         )
 
-    return ResponseModel[bool](success=verify_password(form.password, user.kiosk_password), data=user)
+    return ResponseModel[bool](success=True, data=verify_password(form.password, user.kiosk_password))
 
 
 @router.post(
