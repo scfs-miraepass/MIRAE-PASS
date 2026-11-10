@@ -6,6 +6,8 @@ from pydantic import GetJsonSchemaHandler, field_serializer
 from pydantic_core import core_schema
 from sqlalchemy import Connection, event, insert
 from sqlmodel import Field, Relationship, SQLModel, delete
+from functools import reduce
+from operator import or_
 
 from app.core import LoggerCore
 
@@ -126,6 +128,11 @@ class UserPermission(IntFlag):
         | JOIN_KARAOKE
     )
     ADMIN = MANAGE_USER | MANAGE_POST | MANAGE_QUEST | CREATE_POST | MANAGE_KARAOKE | VIEW_KARAOKE
+    ALL = reduce(
+        or_,
+        (value for value in locals().values() if isinstance(value, int)),
+        0,
+    )
 
     @classmethod
     def __get_pydantic_json_schema__(
@@ -253,3 +260,8 @@ def user_search_update(mapper, connection: Connection, target: Users):
             insert(UserSearch),
             [entry.model_dump() for entry in search_entries],
         )
+
+
+a = 0
+for i in UserPermission.__members__.values():
+    a |= i

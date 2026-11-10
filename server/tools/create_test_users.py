@@ -50,7 +50,7 @@ async def create_students(session):
             name=spec["name"],
             grade=spec["grade"],
             number=spec["number"],
-            permissions=UserPermission.STUDENT.value,
+            permissions=UserPermission.STUDENT,
         )
         session.add(new_user)
         client.logs.service.info(f"ID {user_id}의 학생 '{spec['name']}'을(를) 추가했습니다.")
@@ -69,7 +69,7 @@ async def create_teachers(session):
             id=current_teacher_id,
             type=UserType.teacher,
             name=name,
-            permissions=UserPermission.TEACHER.value,
+            permissions=UserPermission.TEACHER,
         )
         session.add(new_user)
         client.logs.service.info(f"ID {current_teacher_id}의 교사 '{name}'을(를) 추가했습니다.")
@@ -89,11 +89,20 @@ async def create_services(session):
             id=current_service_id,
             type=UserType.service,
             name=name,
-            permissions=(UserPermission.TEACHER | UserPermission.ADMIN | UserPermission.STUDENT).value,
+            permissions=UserPermission.NONE,
         )
         session.add(new_user)
         client.logs.service.info(f"ID {current_service_id}의 서비스 계정 '{name}'을(를) 추가했습니다.")
         current_service_id += 1
+
+    new_user = Users(
+        id=current_service_id,
+        type=UserType.service,
+        name="admin",
+        permissions=UserPermission.ALL,
+    )
+    session.add(new_user)
+    client.logs.service.info(f"ID {current_service_id}의 서비스 계정 'admin'을(를) 추가했습니다.")
 
 
 async def main():
