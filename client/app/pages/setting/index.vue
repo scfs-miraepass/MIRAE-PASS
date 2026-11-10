@@ -46,6 +46,9 @@ const handleTheme = () => {
             <Obj :icon="selectedTheme!.icon()" label="화면 테마" :value="selectedTheme!.label" @click="handleTheme" />
         </Section>
         <Section name="계정">
+            <NuxtLink to="/setting/kioskPassword" v-slot="{ navigate }" custom>
+                <Obj icon="i-ph-password" label="키오스크 비밀번호" @click="navigate" />
+            </NuxtLink>
             <Obj icon="i-ph-sign-out" label="로그아웃" @click="handleLogout" />
         </Section>
         <div class="text-ui-p2 space-y-1 light:text-black/10 dark:text-white/10 text-center">
