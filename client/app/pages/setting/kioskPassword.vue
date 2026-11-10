@@ -11,7 +11,9 @@ import Obj from "@/components/setting/object.vue";
         <p class="text-2xl font-bold text-gray-900 dark:text-white ml-1">키오스크 비밀번호 설정</p>
     </div>
 
-    <div class="space-y-3">
+    <div>
+
+
 
     </div>
 </template>
