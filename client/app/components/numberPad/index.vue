@@ -12,7 +12,12 @@ const emit = defineEmits<{
     'delete': []
 }>();
 
-const keypad = ["1", "2", "3", "4", "5", "6", "7", "8", "9"];
+const keypad = [
+    "1", "2", "3",
+    "4", "5", "6",
+    "7", "8", "9",
+    NaN, "0"
+];
 
 const triggerVibration = (pattern?: number) => {
     // 모바일에서 진동 함수
@@ -45,12 +50,15 @@ const onDelete = () => {
             mass: 1,
         }"
     >
-
-        <Key v-for="key in keypad" :label="key" :key="key" @click="onInput(key)" />
-
-        <div />
-
-        <Key label="0" key="0" @click="onInput('0')" />
+        <template v-for="key in keypad">
+            <div v-if="typeof key === 'number'" /> <!-- NaN 자체가 number 타입이라, 따로 isNaN 쓰지 않고 이렇게만 -->
+            <Key
+                 :label="key"
+                 :key="key"
+                 @click="onInput(key)"
+                 v-else
+            />
+        </template>
         <Key class="text-h5" key="delete" @click="onDelete">
             <UIcon name="i-ph-arrow-left" />
         </Key>
