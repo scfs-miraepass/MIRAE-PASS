@@ -91,11 +91,15 @@ async def login(
     },
     status_code=status.HTTP_200_OK,
     summary="키오스크 비밀번호 검사",
-    description="특정 유저의 키오스크 비밀번호가 일치한지 응답합니다. service 타입의 사용자만 이용할 수 있습니다.",
+    description="특정 유저의 키오스크 비밀번호가 일치한지 응답합니다. service 타입 또는 유저 본인만 요청할 수 있습니다.",
 )
 async def kiosk_password_verify(form: LoginForm, auth_data: LoginDep):
+    """
+    키오스크에서 비밀번호가 맞는지와 키오스크 비밀번호 변경시, 비밀번호가 설정이 되었는지 확인합니다.
+    키오스크 비밀번호 변경을 위해 기존에 설정이 되었는지 확인 시에는 본문 password는 아무값도 없는 문자열이 들어갑니다.
+    """
     user, _ = auth_data
-    if user.type != UserType.service:
+    if user.type != UserType.service and form.id != user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Permission denied.",
