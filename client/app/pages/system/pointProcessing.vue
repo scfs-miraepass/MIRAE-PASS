@@ -2,6 +2,7 @@
 import { Motion } from "motion-v";
 import type { User, GetLimitResponse } from '@miraepass/api-client'
 import { useElementSize } from '@vueuse/core'
+import type { InputEmit } from '@/components/numberPad/index.vue'
 
 definePageMeta({
     middleware: [
@@ -81,6 +82,50 @@ const onButton = async () => {
 const onMemoInput = (event: InputEvent) => {
     memoValue.value = (event.target as HTMLInputElement).value;
 }
+
+const onInput = ({ value: val, vibration }: InputEmit) => {
+    const currentStr = String(amount.value);
+    if (currentStr.length >= 6) return; // 최대 6자리 제한
+
+    // 초기값이 0이면 새 숫자로 교체, 아니면 뒤에 추가
+    const _new = Number(amount.value === 0 ? val : currentStr + val);
+    const limit = isDeduct.value
+        ? userData.value.point!
+        : Math.min(pointLimit.value!.target_limit, pointLimit.value!.limit)!;
+    if (_new > limit) {
+        vibration(20);
+        setTimeout(() => vibration(100), 100);
+
+        pointError.value = true;
+        pointAnimate(
+            pointScope.value,
+            { translate: "20px" },
+            { type: "spring", stiffness: 700, damping: 3, mass: 0.5 },
+        );
+        setTimeout(
+            () =>
+                pointAnimate(
+                    pointScope.value,
+                    { translate: "0" },
+                    { type: "spring", stiffness: 700, damping: 3, mass: 0.5 },
+                ),
+            25,
+        );
+        return;
+    }
+    pointError.value = false;
+    amount.value = _new;
+};
+
+const onDelete = () => {
+    const currentStr = String(amount.value);
+    if (currentStr.length <= 1) {
+        amount.value = 0;
+    } else {
+        amount.value = Number(currentStr.slice(0, -1));
+    }
+    pointError.value = false;
+};
 </script>
 
 <template>
@@ -260,7 +305,7 @@ const onMemoInput = (event: InputEvent) => {
             </div>
 
             <!-- 키패드 UI -->
-
+            <NumberPad @input="onInput" @delete="onDelete" :hidden="isConfirm" />
         </div>
         <div
             class="pt-10 h-full w-full flex flex-col items-center justify-center absolute transition"
