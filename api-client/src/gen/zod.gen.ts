@@ -625,6 +625,13 @@ export const zKioskPasswordVerifyBody = zLoginForm;
  */
 export const zKioskPasswordVerifyResponse = zResponseModelBool;
 
+export const zChangeKioskPasswordBody = zChangePasswordForm;
+
+/**
+ * 비밀번호 변경 성공
+ */
+export const zChangeKioskPasswordResponse = z.void();
+
 /**
  * 정상적으로 로그아웃이 되었음
  */

@@ -1569,6 +1569,39 @@ export type KioskPasswordVerifyResponses = {
 
 export type KioskPasswordVerifyResponse = KioskPasswordVerifyResponses[keyof KioskPasswordVerifyResponses];
 
+export type ChangeKioskPasswordData = {
+    body: ChangePasswordForm;
+    path?: never;
+    query?: never;
+    url: '/auth/kiosk';
+};
+
+export type ChangeKioskPasswordErrors = {
+    /**
+     * 기존 비밀번호가 일치하지 않음
+     */
+    400: ErrorResponse;
+    /**
+     * 세션이 만료되었거나 유효하지 않음.
+     */
+    401: ErrorResponse;
+    /**
+     * 비밀번호의 형식이 잘못 되었음.
+     */
+    422: ErrorResponse;
+};
+
+export type ChangeKioskPasswordError = ChangeKioskPasswordErrors[keyof ChangeKioskPasswordErrors];
+
+export type ChangeKioskPasswordResponses = {
+    /**
+     * 비밀번호 변경 성공
+     */
+    204: void;
+};
+
+export type ChangeKioskPasswordResponse = ChangeKioskPasswordResponses[keyof ChangeKioskPasswordResponses];
+
 export type LogoutAuthLogoutPostData = {
     body?: never;
     path?: never;
@@ -1660,7 +1693,7 @@ export type ChangePasswordAuthPasswordPutErrors = {
      */
     401: ErrorResponse;
     /**
-     * 초기회 되지 않은 유저.
+     * 초기화 되지 않은 유저.
      */
     404: ErrorResponse;
     /**
