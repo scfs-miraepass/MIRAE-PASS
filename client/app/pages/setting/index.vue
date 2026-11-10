@@ -2,6 +2,7 @@
 import Section from "@/components/setting/section.vue";
 import Obj from "@/components/setting/object.vue";
 
+const session = useSession();
 const config = useRuntimeConfig()
 const colorMode = useColorMode()
 const serverVersion = useServerVersion()
@@ -51,9 +52,9 @@ const handleTheme = () => {
             </NuxtLink>
             <Obj icon="i-ph-sign-out" label="로그아웃" @click="handleLogout" />
         </Section>
-        <div class="text-ui-p2 space-y-1 light:text-black/10 dark:text-white/10 text-center">
-            <p>ClientVersion: {{ config.public.clientVersion }}</p>
-            <p>ServerVersion: {{ serverVersion }}</p>
+        <div class="text-ui-p2 space-y-1 light:text-black/20 dark:text-white/20 text-center">
+            <p class="light:text-black/50 dark:text-white/50">사용자 고유번호: {{ session!.id }}</p>
+            <p>Version: {{ serverVersion }}</p>
             <p>BuildDate: KST {{ config.public.buildDate }}</p>
         </div>
     </div>
