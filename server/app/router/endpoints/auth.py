@@ -264,6 +264,7 @@ async def change_password(form: ChangePasswordForm, auth_data: LoginDep):
             "model": ErrorResponse,
             "description": "세션이 만료되었거나 유효하지 않음.",
         },
+        422: {"model": ErrorResponse, "description": "비밀번호의 형식이 잘못 되었음."},
     },
     status_code=status.HTTP_204_NO_CONTENT,
     summary="키오스크 비밀번호 변경",
@@ -282,7 +283,13 @@ async def change_kiosk_password(form: ChangePasswordForm, auth_data: LoginDep):
             detail="Incorrect old password",
         )
 
-    await user.update_kiosk_password(form.new_password)
+    try:
+        await user.update_kiosk_password(form.new_password)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="키오스크 비밀번호는 6자의 숫자만 가능합니다.",
+        )
 
 
 @router.get(
