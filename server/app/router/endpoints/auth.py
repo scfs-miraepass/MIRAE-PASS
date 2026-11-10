@@ -101,7 +101,7 @@ async def kiosk_password_verify(form: LoginForm, auth_data: LoginDep):
             detail="Permission denied.",
         )
 
-    user = await client.get_user(form.id, cache=True)
+    user = await client.get_user(form.id)
     if user is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
