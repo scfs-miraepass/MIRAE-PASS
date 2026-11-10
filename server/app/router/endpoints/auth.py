@@ -221,7 +221,7 @@ async def change_password_new(form: ChangePasswordNewForm):
         },
         404: {
             "model": ErrorResponse,
-            "description": "초기회 되지 않은 유저.",
+            "description": "초기화 되지 않은 유저.",
         },
     },
     status_code=status.HTTP_204_NO_CONTENT,
@@ -249,6 +249,40 @@ async def change_password(form: ChangePasswordForm, auth_data: LoginDep):
 
     # 새 비밀번호 해싱 및 저장 (현재 세션을 포함한 모든 로그인 세션이 종료됨)
     await user.update_password(form.new_password)
+
+
+@router.put(
+    "/kiosk",
+    operation_id="change_kiosk_password",
+    responses={
+        204: {"description": "비밀번호 변경 성공"},
+        400: {
+            "model": ErrorResponse,
+            "description": "기존 비밀번호가 일치하지 않음",
+        },
+        401: {
+            "model": ErrorResponse,
+            "description": "세션이 만료되었거나 유효하지 않음.",
+        },
+    },
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="키오스크 비밀번호 변경",
+    description="로그인된 유저의 키오스크 비밀번호를 변경합니다.",
+)
+async def change_kiosk_password(form: ChangePasswordForm, auth_data: LoginDep):
+    session_user, _ = auth_data
+
+    user = await client.get_user(session_user.id)
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
+
+    if not verify_password(form.old_password, user.kiosk_password) and user.kiosk_password is not None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Incorrect old password",
+        )
+
+    await user.update_kiosk_password(form.new_password)
 
 
 @router.get(
