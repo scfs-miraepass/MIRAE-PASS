@@ -618,6 +618,13 @@ export const zLoginAuthLoginPostBody = zLoginForm;
  */
 export const zLoginAuthLoginPostResponse = zResponseModelUser;
 
+export const zKioskPasswordVerifyBody = zLoginForm;
+
+/**
+ * 검사 결과를 응답합니다.
+ */
+export const zKioskPasswordVerifyResponse = zResponseModelBool;
+
 /**
  * 정상적으로 로그아웃이 되었음
  */

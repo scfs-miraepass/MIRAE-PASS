@@ -1528,6 +1528,47 @@ export type LoginAuthLoginPostResponses = {
 
 export type LoginAuthLoginPostResponse = LoginAuthLoginPostResponses[keyof LoginAuthLoginPostResponses];
 
+export type KioskPasswordVerifyData = {
+    body: LoginForm;
+    path?: never;
+    query?: never;
+    url: '/auth/kiosk';
+};
+
+export type KioskPasswordVerifyErrors = {
+    /**
+     * 키오스크 비밀번호가 설정되지 않았습니다.
+     */
+    400: ErrorResponse;
+    /**
+     * 로그인이 필요합니다.
+     */
+    401: ErrorResponse;
+    /**
+     * 권한이 없습니다.
+     */
+    403: ErrorResponse;
+    /**
+     * 검사하려는 유저가 존재하지 않습니다.
+     */
+    404: ErrorResponse;
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type KioskPasswordVerifyError = KioskPasswordVerifyErrors[keyof KioskPasswordVerifyErrors];
+
+export type KioskPasswordVerifyResponses = {
+    /**
+     * 검사 결과를 응답합니다.
+     */
+    200: ResponseModelBool;
+};
+
+export type KioskPasswordVerifyResponse = KioskPasswordVerifyResponses[keyof KioskPasswordVerifyResponses];
+
 export type LogoutAuthLogoutPostData = {
     body?: never;
     path?: never;
