@@ -249,17 +249,16 @@ await $API.changePasswordAuthPasswordPut({
 **응답** `204` — 본문이 없습니다.
 
 | 오류 | 이유 |
-
 | --- | --- |
 | `400` | 지금 사용 중인 비밀번호가 틀렸습니다. |
 | `401` | 로그인하지 않았습니다. |
-| `404` | 아직 비밀번호를 정하지 않은 유저입니다. |
 | `422` | 비밀번호의 형식이 맞지 않습니다. |
 
 ```ts
 await $API.changeKioskPassword({
     body: { old_password: "기존비밀번호", new_password: "새비밀번호" },
 })
+```
 
 ## 로그아웃
 
