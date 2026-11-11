@@ -24,7 +24,7 @@ const onSubmit = ({ error, inputVibration }: SubmitEmit) => {
         error.value = true;
         inputVibration()
         confirm_password.value = '';
-        toast.add({ title: '비밀번호가 맞지 않습니다.', color: 'error',  })
+        toast.add({ title: '비밀번호가 맞지 않습니다.', color: 'error' })
         return;
     }
 

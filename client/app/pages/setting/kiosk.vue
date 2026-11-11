@@ -2,6 +2,7 @@
 import newPassword from "@/components/setting/kiosk/new.vue"
 import oldPassword from "@/components/setting/kiosk/old.vue"
 
+const toast = useToast();
 const session = useSession();
 const isFirst = ref(true);
 const old_password = ref<string>("");
@@ -26,6 +27,35 @@ await useAsyncData(
     }
 )
 
+const onVerify = (password: string) => {
+    /*
+    기존 비밀번호 확인(oldPassword)에서 기존 비밀번호가 일치하면 호출됩니다.
+     */
+
+    old_password.value = password
+}
+
+const onSubmit = async (password: string) => {
+    /*
+    비밀번호를 업데이트하는 경우 호출됩니다.
+     */
+
+    const req = await $API.changeKioskPassword({
+        body: {
+            old_password: old_password.value,
+            new_password: password
+        }
+    })
+
+    if (req.error) {
+        // TODO: 언젠기는 내가 에러처리 하겠지2
+        return;
+    }
+
+    toast.add({ title: '키오스크 비밀번호가 업데이트 되었습니다.', color: 'success' })
+    await navigateTo('/setting', { replace: true })
+}
+
 </script>
 
 <template>
@@ -36,6 +66,6 @@ await useAsyncData(
         <p class="text-2xl font-bold text-gray-900 dark:text-white ml-1">키오스크 비밀번호 설정</p>
     </div>
 
-    <oldPassword v-if="!isFirst" />
-    <newPassword v-if="(!isFirst && old_password.length > 0) || isFirst" />
+    <oldPassword v-if="!isFirst && old_password.length <= 0" @verify="onVerify" />
+    <newPassword v-if="(!isFirst && old_password.length > 0) || isFirst" @submit="onSubmit" />
 </template>
