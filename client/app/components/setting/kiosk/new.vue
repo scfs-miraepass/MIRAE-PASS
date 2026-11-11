@@ -2,6 +2,10 @@
 import Form from './inputForm.vue'
 import type { SubmitEmit } from './inputForm.vue'
 
+const emit = defineEmits<{
+    'submit': [password: string]
+}>()
+
 const toast = useToast();
 const password = ref<string>('');
 const confirm_password = ref<string>('');
@@ -24,8 +28,8 @@ const onSubmit = ({ error, inputVibration }: SubmitEmit) => {
         return;
     }
 
-    // TODO: 비밀번호 검증 처리와 실제 변경 요청
-
+    // 최종적으로 요청 날리는건 부모(kiosk.vue)에서 할꺼임. 기존에 비밀번호가 있다면 같이 넣어서 보내줘야 해서;;
+    emit('submit', password.value)
 }
 </script>
 

@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import newPassword from "@/components/setting/kiosk/newPassword.vue"
+import newPassword from "@/components/setting/kiosk/new.vue"
+import oldPassword from "@/components/setting/kiosk/old.vue"
 
 const session = useSession();
 const isFirst = ref(true);
+const old_password = ref<string>("");
 
 await useAsyncData(
     'settings.kioskPassword',
@@ -34,5 +36,6 @@ await useAsyncData(
         <p class="text-2xl font-bold text-gray-900 dark:text-white ml-1">키오스크 비밀번호 설정</p>
     </div>
 
-    <newPassword />
+    <oldPassword v-if="!isFirst" />
+    <newPassword v-if="(!isFirst && old_password.length > 0) || isFirst" />
 </template>
