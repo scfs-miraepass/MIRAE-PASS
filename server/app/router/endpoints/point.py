@@ -291,9 +291,7 @@ async def deduct_points(
     user, _ = auth_data
 
     if not user.has_permission(UserPermission.DEDUCT_POINT):
-        client.logs.service_point.warning(
-            f"Unauthorized deduct attempt. UserID: {user.id}, Role: {user.type}, Admin: {user.is_admin}"
-        )
+        client.logs.service_point.warning(f"Unauthorized deduct attempt. UserID: {user.id}")
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Permission denied. Only service users or admins can deduct points.",

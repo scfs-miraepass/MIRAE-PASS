@@ -76,6 +76,49 @@ async def login(
 
 
 @router.post(
+    "/kiosk",
+    operation_id="kiosk_password_verify",
+    response_model=ResponseModel[bool],
+    responses={
+        200: {"description": "검사 결과를 응답합니다."},
+        401: {
+            "model": ErrorResponse,
+            "description": "로그인이 필요합니다.",
+        },
+        403: {"model": ErrorResponse, "description": "권한이 없습니다."},
+        404: {"model": ErrorResponse, "description": "검사하려는 유저가 존재하지 않습니다."},
+        400: {"model": ErrorResponse, "description": "키오스크 비밀번호가 설정되지 않았습니다."},
+    },
+    status_code=status.HTTP_200_OK,
+    summary="키오스크 비밀번호 검사",
+    description="특정 유저의 키오스크 비밀번호가 일치한지 응답합니다. service 타입 또는 유저 본인만 요청할 수 있습니다.",
+)
+async def kiosk_password_verify(form: LoginForm, auth_data: LoginDep):
+    """
+    키오스크에서 비밀번호가 맞는지와 키오스크 비밀번호 변경시, 비밀번호가 설정이 되었는지 확인합니다.
+    키오스크 비밀번호 변경을 위해 기존에 설정이 되었는지 확인 시에는 본문 password는 아무값도 없는 문자열이 들어갑니다.
+    """
+    user, _ = auth_data
+    if user.type != UserType.service and form.id != user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Permission denied.",
+        )
+
+    user = await client.get_user(form.id)
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    if user.kiosk_password is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No password has been set",
+        )
+
+    return ResponseModel[bool](success=True, data=verify_password(form.password, user.kiosk_password))
+
+
+@router.post(
     "/logout",
     responses={204: {"description": "정상적으로 로그아웃이 되었음"}},
     status_code=status.HTTP_204_NO_CONTENT,
@@ -182,7 +225,7 @@ async def change_password_new(form: ChangePasswordNewForm):
         },
         404: {
             "model": ErrorResponse,
-            "description": "초기회 되지 않은 유저.",
+            "description": "초기화 되지 않은 유저.",
         },
     },
     status_code=status.HTTP_204_NO_CONTENT,
@@ -210,6 +253,47 @@ async def change_password(form: ChangePasswordForm, auth_data: LoginDep):
 
     # 새 비밀번호 해싱 및 저장 (현재 세션을 포함한 모든 로그인 세션이 종료됨)
     await user.update_password(form.new_password)
+
+
+@router.put(
+    "/kiosk",
+    operation_id="change_kiosk_password",
+    responses={
+        204: {"description": "비밀번호 변경 성공"},
+        400: {
+            "model": ErrorResponse,
+            "description": "기존 비밀번호가 일치하지 않음",
+        },
+        401: {
+            "model": ErrorResponse,
+            "description": "세션이 만료되었거나 유효하지 않음.",
+        },
+        422: {"model": ErrorResponse, "description": "비밀번호의 형식이 잘못 되었음."},
+    },
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="키오스크 비밀번호 변경",
+    description="로그인된 유저의 키오스크 비밀번호를 변경합니다.",
+)
+async def change_kiosk_password(form: ChangePasswordForm, auth_data: LoginDep):
+    session_user, _ = auth_data
+
+    user = await client.get_user(session_user.id)
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
+
+    if not verify_password(form.old_password, user.kiosk_password) and user.kiosk_password is not None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Incorrect old password",
+        )
+
+    try:
+        await user.update_kiosk_password(form.new_password)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="키오스크 비밀번호는 6자의 숫자만 가능합니다.",
+        )
 
 
 @router.get(

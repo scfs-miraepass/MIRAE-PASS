@@ -42,7 +42,7 @@ else:
     _Type = object
 
 
-USER_CACHE_EXCLUDE = frozenset({"password"})
+USER_CACHE_EXCLUDE = frozenset({"password", "kiosk_password"})
 """유저 캐시(`Keys.User.ITEM`)에 저장하지 않는 필드"""
 
 
@@ -50,7 +50,10 @@ class User(ServiceCore[Users], _Type):
     def __getattribute__(self, name):
         # 캐시에서 불러온 유저는 비밀번호 해시를 갖고 있지 않습니다.
         # 이 경우 password가 None(비밀번호 미설정)으로 잘못 읽히지 않도록 접근 자체를 막습니다.
-        if name == "password" and "password" not in super().__getattribute__("_payload").__dict__:
+        payload_dict = super().__getattribute__("_payload").__dict__
+        if name in ["password", "kiosk_password"] and (
+            "password" not in payload_dict or "kiosk_password" not in payload_dict
+        ):
             raise RuntimeError("캐시에서 불러온 유저에는 비밀번호가 없습니다. cache=False로 다시 조회해야 합니다.")
         return super().__getattribute__(name)
 
@@ -96,6 +99,30 @@ class User(ServiceCore[Users], _Type):
         self._payload = user
         await on_user_cache_changed(self.id)
         await revoke_user_sessions(self.id)
+
+    async def update_kiosk_password(self, _new: str | None):
+        """
+        사용자의 키오스크 결재용 비밀번호를 업데이트 합니다.
+
+        Args:
+            _new: 새로운 비밀번호, None인 경우 비밀번호 설정이 되지 않은 것을 뜻하며 키오스크를 이용할 수 없습니다.
+
+        Raises:
+            ValueError: 설정하려는 비밀번호가 6자의 숫자가 아닌 경우 발생합니다.
+        """
+
+        if _new is not None and (len(_new) != 6 or not _new.isdecimal()):
+            raise ValueError("키오스크 비밀번호는 6자의 숫자만 가능합니다.")
+
+        if isinstance(_new, str):
+            self.logs.service.info(f"{self.name}({self.id})님의 키오스크 결재용 비밀번호가 변경되었습니다.")
+        else:
+            self.logs.service.info(f"{self.name}({self.id})님의 키오스크 결재용 비밀번호가 제거되었습니다.")
+        async with self.session as session:
+            user = await session.merge(self._payload)
+            user.kiosk_password = get_password_hash(str(_new)) if isinstance(_new, str) else None
+        self._payload = user
+        await on_user_cache_changed(self.id)
 
     async def create_history(
         self,

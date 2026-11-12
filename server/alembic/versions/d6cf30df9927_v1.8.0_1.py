@@ -46,17 +46,13 @@ def upgrade() -> None:
     op.create_index(op.f("ix_quests_end_date"), "quests", ["end_date"], unique=False)
     op.create_index(op.f("ix_quests_id"), "quests", ["id"], unique=False)
 
-    op.drop_constraint(
-        op.f("questcompletion_ibfk_1"), "questcompletion", type_="foreignkey"
-    )
+    op.drop_constraint(op.f("questcompletion_ibfk_1"), "questcompletion", type_="foreignkey")
     op.drop_constraint(op.f("quest_ibfk_1"), "quest", type_="foreignkey")
     op.drop_index(op.f("ix_quest_author_id"), table_name="quest")
     op.drop_index(op.f("ix_quest_end_date"), table_name="quest")
     op.drop_index(op.f("ix_quest_id"), table_name="quest")
     op.drop_table("quest")
-    op.create_foreign_key(
-        None, "questcompletion", "quests", ["quest_id"], ["id"], ondelete="CASCADE"
-    )
+    op.create_foreign_key(None, "questcompletion", "quests", ["quest_id"], ["id"], ondelete="CASCADE")
     # ### end Alembic commands ###
 
 
@@ -87,9 +83,7 @@ def downgrade() -> None:
             nullable=True,
         ),
         sa.Column("author_id", mysql.INTEGER(), autoincrement=False, nullable=False),
-        sa.ForeignKeyConstraint(
-            ["author_id"], ["users.id"], name=op.f("quest_ibfk_1"), ondelete="CASCADE"
-        ),
+        sa.ForeignKeyConstraint(["author_id"], ["users.id"], name=op.f("quest_ibfk_1"), ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
         mysql_collate="utf8mb4_0900_ai_ci",
         mysql_default_charset="utf8mb4",
