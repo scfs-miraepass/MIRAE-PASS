@@ -1,3 +1,10 @@
+# [1.15.0-dev.1](https://github.com/scfs-miraepass/MIRAE-PASS/compare/v1.14.1...v1.15.0-dev.1) (2026-11-12)
+
+
+### Features
+
+* 키오스크 결제 비밀번호 추가 ([#11](https://github.com/scfs-miraepass/MIRAE-PASS/issues/11)) ([51f9fd3](https://github.com/scfs-miraepass/MIRAE-PASS/commit/51f9fd36a8d4922769ea8acaefafbe2b77ff78e3))
+
 ## [1.14.1](https://github.com/scfs-miraepass/MIRAE-PASS/compare/v1.14.0...v1.14.1) (2026-11-02)
 
 
