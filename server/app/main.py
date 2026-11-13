@@ -1,5 +1,6 @@
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from datetime import timedelta, timezone, tzinfo
 from pathlib import Path
 from tomllib import load
 
@@ -10,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
 from sqlmodel import select, col
-from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+from zoneinfo import ZoneInfo
 
 from .core import ServiceClient, settings
 from .core.service.karaoke import Karaoke as KaraokeService
@@ -85,6 +86,38 @@ async def process_karaoke_auctions():
     )
 
 
+async def resolve_database_timezone(session) -> tzinfo:
+    """
+    DB 서버의 시간대를 해석합니다.
+
+    1. `@@time_zone`(SYSTEM이면 `@@system_time_zone`)을 IANA 이름으로 해석
+    2. 실패 시 DB 서버의 실제 UTC 오프셋(`NOW() - UTC_TIMESTAMP()`)으로 고정 오프셋 시간대 생성
+
+    Windows MySQL은 `@@system_time_zone`을 "대한민국 표준시"처럼 로케일 이름으로 반환하므로
+    (인코딩에 따라 깨진 문자열이 되기도 함) 1단계가 실패할 수 있어 2단계 fallback이 필요합니다.
+    PostgreSQL 사용하는경우 `SHOW TIME ZONE` 으로 SQL문 변경해야함
+    """
+    tz_string = (await session.execute(text("SELECT @@time_zone"))).scalar() or ""
+    if tz_string.lower() == "system":
+        tz_string = (await session.execute(text("SELECT @@system_time_zone"))).scalar() or ""
+
+    try:
+        return ZoneInfo(tz_string)
+    except Exception:  # ZoneInfoNotFoundError 외에도 OSError/ValueError 등이 발생할 수 있음
+        client.logs.global_.warning(
+            f"DB의 서버 시간대 이름을 해석할 수 없습니다: {tz_string!r}. UTC 오프셋으로 대체합니다."
+        )
+
+    offset_seconds = (await session.execute(text("SELECT TIMESTAMPDIFF(SECOND, UTC_TIMESTAMP(), NOW())"))).scalar()
+    if offset_seconds is None:
+        client.logs.global_.warning("DB의 UTC 오프셋을 조회할 수 없어 UTC를 사용합니다.")
+        return timezone.utc
+
+    # 초 단위 오차를 제거하기 위해 15분 단위로 반올림
+    offset_seconds = round(int(offset_seconds) / 900) * 900
+    return timezone(timedelta(seconds=offset_seconds))
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """
@@ -98,16 +131,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
     client.logs.global_.info("데이터베이스 서버와 시간대를 동기화")
     async with client.session as session:
-        # PostgreSQL 사용하는경우 `SHOW TIME ZONE` 으로 SQL문 변경해야함
-        tz_string = (await session.execute(text("SELECT @@time_zone"))).scalar()
-        if tz_string.lower() == "system":
-            tz_string = (await session.execute(text("SELECT @@system_time_zone"))).scalar()
-
-        try:
-            SchemaCore.timezone = ZoneInfo(tz_string)
-            client.logs.global_.debug(f"DB의 시간대: {SchemaCore.timezone}")
-        except ZoneInfoNotFoundError:
-            client.logs.global_.warning("DB의 서버 시간대를 해석할 수 없습니다.")
+        SchemaCore.timezone = await resolve_database_timezone(session)
+        client.logs.global_.debug(f"DB의 시간대: {SchemaCore.timezone}")
 
     scheduler.start()
     client.logs.global_.info("Scheduler 시작")
