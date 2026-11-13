@@ -8,6 +8,7 @@ COPY package.json yarn.lock .yarnrc.yml ./
 COPY client/package.json client/
 COPY admin/package.json admin/
 COPY api-client/package.json api-client/
+COPY docs/package.json docs/
 
 RUN apt-get update \
     && rm -rf /var/lib/apt/lists/* \
