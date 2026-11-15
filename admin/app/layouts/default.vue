@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { NavigationMenuItem } from '@nuxt/ui'
+import { NOTICE_MANAGEMENT_PERMISSIONS } from '~/utils/permission'
 import { UserPermission } from '@miraepass/api-client'
 
 const session = useSession()
@@ -9,8 +10,7 @@ const links = computed(() => {
 
     const items: NavigationMenuItem[] = []
 
-    if (hasPermission(session.value?.permissions, UserPermission.CREATE_POST)
-        || hasPermission(session.value?.permissions, UserPermission.MANAGE_POST)) {
+    if (hasPermission(session.value?.permissions, NOTICE_MANAGEMENT_PERMISSIONS)) {
         items.push({ label: '공지사항', icon: 'i-lucide-megaphone', to: '/notices' })
     }
 
