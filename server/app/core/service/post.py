@@ -60,8 +60,9 @@ class Post(ServiceCore[Posts], _Type):
                 post.title = title
 
             if content is not None:
-                if post.content:
-                    post.content.data = content
+                post_content = await session.get(PostContent, post.id)
+                if post_content is not None:
+                    post_content.data = content
                 else:
                     post.content = PostContent(data=content)
             await session.flush()

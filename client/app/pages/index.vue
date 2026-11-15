@@ -10,6 +10,11 @@ import DeductPoint from "@/components/home/section/deductPoint.vue";
 import Karaoke from "@/components/home/section/karaoke.vue";
 
 const session = useSession()
+const { data: notices } = useAsyncData('home-notices', async () => {
+    if (!hasPermission(session.value?.permissions ?? 0, UserPermission.VIEW_POST)) return []
+    const result = await $fetch<{ data: { id: number; title: string; text: string }[] }>('/api/posts/notices')
+    return result.data
+}, { server: false })
 const sectionItem = computed(() => {
     const items = []
     const permissions = session.value!.permissions
@@ -34,6 +39,20 @@ const sectionItem = computed(() => {
         </NuxtLink>
     </div>
     <div class="pb-2 mt-2.5 flex-1 flex flex-col">
+        <section v-if="notices?.length" class="mb-3 rounded-xl border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-950/40" aria-labelledby="notices-heading">
+            <h2 id="notices-heading" class="mb-2 font-bold text-blue-800 dark:text-blue-200">공지사항</h2>
+            <ul>
+                <li v-for="notice in notices" :key="notice.id" class="border-t border-blue-200 dark:border-blue-800">
+                    <NuxtLink
+                        :to="`/notices/${notice.id}`"
+                        class="flex min-h-11 items-center justify-between gap-3 py-2 font-medium text-blue-900 focus-visible:outline-2 focus-visible:outline-blue-600 dark:text-blue-100 dark:focus-visible:outline-blue-400"
+                    >
+                        <span class="min-w-0 break-words">{{ notice.title }}</span>
+                        <UIcon name="i-ph-caret-right" class="shrink-0" aria-hidden="true" />
+                    </NuxtLink>
+                </li>
+            </ul>
+        </section>
         <Point v-if="hasPermission(session!.permissions, UserPermission.VIEW_POINT)" />
         <Section class="mt-3" v-if="sectionItem.length > 0">
             <component v-for="i in sectionItem" :is="i" />

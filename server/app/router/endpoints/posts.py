@@ -6,7 +6,7 @@ from sqlmodel import func, select
 
 from app.core import LoginDep, ServiceClient
 from app.core.redis_keys import Keys
-from app.schemas import Posts, UserPermission
+from app.schemas import PostContent, Posts, UserPermission
 from app.schemas.response import ErrorResponse, ResponseModel
 
 router = APIRouter(prefix="/posts", tags=["posts"])
@@ -21,6 +21,75 @@ class PostCreateRequest(BaseModel):
 class PostUpdateRequest(BaseModel):
     title: str | None = Field(None, description="수정할 게시글 제목")
     content_data: dict | None = Field(None, description="수정할 게시글의 본문 데이터")
+
+
+class Notice(BaseModel):
+    id: int
+    title: str
+    text: str
+
+
+class ManagedNotice(Notice):
+    can_edit: bool
+
+
+def notice_query():
+    return (
+        select(Posts.id, Posts.title, Posts.author_id, PostContent.data)
+        .join(PostContent, PostContent.post_id == Posts.id)
+        .where(PostContent.data['kind'].as_string() == 'notice')
+    )
+
+
+@router.get('/notices', response_model=ResponseModel[list[Notice]])
+async def get_notices(auth: LoginDep):
+    user, _ = auth
+    if not user.has_permission(UserPermission.VIEW_POST):
+        raise HTTPException(status_code=403, detail='Permission denied.')
+
+    async with client.session as session:
+        query = notice_query().order_by(Posts.id.desc()).limit(5)
+        rows = (await session.execute(query)).all()
+    notices = [
+        Notice(id=id_, title=title, text=data['text'])
+        for id_, title, _, data in rows
+        if isinstance(data.get('text'), str)
+    ]
+    return ResponseModel[list[Notice]](success=True, data=notices)
+
+
+@router.get('/notices/manage', response_model=ResponseModel[list[ManagedNotice]])
+async def get_managed_notices(auth: LoginDep):
+    user, _ = auth
+    can_manage = user.has_permission(UserPermission.MANAGE_POST)
+    if not can_manage and not user.has_permission(UserPermission.CREATE_POST):
+        raise HTTPException(status_code=403, detail='Permission denied.')
+
+    async with client.session as session:
+        rows = (await session.execute(notice_query().order_by(Posts.id.desc()))).all()
+    notices = [
+        ManagedNotice(id=id_, title=title, text=data['text'], can_edit=can_manage or author_id == user.id)
+        for id_, title, author_id, data in rows
+        if isinstance(data.get('text'), str)
+    ]
+    return ResponseModel[list[ManagedNotice]](success=True, data=notices)
+
+
+@router.get('/notices/{notice_id}', response_model=ResponseModel[Notice])
+async def get_notice(notice_id: int, auth: LoginDep):
+    user, _ = auth
+    if not user.has_permission(UserPermission.VIEW_POST):
+        raise HTTPException(status_code=403, detail='Permission denied.')
+
+    async with client.session as session:
+        query = notice_query().where(Posts.id == notice_id)
+        row = (await session.execute(query)).one_or_none()
+
+    if row is None or not isinstance(row.data.get('text'), str):
+        raise HTTPException(status_code=404, detail='Notice not found.')
+
+    notice = Notice(id=notice_id, title=row.title, text=row.data['text'])
+    return ResponseModel[Notice](success=True, data=notice)
 
 
 @router.get(
