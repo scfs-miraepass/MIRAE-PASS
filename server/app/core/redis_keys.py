@@ -174,6 +174,25 @@ class Keys:
             """,
         )
 
+    class Sticker:
+        VERSION = RedisKey("sticker:ver", ttl=HOUR, description="스티커 랭킹/학급 랭킹 페이지 캐시 버전")
+        RANKING = RedisKey(
+            "sticker:ranking:{ver}:{period}:{limit}:{offset}",
+            ttl=5 * MINUTE,
+            description="""
+                스티커 개인 랭킹 페이지 (검색어가 있는 요청은 캐시하지 않음)
+                - ver: 버전
+                - period: 현재 집계 기간 시작 시각 (YYYYMMDDHHMMSS)
+                - limit: 한 페이지당 최대 데이터 개수
+                - offset: 현재 페이지 위치
+            """,
+        )
+        CLASS_RANKING = RedisKey(
+            "sticker:class_ranking:{ver}:{period}",
+            ttl=5 * MINUTE,
+            description="학급별 스티커 합계 랭킹 (period: 현재 집계 기간 시작 시각)",
+        )
+
     class Search:
         USERS = RedisKey(
             "search:users:{query}:{types}",

@@ -994,6 +994,34 @@ export type ResponseModelQuests = {
 };
 
 /**
+ * ResponseModel[StickerBalance]
+ */
+export type ResponseModelStickerBalance = {
+    /**
+     * Success
+     */
+    success: boolean;
+    /**
+     * 응답 데이터
+     */
+    data: StickerBalance;
+};
+
+/**
+ * ResponseModel[StickerHistoryPage]
+ */
+export type ResponseModelStickerHistoryPage = {
+    /**
+     * Success
+     */
+    success: boolean;
+    /**
+     * 응답 데이터
+     */
+    data: StickerHistoryPage;
+};
+
+/**
  * ResponseModel[User]
  */
 export type ResponseModelUser = {
@@ -1152,6 +1180,38 @@ export type ResponseModelListStampsList = {
 };
 
 /**
+ * ResponseModel[list[StickerClassRankingResponse]]
+ */
+export type ResponseModelListStickerClassRankingResponse = {
+    /**
+     * Success
+     */
+    success: boolean;
+    /**
+     * Data
+     *
+     * 응답 데이터
+     */
+    data: Array<StickerClassRankingResponse>;
+};
+
+/**
+ * ResponseModel[list[StickerRankingResponse]]
+ */
+export type ResponseModelListStickerRankingResponse = {
+    /**
+     * Success
+     */
+    success: boolean;
+    /**
+     * Data
+     *
+     * 응답 데이터
+     */
+    data: Array<StickerRankingResponse>;
+};
+
+/**
  * ResponseModel[list[User]]
  */
 export type ResponseModelListUser = {
@@ -1228,6 +1288,262 @@ export type StampsList = {
      * Time
      */
     time: Date | null;
+};
+
+/**
+ * StickerBalance
+ */
+export type StickerBalance = {
+    /**
+     * User Id
+     *
+     * 학생의 고유 ID
+     */
+    user_id: number;
+    /**
+     * Count
+     *
+     * 현재 집계 기간 내 보유 스티커 수
+     */
+    count: number;
+    /**
+     * Max
+     *
+     * 보유 가능한 최대 스티커 수
+     */
+    max: number;
+    /**
+     * Period Start
+     *
+     * 현재 집계 기간 시작 시각
+     */
+    period_start: Date;
+};
+
+/**
+ * StickerClassOperation
+ */
+export type StickerClassOperation = {
+    /**
+     * Grade
+     *
+     * 대상 학년
+     */
+    grade: number;
+    /**
+     * Number
+     *
+     * 대상 반
+     */
+    number: number;
+    /**
+     * Amount
+     *
+     * 전달할 스티커 수 (1~3)
+     */
+    amount?: number;
+    /**
+     * Memo
+     *
+     * 메모
+     */
+    memo?: string | null;
+};
+
+/**
+ * StickerClassRankingResponse
+ */
+export type StickerClassRankingResponse = {
+    /**
+     * Grade
+     *
+     * 학년
+     */
+    grade: number;
+    /**
+     * Number
+     *
+     * 반
+     */
+    number: number;
+    /**
+     * Count
+     *
+     * 학급 스티커 합계 (학생 보유 + 교사 전달)
+     */
+    count: number;
+    /**
+     * Teacher Count
+     *
+     * 교사가 이 학급에 전달한 스티커 수
+     */
+    teacher_count: number;
+    /**
+     * Rank
+     *
+     * 합계 기준 순위
+     */
+    rank: number;
+};
+
+/**
+ * StickerHistoryItem
+ */
+export type StickerHistoryItem = {
+    /**
+     * Id
+     */
+    id: number;
+    /**
+     * User Id
+     *
+     * 대상 유저(학생/교사)의 고유 ID
+     */
+    user_id: number;
+    /**
+     * User Name
+     *
+     * 대상 유저 이름
+     */
+    user_name: string | null;
+    /**
+     * User Type
+     *
+     * 대상 유저 타입 (student / teacher)
+     */
+    user_type: string | null;
+    /**
+     * Class Grade
+     *
+     * 교사가 학급에 전달한 기록인 경우 대상 학년
+     */
+    class_grade: number | null;
+    /**
+     * Class Number
+     *
+     * 교사가 학급에 전달한 기록인 경우 대상 반
+     */
+    class_number: number | null;
+    /**
+     * Grade
+     *
+     * 대상 학생 학년
+     */
+    grade: number | null;
+    /**
+     * Number
+     *
+     * 대상 학생 반
+     */
+    number: number | null;
+    /**
+     * Amount
+     *
+     * 변동 수량 (지급 +, 회수 -)
+     */
+    amount: number;
+    /**
+     * Actor Id
+     *
+     * 처리한 유저의 고유 ID
+     */
+    actor_id: number | null;
+    /**
+     * Actor Name
+     *
+     * 처리한 유저 이름
+     */
+    actor_name: string | null;
+    /**
+     * Memo
+     */
+    memo: string | null;
+    /**
+     * Created At
+     */
+    created_at: Date;
+};
+
+/**
+ * StickerHistoryPage
+ */
+export type StickerHistoryPage = {
+    /**
+     * Period Start
+     *
+     * 현재 집계 기간 시작 시각
+     */
+    period_start: Date;
+    /**
+     * Items
+     */
+    items: Array<StickerHistoryItem>;
+};
+
+/**
+ * StickerOperation
+ */
+export type StickerOperation = {
+    /**
+     * User Id
+     *
+     * 대상 학생의 고유 ID (학번)
+     */
+    user_id: number;
+    /**
+     * Amount
+     *
+     * 처리할 스티커 수 (1~3)
+     */
+    amount?: number;
+    /**
+     * Memo
+     *
+     * 메모
+     */
+    memo?: string | null;
+};
+
+/**
+ * StickerRankingResponse
+ */
+export type StickerRankingResponse = {
+    /**
+     * Id
+     *
+     * 학생의 고유 ID (학번)
+     */
+    id: number;
+    /**
+     * Name
+     *
+     * 이름
+     */
+    name: string;
+    /**
+     * Grade
+     *
+     * 학년
+     */
+    grade: number | null;
+    /**
+     * Number
+     *
+     * 반
+     */
+    number: number | null;
+    /**
+     * Count
+     *
+     * 현재 집계 기간 내 보유 스티커 수
+     */
+    count: number;
+    /**
+     * Rank
+     *
+     * 전체 학생 기준 순위
+     */
+    rank: number;
 };
 
 /**
@@ -1407,17 +1723,41 @@ export const UserPermission = {
      */
     VIEW_KARAOKE: 1048576,
     /**
+     * _GIVE_STICKER
+     */
+    _GIVE_STICKER: 2097152,
+    /**
+     * GIVE_STICKER
+     */
+    GIVE_STICKER: 2228224,
+    /**
+     * VIEW_STICKER
+     */
+    VIEW_STICKER: 4194304,
+    /**
+     * _MANAGE_STICKER
+     */
+    _MANAGE_STICKER: 8388608,
+    /**
+     * MANAGE_STICKER
+     */
+    MANAGE_STICKER: 8519680,
+    /**
+     * GIVE_CLASS_STICKER
+     */
+    GIVE_CLASS_STICKER: 16777216,
+    /**
      * STUDENT
      */
-    STUDENT: 1458624,
+    STUDENT: 5652928,
     /**
      * TEACHER
      */
-    TEACHER: 1493442,
+    TEACHER: 22464962,
     /**
      * ADMIN
      */
-    ADMIN: 1713680
+    ADMIN: 14296592
 } as const;
 
 /**
@@ -3006,6 +3346,372 @@ export type CreateStampStampPostResponses = {
 };
 
 export type CreateStampStampPostResponse = CreateStampStampPostResponses[keyof CreateStampStampPostResponses];
+
+export type GrantStickerData = {
+    body: StickerOperation;
+    path?: never;
+    query?: never;
+    url: '/sticker';
+};
+
+export type GrantStickerErrors = {
+    /**
+     * 학생이 아닌 유저에게 지급 시도
+     */
+    400: ErrorResponse;
+    /**
+     * 권한이 없음
+     */
+    403: ErrorResponse;
+    /**
+     * 유저를 찾을 수 없음
+     */
+    404: ErrorResponse;
+    /**
+     * 보유 한도(3개) 초과
+     */
+    409: ErrorResponse;
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GrantStickerError = GrantStickerErrors[keyof GrantStickerErrors];
+
+export type GrantStickerResponses = {
+    /**
+     * 정상 처리
+     */
+    200: ResponseModelStickerBalance;
+};
+
+export type GrantStickerResponse = GrantStickerResponses[keyof GrantStickerResponses];
+
+export type RevokeStickerData = {
+    body: StickerOperation;
+    path?: never;
+    query?: never;
+    url: '/sticker/revoke';
+};
+
+export type RevokeStickerErrors = {
+    /**
+     * 학생이 아닌 유저
+     */
+    400: ErrorResponse;
+    /**
+     * 권한이 없음
+     */
+    403: ErrorResponse;
+    /**
+     * 유저를 찾을 수 없음
+     */
+    404: ErrorResponse;
+    /**
+     * 보유 수보다 많이 회수 시도
+     */
+    409: ErrorResponse;
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type RevokeStickerError = RevokeStickerErrors[keyof RevokeStickerErrors];
+
+export type RevokeStickerResponses = {
+    /**
+     * 정상 처리
+     */
+    200: ResponseModelStickerBalance;
+};
+
+export type RevokeStickerResponse = RevokeStickerResponses[keyof RevokeStickerResponses];
+
+export type GiveStickerToClassData = {
+    body: StickerClassOperation;
+    path?: never;
+    query?: never;
+    url: '/sticker/class';
+};
+
+export type GiveStickerToClassErrors = {
+    /**
+     * 권한이 없음
+     */
+    403: ErrorResponse;
+    /**
+     * 해당 학급(학생)이 없음
+     */
+    404: ErrorResponse;
+    /**
+     * 보유한 스티커가 부족함
+     */
+    409: ErrorResponse;
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GiveStickerToClassError = GiveStickerToClassErrors[keyof GiveStickerToClassErrors];
+
+export type GiveStickerToClassResponses = {
+    /**
+     * 정상 처리
+     */
+    200: ResponseModelStickerBalance;
+};
+
+export type GiveStickerToClassResponse = GiveStickerToClassResponses[keyof GiveStickerToClassResponses];
+
+export type ResetStickersData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/sticker/reset';
+};
+
+export type ResetStickersErrors = {
+    /**
+     * 권한이 없음
+     */
+    403: ErrorResponse;
+};
+
+export type ResetStickersError = ResetStickersErrors[keyof ResetStickersErrors];
+
+export type ResetStickersResponses = {
+    /**
+     * 정상 처리
+     */
+    204: void;
+};
+
+export type ResetStickersResponse = ResetStickersResponses[keyof ResetStickersResponses];
+
+export type GetMyStickerBalanceData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/sticker/me';
+};
+
+export type GetMyStickerBalanceErrors = {
+    /**
+     * 권한이 없음
+     */
+    403: ErrorResponse;
+};
+
+export type GetMyStickerBalanceError = GetMyStickerBalanceErrors[keyof GetMyStickerBalanceErrors];
+
+export type GetMyStickerBalanceResponses = {
+    /**
+     * 정상 처리
+     */
+    200: ResponseModelStickerBalance;
+};
+
+export type GetMyStickerBalanceResponse = GetMyStickerBalanceResponses[keyof GetMyStickerBalanceResponses];
+
+export type GetUserStickerBalanceData = {
+    body?: never;
+    path: {
+        /**
+         * User Id
+         */
+        user_id: number;
+    };
+    query?: never;
+    url: '/sticker/users/{user_id}';
+};
+
+export type GetUserStickerBalanceErrors = {
+    /**
+     * 권한이 없음
+     */
+    403: ErrorResponse;
+    /**
+     * 유저를 찾을 수 없음
+     */
+    404: ErrorResponse;
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetUserStickerBalanceError = GetUserStickerBalanceErrors[keyof GetUserStickerBalanceErrors];
+
+export type GetUserStickerBalanceResponses = {
+    /**
+     * 정상 처리
+     */
+    200: ResponseModelStickerBalance;
+};
+
+export type GetUserStickerBalanceResponse = GetUserStickerBalanceResponses[keyof GetUserStickerBalanceResponses];
+
+export type GetStickerRankingData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Q
+         *
+         * 검색어 (이름 또는 학번)
+         */
+        q?: string | null;
+        /**
+         * Limit
+         *
+         * 페이지 당 데이터 갯수 (최대 100)
+         */
+        limit?: number;
+        /**
+         * Offset
+         */
+        offset?: number;
+    };
+    url: '/sticker/ranking';
+};
+
+export type GetStickerRankingErrors = {
+    /**
+     * 권한이 없음
+     */
+    403: ErrorResponse;
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetStickerRankingError = GetStickerRankingErrors[keyof GetStickerRankingErrors];
+
+export type GetStickerRankingResponses = {
+    /**
+     * 정상 처리
+     */
+    200: ResponseModelListStickerRankingResponse;
+};
+
+export type GetStickerRankingResponse = GetStickerRankingResponses[keyof GetStickerRankingResponses];
+
+export type GetStickerClassRankingData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/sticker/ranking/class';
+};
+
+export type GetStickerClassRankingErrors = {
+    /**
+     * 권한이 없음
+     */
+    403: ErrorResponse;
+};
+
+export type GetStickerClassRankingError = GetStickerClassRankingErrors[keyof GetStickerClassRankingErrors];
+
+export type GetStickerClassRankingResponses = {
+    /**
+     * 정상 처리
+     */
+    200: ResponseModelListStickerClassRankingResponse;
+};
+
+export type GetStickerClassRankingResponse = GetStickerClassRankingResponses[keyof GetStickerClassRankingResponses];
+
+export type GetStickerHistoryData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * User Id
+         *
+         * 특정 학생의 기록만 조회
+         */
+        user_id?: number | null;
+        /**
+         * Limit
+         *
+         * 페이지 당 데이터 갯수 (최대 100)
+         */
+        limit?: number;
+        /**
+         * Offset
+         */
+        offset?: number;
+    };
+    url: '/sticker/history';
+};
+
+export type GetStickerHistoryErrors = {
+    /**
+     * 권한이 없음
+     */
+    403: ErrorResponse;
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetStickerHistoryError = GetStickerHistoryErrors[keyof GetStickerHistoryErrors];
+
+export type GetStickerHistoryResponses = {
+    /**
+     * 정상 처리
+     */
+    200: ResponseModelStickerHistoryPage;
+};
+
+export type GetStickerHistoryResponse = GetStickerHistoryResponses[keyof GetStickerHistoryResponses];
+
+export type DeleteStickerHistoryData = {
+    body?: never;
+    path: {
+        /**
+         * History Id
+         */
+        history_id: number;
+    };
+    query?: never;
+    url: '/sticker/history/{history_id}';
+};
+
+export type DeleteStickerHistoryErrors = {
+    /**
+     * 권한이 없음
+     */
+    403: ErrorResponse;
+    /**
+     * 기록을 찾을 수 없음
+     */
+    404: ErrorResponse;
+    /**
+     * 취소 시 학생의 보유 수가 0 미만이 됨
+     */
+    409: ErrorResponse;
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type DeleteStickerHistoryError = DeleteStickerHistoryErrors[keyof DeleteStickerHistoryErrors];
+
+export type DeleteStickerHistoryResponses = {
+    /**
+     * 정상 처리
+     */
+    204: void;
+};
+
+export type DeleteStickerHistoryResponse = DeleteStickerHistoryResponses[keyof DeleteStickerHistoryResponses];
 
 export type GetKaraokeListData = {
     body?: never;

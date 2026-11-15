@@ -20,6 +20,12 @@ const actionList = computed<{
             searchTarget: ["student", "teacher"],
             permissions: [ UserPermission.GIVE_STAMP ]
         },
+        "give-sticker": {
+            title: "스티커 지급",
+            selectUrl: "/service/sticker",
+            searchTarget: ["student", "teacher"],
+            permissions: [ UserPermission.GIVE_STICKER ]
+        },
         "grant-point": {
             title: "포인트 지급",
             selectUrl: "/system/pointProcessing?a=grant",

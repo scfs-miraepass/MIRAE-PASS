@@ -6,8 +6,6 @@ from pydantic import GetJsonSchemaHandler, field_serializer
 from pydantic_core import core_schema
 from sqlalchemy import Connection, event, insert
 from sqlmodel import Field, Relationship, SQLModel, delete
-from functools import reduce
-from operator import or_
 
 from app.core import LoggerCore
 
@@ -115,7 +113,26 @@ class UserPermission(IntFlag):
     VIEW_KARAOKE = 2**20
     """노래방 경매를 확인할 수 있는 권한"""
 
-    STUDENT = VIEW_RANK | VIEW_POINT | VIEW_POINT_HISTORY | VIEW_POST | VIEW_KARAOKE | JOIN_KARAOKE
+    _GIVE_STICKER = 2**21
+    GIVE_STICKER = _GIVE_STICKER | SEARCH_USER
+    """학생에게 스티커를 지급할 수 있는 권한 (기본: 서비스 계정)"""
+
+    VIEW_STICKER = 2**22
+    """자신의 스티커 보유 수와 스티커 랭킹(개인/학급)을 확인할 수 있는 권한"""
+
+    _MANAGE_STICKER = 2**23
+    MANAGE_STICKER = _MANAGE_STICKER | SEARCH_USER
+    """
+    스티커 관리 권한
+    - 스티커 지급 / 회수
+    - 현재 기간 스티커 기록 조회
+    - 스티커 수동 초기화
+    """
+
+    GIVE_CLASS_STICKER = 2**24
+    """받은 스티커를 원하는 학급에 전달할 수 있는 권한 (기본: 교사)"""
+
+    STUDENT = VIEW_RANK | VIEW_POINT | VIEW_POINT_HISTORY | VIEW_POST | VIEW_KARAOKE | JOIN_KARAOKE | VIEW_STICKER
     TEACHER = (
         GRANT_POINT
         | VIEW_RANK
@@ -126,12 +143,18 @@ class UserPermission(IntFlag):
         | VIEW_STAMP
         | VIEW_KARAOKE
         | JOIN_KARAOKE
+        | VIEW_STICKER
+        | GIVE_CLASS_STICKER
     )
-    ADMIN = MANAGE_USER | MANAGE_POST | MANAGE_QUEST | CREATE_POST | MANAGE_KARAOKE | VIEW_KARAOKE
-    ALL = reduce(
-        or_,
-        (value for value in locals().values() if isinstance(value, int)),
-        0,
+    ADMIN = (
+        MANAGE_USER
+        | MANAGE_POST
+        | MANAGE_QUEST
+        | CREATE_POST
+        | MANAGE_KARAOKE
+        | VIEW_KARAOKE
+        | MANAGE_STICKER
+        | VIEW_STICKER
     )
 
     @classmethod

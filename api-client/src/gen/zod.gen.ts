@@ -456,6 +456,117 @@ export const zResponseModelListStampsList = z.object({
 });
 
 /**
+ * StickerBalance
+ */
+export const zStickerBalance = z.object({
+    user_id: z.int(),
+    count: z.int(),
+    max: z.int(),
+    period_start: z.iso.datetime({ offset: true })
+});
+
+/**
+ * ResponseModel[StickerBalance]
+ */
+export const zResponseModelStickerBalance = z.object({
+    success: z.boolean(),
+    data: zStickerBalance
+});
+
+/**
+ * StickerClassOperation
+ */
+export const zStickerClassOperation = z.object({
+    grade: z.int().gte(1).lte(3),
+    number: z.int().gte(1),
+    amount: z.int().gte(1).lte(3).optional().default(1),
+    memo: z.string().max(100).nullish()
+});
+
+/**
+ * StickerClassRankingResponse
+ */
+export const zStickerClassRankingResponse = z.object({
+    grade: z.int(),
+    number: z.int(),
+    count: z.int(),
+    teacher_count: z.int(),
+    rank: z.int()
+});
+
+/**
+ * ResponseModel[list[StickerClassRankingResponse]]
+ */
+export const zResponseModelListStickerClassRankingResponse = z.object({
+    success: z.boolean(),
+    data: z.array(zStickerClassRankingResponse)
+});
+
+/**
+ * StickerHistoryItem
+ */
+export const zStickerHistoryItem = z.object({
+    id: z.int(),
+    user_id: z.int(),
+    user_name: z.string().nullable(),
+    user_type: z.string().nullable(),
+    class_grade: z.int().nullable(),
+    class_number: z.int().nullable(),
+    grade: z.int().nullable(),
+    number: z.int().nullable(),
+    amount: z.int(),
+    actor_id: z.int().nullable(),
+    actor_name: z.string().nullable(),
+    memo: z.string().nullable(),
+    created_at: z.iso.datetime({ offset: true })
+});
+
+/**
+ * StickerHistoryPage
+ */
+export const zStickerHistoryPage = z.object({
+    period_start: z.iso.datetime({ offset: true }),
+    items: z.array(zStickerHistoryItem)
+});
+
+/**
+ * ResponseModel[StickerHistoryPage]
+ */
+export const zResponseModelStickerHistoryPage = z.object({
+    success: z.boolean(),
+    data: zStickerHistoryPage
+});
+
+/**
+ * StickerOperation
+ */
+export const zStickerOperation = z.object({
+    user_id: z.int(),
+    amount: z.int().gte(1).lte(3).optional().default(1),
+    memo: z.string().max(100).nullish()
+});
+
+/**
+ * StickerRankingResponse
+ */
+export const zStickerRankingResponse = z.object({
+    id: z.int(),
+    name: z.string(),
+    grade: z.int().nullable(),
+    number: z.int().nullable(),
+    count: z.int(),
+    rank: z.int()
+});
+
+/**
+ * ResponseModel[list[StickerRankingResponse]]
+ */
+export const zResponseModelListStickerRankingResponse = z.object({
+    success: z.boolean(),
+    data: z.array(zStickerRankingResponse)
+});
+
+/**
  * UserPermission
  *
  * 유저 권한 IntFlag.
@@ -491,9 +602,15 @@ export const zUserPermission = z.union([
     z.literal(393216),
     z.literal(524288),
     z.literal(1048576),
-    z.literal(1458624),
-    z.literal(1493442),
-    z.literal(1713680)
+    z.literal(2097152),
+    z.literal(2228224),
+    z.literal(4194304),
+    z.literal(8388608),
+    z.literal(8519680),
+    z.literal(16777216),
+    z.literal(5652928),
+    z.literal(22464962),
+    z.literal(14296592)
 ]);
 
 /**
@@ -943,6 +1060,82 @@ export const zCreateStampStampPostBody = zStampCreate;
  * 정상 처리
  */
 export const zCreateStampStampPostResponse = z.void();
+
+export const zGrantStickerBody = zStickerOperation;
+
+/**
+ * 정상 처리
+ */
+export const zGrantStickerResponse = zResponseModelStickerBalance;
+
+export const zRevokeStickerBody = zStickerOperation;
+
+/**
+ * 정상 처리
+ */
+export const zRevokeStickerResponse = zResponseModelStickerBalance;
+
+export const zGiveStickerToClassBody = zStickerClassOperation;
+
+/**
+ * 정상 처리
+ */
+export const zGiveStickerToClassResponse = zResponseModelStickerBalance;
+
+/**
+ * 정상 처리
+ */
+export const zResetStickersResponse = z.void();
+
+/**
+ * 정상 처리
+ */
+export const zGetMyStickerBalanceResponse = zResponseModelStickerBalance;
+
+export const zGetUserStickerBalancePath = z.object({
+    user_id: z.int()
+});
+
+/**
+ * 정상 처리
+ */
+export const zGetUserStickerBalanceResponse = zResponseModelStickerBalance;
+
+export const zGetStickerRankingQuery = z.object({
+    q: z.string().nullish(),
+    limit: z.int().gte(1).lte(100).optional().default(20),
+    offset: z.int().gte(0).optional().default(0)
+});
+
+/**
+ * 정상 처리
+ */
+export const zGetStickerRankingResponse = zResponseModelListStickerRankingResponse;
+
+/**
+ * 정상 처리
+ */
+export const zGetStickerClassRankingResponse = zResponseModelListStickerClassRankingResponse;
+
+export const zGetStickerHistoryQuery = z.object({
+    user_id: z.int().nullish(),
+    limit: z.int().gte(1).lte(100).optional().default(20),
+    offset: z.int().gte(0).optional().default(0)
+});
+
+/**
+ * 정상 처리
+ */
+export const zGetStickerHistoryResponse = zResponseModelStickerHistoryPage;
+
+export const zDeleteStickerHistoryPath = z.object({
+    history_id: z.int()
+});
+
+/**
+ * 정상 처리
+ */
+export const zDeleteStickerHistoryResponse = z.void();
 
 export const zGetKaraokeListQuery = z.object({
     limit: z.int().optional().default(20),

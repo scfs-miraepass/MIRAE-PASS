@@ -1359,6 +1359,44 @@ export const ResponseModel_Quests_Schema = {
     title: 'ResponseModel[Quests]'
 } as const;
 
+export const ResponseModel_StickerBalance_Schema = {
+    properties: {
+        success: {
+            type: 'boolean',
+            title: 'Success'
+        },
+        data: {
+            $ref: '#/components/schemas/StickerBalance',
+            description: '응답 데이터'
+        }
+    },
+    type: 'object',
+    required: [
+        'success',
+        'data'
+    ],
+    title: 'ResponseModel[StickerBalance]'
+} as const;
+
+export const ResponseModel_StickerHistoryPage_Schema = {
+    properties: {
+        success: {
+            type: 'boolean',
+            title: 'Success'
+        },
+        data: {
+            $ref: '#/components/schemas/StickerHistoryPage',
+            description: '응답 데이터'
+        }
+    },
+    type: 'object',
+    required: [
+        'success',
+        'data'
+    ],
+    title: 'ResponseModel[StickerHistoryPage]'
+} as const;
+
 export const ResponseModel_User_Schema = {
     properties: {
         success: {
@@ -1579,6 +1617,52 @@ export const ResponseModel_list_StampsList__Schema = {
     title: 'ResponseModel[list[StampsList]]'
 } as const;
 
+export const ResponseModel_list_StickerClassRankingResponse__Schema = {
+    properties: {
+        success: {
+            type: 'boolean',
+            title: 'Success'
+        },
+        data: {
+            items: {
+                $ref: '#/components/schemas/StickerClassRankingResponse'
+            },
+            type: 'array',
+            title: 'Data',
+            description: '응답 데이터'
+        }
+    },
+    type: 'object',
+    required: [
+        'success',
+        'data'
+    ],
+    title: 'ResponseModel[list[StickerClassRankingResponse]]'
+} as const;
+
+export const ResponseModel_list_StickerRankingResponse__Schema = {
+    properties: {
+        success: {
+            type: 'boolean',
+            title: 'Success'
+        },
+        data: {
+            items: {
+                $ref: '#/components/schemas/StickerRankingResponse'
+            },
+            type: 'array',
+            title: 'Data',
+            description: '응답 데이터'
+        }
+    },
+    type: 'object',
+    required: [
+        'success',
+        'data'
+    ],
+    title: 'ResponseModel[list[StickerRankingResponse]]'
+} as const;
+
 export const ResponseModel_list_User__Schema = {
     properties: {
         success: {
@@ -1676,6 +1760,391 @@ export const StampsListSchema = {
         'time'
     ],
     title: 'StampsList'
+} as const;
+
+export const StickerBalanceSchema = {
+    properties: {
+        user_id: {
+            type: 'integer',
+            title: 'User Id',
+            description: '학생의 고유 ID'
+        },
+        count: {
+            type: 'integer',
+            title: 'Count',
+            description: '현재 집계 기간 내 보유 스티커 수'
+        },
+        max: {
+            type: 'integer',
+            title: 'Max',
+            description: '보유 가능한 최대 스티커 수'
+        },
+        period_start: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Period Start',
+            description: '현재 집계 기간 시작 시각'
+        }
+    },
+    type: 'object',
+    required: [
+        'user_id',
+        'count',
+        'max',
+        'period_start'
+    ],
+    title: 'StickerBalance'
+} as const;
+
+export const StickerClassOperationSchema = {
+    properties: {
+        grade: {
+            type: 'integer',
+            maximum: 3,
+            minimum: 1,
+            title: 'Grade',
+            description: '대상 학년'
+        },
+        number: {
+            type: 'integer',
+            minimum: 1,
+            title: 'Number',
+            description: '대상 반'
+        },
+        amount: {
+            type: 'integer',
+            maximum: 3,
+            minimum: 1,
+            title: 'Amount',
+            description: '전달할 스티커 수 (1~3)',
+            default: 1
+        },
+        memo: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 100
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Memo',
+            description: '메모'
+        }
+    },
+    type: 'object',
+    required: [
+        'grade',
+        'number'
+    ],
+    title: 'StickerClassOperation'
+} as const;
+
+export const StickerClassRankingResponseSchema = {
+    properties: {
+        grade: {
+            type: 'integer',
+            title: 'Grade',
+            description: '학년'
+        },
+        number: {
+            type: 'integer',
+            title: 'Number',
+            description: '반'
+        },
+        count: {
+            type: 'integer',
+            title: 'Count',
+            description: '학급 스티커 합계 (학생 보유 + 교사 전달)'
+        },
+        teacher_count: {
+            type: 'integer',
+            title: 'Teacher Count',
+            description: '교사가 이 학급에 전달한 스티커 수'
+        },
+        rank: {
+            type: 'integer',
+            title: 'Rank',
+            description: '합계 기준 순위'
+        }
+    },
+    type: 'object',
+    required: [
+        'grade',
+        'number',
+        'count',
+        'teacher_count',
+        'rank'
+    ],
+    title: 'StickerClassRankingResponse'
+} as const;
+
+export const StickerHistoryItemSchema = {
+    properties: {
+        id: {
+            type: 'integer',
+            title: 'Id'
+        },
+        user_id: {
+            type: 'integer',
+            title: 'User Id',
+            description: '대상 유저(학생/교사)의 고유 ID'
+        },
+        user_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'User Name',
+            description: '대상 유저 이름'
+        },
+        user_type: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'User Type',
+            description: '대상 유저 타입 (student / teacher)'
+        },
+        class_grade: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Class Grade',
+            description: '교사가 학급에 전달한 기록인 경우 대상 학년'
+        },
+        class_number: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Class Number',
+            description: '교사가 학급에 전달한 기록인 경우 대상 반'
+        },
+        grade: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Grade',
+            description: '대상 학생 학년'
+        },
+        number: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Number',
+            description: '대상 학생 반'
+        },
+        amount: {
+            type: 'integer',
+            title: 'Amount',
+            description: '변동 수량 (지급 +, 회수 -)'
+        },
+        actor_id: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Actor Id',
+            description: '처리한 유저의 고유 ID'
+        },
+        actor_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Actor Name',
+            description: '처리한 유저 이름'
+        },
+        memo: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Memo'
+        },
+        created_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Created At'
+        }
+    },
+    type: 'object',
+    required: [
+        'id',
+        'user_id',
+        'user_name',
+        'user_type',
+        'class_grade',
+        'class_number',
+        'grade',
+        'number',
+        'amount',
+        'actor_id',
+        'actor_name',
+        'memo',
+        'created_at'
+    ],
+    title: 'StickerHistoryItem'
+} as const;
+
+export const StickerHistoryPageSchema = {
+    properties: {
+        period_start: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Period Start',
+            description: '현재 집계 기간 시작 시각'
+        },
+        items: {
+            items: {
+                $ref: '#/components/schemas/StickerHistoryItem'
+            },
+            type: 'array',
+            title: 'Items'
+        }
+    },
+    type: 'object',
+    required: [
+        'period_start',
+        'items'
+    ],
+    title: 'StickerHistoryPage'
+} as const;
+
+export const StickerOperationSchema = {
+    properties: {
+        user_id: {
+            type: 'integer',
+            title: 'User Id',
+            description: '대상 학생의 고유 ID (학번)'
+        },
+        amount: {
+            type: 'integer',
+            maximum: 3,
+            minimum: 1,
+            title: 'Amount',
+            description: '처리할 스티커 수 (1~3)',
+            default: 1
+        },
+        memo: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 100
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Memo',
+            description: '메모'
+        }
+    },
+    type: 'object',
+    required: [
+        'user_id'
+    ],
+    title: 'StickerOperation'
+} as const;
+
+export const StickerRankingResponseSchema = {
+    properties: {
+        id: {
+            type: 'integer',
+            title: 'Id',
+            description: '학생의 고유 ID (학번)'
+        },
+        name: {
+            type: 'string',
+            title: 'Name',
+            description: '이름'
+        },
+        grade: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Grade',
+            description: '학년'
+        },
+        number: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Number',
+            description: '반'
+        },
+        count: {
+            type: 'integer',
+            title: 'Count',
+            description: '현재 집계 기간 내 보유 스티커 수'
+        },
+        rank: {
+            type: 'integer',
+            title: 'Rank',
+            description: '전체 학생 기준 순위'
+        }
+    },
+    type: 'object',
+    required: [
+        'id',
+        'name',
+        'grade',
+        'number',
+        'count',
+        'rank'
+    ],
+    title: 'StickerRankingResponse'
 } as const;
 
 export const UserSchema = {
@@ -1796,9 +2265,15 @@ export const UserPermissionSchema = {
         393216,
         524288,
         1048576,
-        1458624,
-        1493442,
-        1713680
+        2097152,
+        2228224,
+        4194304,
+        8388608,
+        8519680,
+        16777216,
+        5652928,
+        22464962,
+        14296592
     ],
     title: 'UserPermission',
     description: '유저 권한 IntFlag.\n작명시 `동사_목적`으로 작성하며, 대문자로만 작성한다.\n예) 포인트 관리 -> MANAGE_POINT',
@@ -1831,6 +2306,12 @@ export const UserPermissionSchema = {
         'JOIN_KARAOKE',
         'MANAGE_KARAOKE',
         'VIEW_KARAOKE',
+        '_GIVE_STICKER',
+        'GIVE_STICKER',
+        'VIEW_STICKER',
+        '_MANAGE_STICKER',
+        'MANAGE_STICKER',
+        'GIVE_CLASS_STICKER',
         'STUDENT',
         'TEACHER',
         'ADMIN'
@@ -1864,6 +2345,12 @@ export const UserPermissionSchema = {
         'JOIN_KARAOKE',
         'MANAGE_KARAOKE',
         'VIEW_KARAOKE',
+        '_GIVE_STICKER',
+        'GIVE_STICKER',
+        'VIEW_STICKER',
+        '_MANAGE_STICKER',
+        'MANAGE_STICKER',
+        'GIVE_CLASS_STICKER',
         'STUDENT',
         'TEACHER',
         'ADMIN'
