@@ -1,7 +1,7 @@
-"""v1.15.0 (Sticker tables and permissions)
+"""v1.16.0 #1 (Sticker tables and permissions)
 
 Revision ID: 8095336900d4
-Revises: da0b850e71f1
+Revises: 20dbd40b236a
 Create Date: 2026-11-14 00:12:03.193906
 """
 
@@ -15,7 +15,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "8095336900d4"
-down_revision: str | Sequence[str] | None = "da0b850e71f1"
+down_revision: str | Sequence[str] | None = "20dbd40b236a"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

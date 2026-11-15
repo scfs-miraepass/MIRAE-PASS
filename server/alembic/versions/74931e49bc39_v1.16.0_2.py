@@ -1,4 +1,4 @@
-"""v1.16.0 (Teacher stickers and class transfer)
+"""v1.16.0 #2 (Teacher stickers and class transfer)
 
 Revision ID: 74931e49bc39
 Revises: 8095336900d4
