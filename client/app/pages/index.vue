@@ -10,10 +10,18 @@ import DeductPoint from "@/components/home/section/deductPoint.vue";
 import Karaoke from "@/components/home/section/karaoke.vue";
 
 const session = useSession()
-const { data: notices } = useAsyncData('home-notices', async () => {
-    if (!hasPermission(session.value?.permissions ?? 0, UserPermission.VIEW_POST)) return []
-    const result = await $fetch<{ data: { id: number; title: string; text: string }[] }>('/api/posts/notices')
-    return result.data
+const toast = useToast()
+const { data: notices } = useAsyncData("notices.home", async (_nuxtApp, { signal }) => {
+    if (!hasPermission(session.value?.permissions, UserPermission.VIEW_POST)) return []
+    const req = await $API.getPostsPostsGet({ query: { content_kind: "notice", size: 5 }, signal })
+    if (req.error) {
+        toast.add({ title: "공지 목록을 불러오지 못했습니다.", color: "error" })
+        return []
+    }
+    return req.data.data.flatMap((post) => {
+        if (post.id == null || typeof post.content_data?.text !== "string") return []
+        return [{ id: post.id, title: post.title }]
+    })
 }, { server: false })
 const sectionItem = computed(() => {
     const items = []
@@ -39,13 +47,13 @@ const sectionItem = computed(() => {
         </NuxtLink>
     </div>
     <div class="pb-2 mt-2.5 flex-1 flex flex-col">
-        <section v-if="notices?.length" class="mb-3 rounded-xl border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-950/40" aria-labelledby="notices-heading">
-            <h2 id="notices-heading" class="mb-2 font-bold text-blue-800 dark:text-blue-200">공지사항</h2>
+        <section v-if="notices?.length" class="mb-3 rounded-xl border border-default bg-elevated p-4" aria-labelledby="notices-heading">
+            <h2 id="notices-heading" class="mb-2 font-bold text-highlighted">공지사항</h2>
             <ul>
-                <li v-for="notice in notices" :key="notice.id" class="border-t border-blue-200 dark:border-blue-800">
+                <li v-for="notice in notices" :key="notice.id" class="border-t border-default">
                     <NuxtLink
                         :to="`/notices/${notice.id}`"
-                        class="flex min-h-11 items-center justify-between gap-3 py-2 font-medium text-blue-900 focus-visible:outline-2 focus-visible:outline-blue-600 dark:text-blue-100 dark:focus-visible:outline-blue-400"
+                        class="flex min-h-11 items-center justify-between gap-3 py-2 font-medium text-highlighted focus-visible:outline-2 focus-visible:outline-primary"
                     >
                         <span class="min-w-0 break-words">{{ notice.title }}</span>
                         <UIcon name="i-ph-caret-right" class="shrink-0" aria-hidden="true" />
