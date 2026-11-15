@@ -10,7 +10,7 @@ import { Callout } from 'nextra/components'
 
 | 방법 | 경로 | 설명 | 필요한 권한 |
 | --- | --- | --- | --- |
-| `GET` | `/posts` | [게시글 목록](#게시글-목록) | `VIEW_POST` |
+| `GET` | `/posts` | [게시글 목록](#게시글-목록) | `VIEW_POST` (공지 목록은 `CREATE_POST` 또는 `MANAGE_POST`로도 조회 가능) |
 | `GET` | `/posts/{post_id}` | [게시글 조회](#게시글-조회) | `VIEW_POST` |
 | `POST` | `/posts` | [게시글 작성](#게시글-작성) | `CREATE_POST` |
 | `PATCH` | `/posts/{post_id}` | [게시글 수정](#게시글-수정) | 작성자 또는 `MANAGE_POST` |
@@ -36,9 +36,7 @@ import { Callout } from 'nextra/components'
 | `updated_at` | 마지막으로 수정한 시간입니다. |
 | `author_id` | 작성자의 ID입니다. |
 
-<Callout type="warning">
-    현재 게시글을 조회하는 API의 응답에는 **본문(`content_data`)이 포함되지 않습니다.** 작성·수정할 때 보낸 본문은 서버에 저장되지만, 조회 응답에는 제목과 작성 정보만 들어 있습니다.
-</Callout>
+상세 조회와 본문 유형을 지정한 목록 조회는 `content_data`를 반환합니다. 유형을 지정하지 않은 목록에서는 본문 값이 `null`입니다.
 
 ## 게시글 목록
 
@@ -50,6 +48,7 @@ import { Callout } from 'nextra/components'
 | --- | --- | --- | --- | --- |
 | 쿼리 | `page` | 숫자 | 1 | 페이지 번호 (1부터 시작) |
 | 쿼리 | `size` | 숫자 | 20 | 한 페이지의 게시글 수 (1~100) |
+| 쿼리 | `content_kind` | 문자 | 없음 | 본문의 `kind` 값으로 필터링합니다. 공지사항은 `notice`를 사용합니다. |
 
 ```ts
 const req = await $API.getPostsPostsGet({ query: { page: 1, size: 10 } })
@@ -88,7 +87,7 @@ await $API.getPostPostsPostIdGet({ path: { post_id: 12 } })
 await $API.createPostPostsPost({
     body: {
         title: "11월 포인트 이벤트 안내",
-        content_data: { text: "이번 달에는 ..." },
+        content_data: { kind: "notice", text: "이번 달에는 ..." },
     },
 })
 ```

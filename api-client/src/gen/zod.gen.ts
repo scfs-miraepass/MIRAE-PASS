@@ -207,6 +207,19 @@ export const zPostCreateRequest = z.object({
 });
 
 /**
+ * PostResponse
+ */
+export const zPostResponse = z.object({
+    id: z.int().nullish(),
+    title: z.string(),
+    views: z.int().optional().default(0),
+    created_at: z.iso.datetime({ offset: true }).optional(),
+    updated_at: z.iso.datetime({ offset: true }).optional(),
+    author_id: z.int(),
+    content_data: z.record(z.string(), z.unknown()).nullish()
+});
+
+/**
  * PostUpdateRequest
  */
 export const zPostUpdateRequest = z.object({
@@ -328,6 +341,14 @@ export const zResponseModelPointHistory = z.object({
 });
 
 /**
+ * ResponseModel[PostResponse]
+ */
+export const zResponseModelPostResponse = z.object({
+    success: z.boolean(),
+    data: zPostResponse
+});
+
+/**
  * ResponseModel[Posts]
  */
 export const zResponseModelPosts = z.object({
@@ -384,11 +405,11 @@ export const zResponseModelListPointHistory = z.object({
 });
 
 /**
- * ResponseModel[list[Posts]]
+ * ResponseModel[list[PostResponse]]
  */
-export const zResponseModelListPosts = z.object({
+export const zResponseModelListPostResponse = z.object({
     success: z.boolean(),
-    data: z.array(zPosts)
+    data: z.array(zPostResponse)
 });
 
 /**
@@ -493,7 +514,8 @@ export const zUserPermission = z.union([
     z.literal(1048576),
     z.literal(1458624),
     z.literal(1493442),
-    z.literal(1713680)
+    z.literal(1713680),
+    z.literal(2097151)
 ]);
 
 /**
@@ -888,13 +910,14 @@ export const zCompleteQuestQuestQuestIdCompletePostResponse = zResponseModelInt;
 
 export const zGetPostsPostsGetQuery = z.object({
     page: z.int().gte(1).optional().default(1),
-    size: z.int().gte(1).lte(100).optional().default(20)
+    size: z.int().gte(1).lte(100).optional().default(20),
+    content_kind: z.string().nullish()
 });
 
 /**
  * 게시글 목록 조회 성공
  */
-export const zGetPostsPostsGetResponse = zResponseModelListPosts;
+export const zGetPostsPostsGetResponse = zResponseModelListPostResponse;
 
 export const zCreatePostPostsPostBody = zPostCreateRequest;
 
@@ -919,7 +942,7 @@ export const zGetPostPostsPostIdGetPath = z.object({
 /**
  * 게시글 상세 조회 성공
  */
-export const zGetPostPostsPostIdGetResponse = zResponseModelPosts;
+export const zGetPostPostsPostIdGetResponse = zResponseModelPostResponse;
 
 export const zUpdatePostPostsPostIdPatchBody = zPostUpdateRequest;
 

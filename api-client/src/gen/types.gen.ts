@@ -614,6 +614,56 @@ export type PostCreateRequest = {
 };
 
 /**
+ * PostResponse
+ */
+export type PostResponse = {
+    /**
+     * Id
+     *
+     * 게시글 고유 ID
+     */
+    id?: number | null;
+    /**
+     * Title
+     *
+     * 게시글 제목
+     */
+    title: string;
+    /**
+     * Views
+     *
+     * 게시글 조회수
+     */
+    views?: number;
+    /**
+     * Created At
+     *
+     * 게시글이 작성된 시간
+     */
+    created_at?: Date;
+    /**
+     * Updated At
+     *
+     * 게시글이 수정된 마지막 시간
+     */
+    updated_at?: Date;
+    /**
+     * Author Id
+     *
+     * 게시글 작성자의 고유 ID
+     */
+    author_id: number;
+    /**
+     * Content Data
+     *
+     * 게시글의 본문 JSON 데이터
+     */
+    content_data?: {
+        [key: string]: unknown;
+    } | null;
+};
+
+/**
  * PostUpdateRequest
  */
 export type PostUpdateRequest = {
@@ -966,6 +1016,20 @@ export type ResponseModelPointHistory = {
 };
 
 /**
+ * ResponseModel[PostResponse]
+ */
+export type ResponseModelPostResponse = {
+    /**
+     * Success
+     */
+    success: boolean;
+    /**
+     * 응답 데이터
+     */
+    data: PostResponse;
+};
+
+/**
  * ResponseModel[Posts]
  */
 export type ResponseModelPosts = {
@@ -1088,9 +1152,9 @@ export type ResponseModelListPointHistory = {
 };
 
 /**
- * ResponseModel[list[Posts]]
+ * ResponseModel[list[PostResponse]]
  */
-export type ResponseModelListPosts = {
+export type ResponseModelListPostResponse = {
     /**
      * Success
      */
@@ -1100,7 +1164,7 @@ export type ResponseModelListPosts = {
      *
      * 응답 데이터
      */
-    data: Array<Posts>;
+    data: Array<PostResponse>;
 };
 
 /**
@@ -1417,7 +1481,11 @@ export const UserPermission = {
     /**
      * ADMIN
      */
-    ADMIN: 1713680
+    ADMIN: 1713680,
+    /**
+     * ALL
+     */
+    ALL: 2097151
 } as const;
 
 /**
@@ -2752,6 +2820,12 @@ export type GetPostsPostsGetData = {
          * 페이지 당 게시글 데이터 갯수 (최대 100)
          */
         size?: number;
+        /**
+         * Content Kind
+         *
+         * 필터링할 게시글 본문 유형
+         */
+        content_kind?: string | null;
     };
     url: '/posts';
 };
@@ -2777,7 +2851,7 @@ export type GetPostsPostsGetResponses = {
     /**
      * 게시글 목록 조회 성공
      */
-    200: ResponseModelListPosts;
+    200: ResponseModelListPostResponse;
 };
 
 export type GetPostsPostsGetResponse = GetPostsPostsGetResponses[keyof GetPostsPostsGetResponses];
@@ -2894,7 +2968,7 @@ export type GetPostPostsPostIdGetResponses = {
     /**
      * 게시글 상세 조회 성공
      */
-    200: ResponseModelPosts;
+    200: ResponseModelPostResponse;
 };
 
 export type GetPostPostsPostIdGetResponse = GetPostPostsPostIdGetResponses[keyof GetPostPostsPostIdGetResponses];
