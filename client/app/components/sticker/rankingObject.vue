@@ -36,7 +36,7 @@ defineProps<StickerRankingResponse>();
                     class="text-ui-p2"
                     :class="count > 0 ? 'light:text-black/50 dark:text-white/50' : 'light:text-black/30 dark:text-white/30'"
                 >
-                    <span class="tossface">♡</span> {{ count }}개
+                    <UIcon name="i-ph-heart" class="inline-block align-[-2px]" /> {{ count }}개
                 </p>
             </div>
         </div>

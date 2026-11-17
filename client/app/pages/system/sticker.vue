@@ -72,10 +72,10 @@ onBeforeUnmount(() => {
             <div>
                 <p class="text-ui-p2 light:text-black/50 dark:text-white/50">내 스티커</p>
                 <p class="text-h5 font-bold mt-0.5">
-                    <span class="tossface">♡</span> {{ myBalance?.count ?? 0 }}개
+                    <UIcon name="i-ph-heart" class="inline-block align-[-2px]" /> {{ myBalance?.count ?? 0 }}개
                 </p>
                 <p class="text-ui-p2 mt-1 light:text-black/40 dark:text-white/40">
-                    {{ isTeacher ? "받은 스티커를 학급에 전달할 수 있어요" : "매월 1일에 초기화돼요" }}
+                    {{ isTeacher ? "받은 스티커를 학급에 전달할 수 있어요" : `매월 1일에 초기화돼요 · 한 주에 최대 ${myBalance?.max ?? 3}개` }}
                 </p>
             </div>
             <div class="flex items-center gap-1.5">

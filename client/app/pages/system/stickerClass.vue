@@ -114,7 +114,7 @@ const giveToClass = async () => {
 
             <div class="flex-1 flex flex-col">
                 <p class="text-ui-p2 light:text-black/50 dark:text-white/50">
-                    내 스티커 <span class="tossface">♡</span> {{ held }}개
+                    내 스티커 <UIcon name="i-ph-heart" class="inline-block align-[-2px]" /> {{ held }}개
                     <template v-if="held <= 0"> · 전달할 스티커가 없어요</template>
                 </p>
 
@@ -236,7 +236,7 @@ const giveToClass = async () => {
                         class="text-ui-p1 mt-2 light:text-black/50 dark:text-white/50 animate-fade-up-blur opacity-0"
                         :style="{ animationDelay: `${0.15 * givenAmount + 0.4}s` }"
                     >
-                        남은 내 스티커 <span class="tossface">♡</span> {{ afterCount }}개
+                        남은 내 스티커 <UIcon name="i-ph-heart" class="inline-block align-[-2px]" /> {{ afterCount }}개
                     </p>
                 </div>
                 <NuxtLink to="/system/sticker" v-slot="{ navigate }" custom>

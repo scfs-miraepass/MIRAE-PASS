@@ -68,7 +68,7 @@ const grouped = computed(() => {
                             class="text-ui-p2"
                             :class="row.count > 0 ? 'light:text-black/50 dark:text-white/50' : 'light:text-black/30 dark:text-white/30'"
                         >
-                            <span class="tossface">♡</span> {{ row.count }}개
+                            <UIcon name="i-ph-heart" class="inline-block align-[-2px]" /> {{ row.count }}개
                             <span v-if="row.teacher_count > 0" class="ml-1.5 light:text-black/40 dark:text-white/40">
                                 선생님 +{{ row.teacher_count }}
                             </span>
