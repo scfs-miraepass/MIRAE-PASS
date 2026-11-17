@@ -40,12 +40,13 @@ defineProps<StickerRankingResponse>();
                 </p>
             </div>
         </div>
+        <!-- 하트는 이번 주 받은 수(주간 한도 3개 기준), 왼쪽 숫자는 기간 총합 -->
         <div class="flex items-center gap-1 mr-3">
             <span
                 v-for="i in 3"
                 :key="i"
                 class="tossface text-lg"
-                :class="{ 'opacity-25 grayscale': i > count }"
+                :class="{ 'opacity-25 grayscale': i > week_count }"
             >
                 💗
             </span>
