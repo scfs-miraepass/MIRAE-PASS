@@ -866,7 +866,7 @@ export class MiraepassApi extends HeyApiClient {
     /**
      * 스티커 일괄 지급
      *
-     * 여러 학생 또는 교사에게 같은 수의 스티커를 한 번에 지급합니다. (최대 100명) 유저마다 따로 처리하므로 한도를 넘거나 찾을 수 없는 유저가 있어도 나머지는 지급되며, 성공한 유저는 `succeeded`에, 실패한 유저와 이유는 `failed`에 담아 돌려줍니다.
+     * 여러 학생 또는 교사에게 스티커를 한 번에 지급합니다. (최대 100명) 유저마다 따로 처리하며, 이번 주 남은 한도가 요청 수보다 적은 유저에게는 남은 한도만큼만 지급합니다. (실제 지급 수는 `granted`) 남은 한도가 없거나 찾을 수 없는 유저는 건너뛰고 `failed`에 이유를 담아 돌려줍니다.
      */
     public grantStickers<ThrowOnError extends boolean = false>(options: Options<GrantStickersData, ThrowOnError>): RequestResult<GrantStickersResponses, GrantStickersErrors, ThrowOnError> {
         return (options.client ?? this.client).post<GrantStickersResponses, GrantStickersErrors, ThrowOnError>({

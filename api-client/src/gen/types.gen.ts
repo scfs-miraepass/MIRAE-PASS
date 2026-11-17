@@ -1365,6 +1365,54 @@ export type StickerBulkFailure = {
 };
 
 /**
+ * StickerBulkGranted
+ */
+export type StickerBulkGranted = {
+    /**
+     * User Id
+     *
+     * 유저의 고유 ID
+     */
+    user_id: number;
+    /**
+     * Count
+     *
+     * 현재 집계 기간 내 보유 스티커 수
+     */
+    count: number;
+    /**
+     * Max
+     *
+     * 한 주 동안 받을 수 있는 최대 스티커 수
+     */
+    max: number;
+    /**
+     * Period Start
+     *
+     * 현재 집계 기간 시작 시각
+     */
+    period_start: Date;
+    /**
+     * Week Count
+     *
+     * 이번 주에 지급받은 스티커 수 (학급 전달 제외)
+     */
+    week_count: number;
+    /**
+     * Week Start
+     *
+     * 이번 주 한도 계산 시작 시각 (월요일 00:00 KST, 수동 초기화가 있었다면 그 시각)
+     */
+    week_start: Date;
+    /**
+     * Granted
+     *
+     * 실제 지급된 수 (이번 주 남은 한도가 요청 수보다 적으면 요청 수보다 작음)
+     */
+    granted: number;
+};
+
+/**
  * StickerBulkOperation
  */
 export type StickerBulkOperation = {
@@ -1395,9 +1443,9 @@ export type StickerBulkResult = {
     /**
      * Succeeded
      *
-     * 지급에 성공한 유저의 지급 후 보유 수
+     * 지급에 성공한 유저의 지급 후 보유 수와 실제 지급 수
      */
-    succeeded: Array<StickerBalance>;
+    succeeded: Array<StickerBulkGranted>;
     /**
      * Failed
      *

@@ -484,6 +484,19 @@ export const zStickerBulkFailure = z.object({
 });
 
 /**
+ * StickerBulkGranted
+ */
+export const zStickerBulkGranted = z.object({
+    user_id: z.int(),
+    count: z.int(),
+    max: z.int(),
+    period_start: z.iso.datetime({ offset: true }),
+    week_count: z.int(),
+    week_start: z.iso.datetime({ offset: true }),
+    granted: z.int()
+});
+
+/**
  * StickerBulkOperation
  */
 export const zStickerBulkOperation = z.object({
@@ -496,7 +509,7 @@ export const zStickerBulkOperation = z.object({
  * StickerBulkResult
  */
 export const zStickerBulkResult = z.object({
-    succeeded: z.array(zStickerBalance),
+    succeeded: z.array(zStickerBulkGranted),
     failed: z.array(zStickerBulkFailure)
 });
 

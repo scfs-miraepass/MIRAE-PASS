@@ -1849,6 +1849,59 @@ export const StickerBulkFailureSchema = {
     title: 'StickerBulkFailure'
 } as const;
 
+export const StickerBulkGrantedSchema = {
+    properties: {
+        user_id: {
+            type: 'integer',
+            title: 'User Id',
+            description: '유저의 고유 ID'
+        },
+        count: {
+            type: 'integer',
+            title: 'Count',
+            description: '현재 집계 기간 내 보유 스티커 수'
+        },
+        max: {
+            type: 'integer',
+            title: 'Max',
+            description: '한 주 동안 받을 수 있는 최대 스티커 수'
+        },
+        period_start: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Period Start',
+            description: '현재 집계 기간 시작 시각'
+        },
+        week_count: {
+            type: 'integer',
+            title: 'Week Count',
+            description: '이번 주에 지급받은 스티커 수 (학급 전달 제외)'
+        },
+        week_start: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Week Start',
+            description: '이번 주 한도 계산 시작 시각 (월요일 00:00 KST, 수동 초기화가 있었다면 그 시각)'
+        },
+        granted: {
+            type: 'integer',
+            title: 'Granted',
+            description: '실제 지급된 수 (이번 주 남은 한도가 요청 수보다 적으면 요청 수보다 작음)'
+        }
+    },
+    type: 'object',
+    required: [
+        'user_id',
+        'count',
+        'max',
+        'period_start',
+        'week_count',
+        'week_start',
+        'granted'
+    ],
+    title: 'StickerBulkGranted'
+} as const;
+
 export const StickerBulkOperationSchema = {
     properties: {
         user_ids: {
@@ -1894,11 +1947,11 @@ export const StickerBulkResultSchema = {
     properties: {
         succeeded: {
             items: {
-                $ref: '#/components/schemas/StickerBalance'
+                $ref: '#/components/schemas/StickerBulkGranted'
             },
             type: 'array',
             title: 'Succeeded',
-            description: '지급에 성공한 유저의 지급 후 보유 수'
+            description: '지급에 성공한 유저의 지급 후 보유 수와 실제 지급 수'
         },
         failed: {
             items: {

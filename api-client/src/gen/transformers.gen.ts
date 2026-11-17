@@ -140,8 +140,14 @@ export const grantStickerResponseTransformer = async (data: any): Promise<GrantS
     return data;
 };
 
+const stickerBulkGrantedSchemaResponseTransformer = (data: any) => {
+    data.period_start = new Date(data.period_start);
+    data.week_start = new Date(data.week_start);
+    return data;
+};
+
 const stickerBulkResultSchemaResponseTransformer = (data: any) => {
-    data.succeeded = data.succeeded.map((item: any) => stickerBalanceSchemaResponseTransformer(item));
+    data.succeeded = data.succeeded.map((item: any) => stickerBulkGrantedSchemaResponseTransformer(item));
     return data;
 };
 
