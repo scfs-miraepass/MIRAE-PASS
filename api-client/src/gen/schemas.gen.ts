@@ -2306,6 +2306,11 @@ export const StickerRankingResponseSchema = {
             title: 'Count',
             description: '현재 집계 기간 내 보유 스티커 수'
         },
+        week_count: {
+            type: 'integer',
+            title: 'Week Count',
+            description: '이번 주에 지급받은 스티커 수 (하트 표시용, 0~최대 한도)'
+        },
         rank: {
             type: 'integer',
             title: 'Rank',
@@ -2319,6 +2324,7 @@ export const StickerRankingResponseSchema = {
         'grade',
         'number',
         'count',
+        'week_count',
         'rank'
     ],
     title: 'StickerRankingResponse'

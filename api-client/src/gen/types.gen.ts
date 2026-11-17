@@ -1679,6 +1679,12 @@ export type StickerRankingResponse = {
      */
     count: number;
     /**
+     * Week Count
+     *
+     * 이번 주에 지급받은 스티커 수 (하트 표시용, 0~최대 한도)
+     */
+    week_count: number;
+    /**
      * Rank
      *
      * 전체 학생 기준 순위

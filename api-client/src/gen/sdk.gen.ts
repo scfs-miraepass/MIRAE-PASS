@@ -986,7 +986,7 @@ export class MiraepassApi extends HeyApiClient {
     /**
      * 스티커 개인 랭킹 조회
      *
-     * 현재 집계 기간 내 스티커 보유 수 기준 학생 랭킹을 조회합니다. `q`로 이름(초성 포함) 또는 학번을 검색할 수 있으며, 검색 결과의 순위는 전체 기준 순위입니다.
+     * 현재 집계 기간 내 스티커 보유 수 기준 학생 랭킹을 조회합니다. `week_count`는 이번 주에 받은 수로, 화면에서 주간 한도 하트를 채우는 데 사용합니다. `q`로 이름(초성 포함) 또는 학번을 검색할 수 있으며, 검색 결과의 순위는 전체 기준 순위입니다.
      */
     public getStickerRanking<ThrowOnError extends boolean = false>(options?: Options<GetStickerRankingData, ThrowOnError>): RequestResult<GetStickerRankingResponses, GetStickerRankingErrors, ThrowOnError> {
         return (options?.client ?? this.client).get<GetStickerRankingResponses, GetStickerRankingErrors, ThrowOnError>({

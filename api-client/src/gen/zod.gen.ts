@@ -568,6 +568,7 @@ export const zStickerRankingResponse = z.object({
     grade: z.int().nullable(),
     number: z.int().nullable(),
     count: z.int(),
+    week_count: z.int(),
     rank: z.int()
 });
 
