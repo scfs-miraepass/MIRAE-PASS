@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Motion } from "motion-v";
-import type { User, StickerBalance, StickerBulkFailure } from "@miraepass/api-client";
+import type { User, StickerBalance, StickerBulkFailure, StickerBulkGranted } from "@miraepass/api-client";
 
 definePageMeta({
     middleware: [
@@ -31,6 +31,10 @@ const isComplete = ref<boolean>(false);
 const grantedAmount = ref<number>(0);
 const grantedCount = ref<number>(0);
 const failed = ref<StickerBulkFailure[]>([]);
+// 이번 주 남은 한도 때문에 요청보다 적게 받은 사람
+const partial = ref<StickerBulkGranted[]>([]);
+
+const nameOf = (userId: number) => targets.value.find((u) => u.id === userId)?.name ?? String(userId);
 
 const { data: balance, refresh: refreshBalance } = await useAsyncData(
     `sticker.user_balance.${firstTarget.value.id}`,
@@ -63,12 +67,8 @@ watch(
 );
 
 // 실패한 유저 ID를 이름으로 바꿔 보여주기 위한 목록
-const failedItems = computed(() =>
-    failed.value.map((item) => ({
-        ...item,
-        name: targets.value.find((u) => u.id === item.user_id)?.name ?? String(item.user_id),
-    })),
-);
+const failedItems = computed(() => failed.value.map((item) => ({ ...item, name: nameOf(item.user_id) })));
+const partialItems = computed(() => partial.value.map((item) => ({ ...item, name: nameOf(item.user_id) })));
 
 // 완료 화면 배경 파티클 위치 (한 번만 계산)
 const particles = Array.from({ length: 10 }, (_, i) => ({
@@ -107,6 +107,7 @@ const giveSticker = async () => {
         balance.value = req.data.data;
         grantedCount.value = 1;
         failed.value = [];
+        partial.value = [];
     } else {
         const req = await $API.grantStickers({
             body: { user_ids: targets.value.map((u) => u.id!), amount: amount.value, memo },
@@ -131,6 +132,7 @@ const giveSticker = async () => {
 
         grantedCount.value = req.data.data.succeeded.length;
         failed.value = req.data.data.failed;
+        partial.value = req.data.data.succeeded.filter((item) => item.granted < amount.value);
     }
 
     grantedAmount.value = amount.value;
@@ -301,7 +303,7 @@ const giveSticker = async () => {
                         :style="{ animationDelay: `${0.15 * grantedAmount + 0.2}s` }"
                     >
                         <template v-if="isSingle">{{ firstTarget.name }} {{ targetLabel }}에게 스티커 {{ grantedAmount }}개!</template>
-                        <template v-else>{{ grantedCount }}명에게 스티커 {{ grantedAmount }}개씩!</template>
+                        <template v-else>{{ grantedCount }}명에게 스티커 {{ partialItems.length > 0 ? `최대 ${grantedAmount}개` : `${grantedAmount}개씩` }}!</template>
                     </p>
                     <p
                         v-if="isSingle"
@@ -310,22 +312,36 @@ const giveSticker = async () => {
                     >
                         이제 <UIcon name="i-ph-heart" /> {{ afterCount }}개예요.
                     </p>
-                    <!-- 일괄 지급에서 지급하지 못한 사람 -->
+                    <!-- 일괄 지급에서 적게 받았거나 지급하지 못한 사람 -->
                     <div
-                        v-else-if="failedItems.length > 0"
-                        class="mt-4 px-5 text-center animate-fade-up-blur opacity-0"
+                        v-else-if="partialItems.length > 0 || failedItems.length > 0"
+                        class="mt-4 px-5 text-center animate-fade-up-blur opacity-0 space-y-3"
                         :style="{ animationDelay: `${0.15 * grantedAmount + 0.4}s` }"
                     >
-                        <p class="text-ui-p1 light:text-black/50 dark:text-white/50">
-                            {{ failedItems.length }}명은 지급하지 못했어요
-                        </p>
-                        <p
-                            v-for="item in failedItems"
-                            :key="item.user_id"
-                            class="text-ui-p2 mt-1 light:text-black/40 dark:text-white/40"
-                        >
-                            {{ item.name }} · {{ item.reason }}
-                        </p>
+                        <div v-if="partialItems.length > 0">
+                            <p class="text-ui-p1 light:text-black/50 dark:text-white/50">
+                                {{ partialItems.length }}명은 이번 주 남은 한도만큼만 받았어요
+                            </p>
+                            <p
+                                v-for="item in partialItems"
+                                :key="item.user_id"
+                                class="text-ui-p2 mt-1 light:text-black/40 dark:text-white/40"
+                            >
+                                {{ item.name }} · {{ item.granted }}개
+                            </p>
+                        </div>
+                        <div v-if="failedItems.length > 0">
+                            <p class="text-ui-p1 light:text-black/50 dark:text-white/50">
+                                {{ failedItems.length }}명은 지급하지 못했어요
+                            </p>
+                            <p
+                                v-for="item in failedItems"
+                                :key="item.user_id"
+                                class="text-ui-p2 mt-1 light:text-black/40 dark:text-white/40"
+                            >
+                                {{ item.name }} · {{ item.reason }}
+                            </p>
+                        </div>
                     </div>
                 </div>
                 <NuxtLink
