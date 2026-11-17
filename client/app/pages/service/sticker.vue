@@ -67,8 +67,16 @@ watch(
 );
 
 // 실패한 유저 ID를 이름으로 바꿔 보여주기 위한 목록
-const failedItems = computed(() => failed.value.map((item) => ({ ...item, name: nameOf(item.user_id) })));
-const partialItems = computed(() => partial.value.map((item) => ({ ...item, name: nameOf(item.user_id) })));
+// 한도 때문에 못 받았거나(granted 0) 일부만 받은 사람을 학번순으로 합친 목록. 모두 이번 주 한도를 채운 상태라 보유 수는 같으므로 학번 · 이름 · 받은 수만 보여줌
+const limitedItems = computed(() =>
+    [
+        ...failed.value.map((item) => ({ user_id: item.user_id, granted: 0 })),
+        ...partial.value.map((item) => ({ user_id: item.user_id, granted: item.granted })),
+    ]
+        .map((item) => ({ ...item, name: nameOf(item.user_id) }))
+        .sort((a, b) => a.user_id - b.user_id),
+);
+const isLimitedOpen = ref<boolean>(false);
 
 // 완료 화면 배경 파티클 위치 (한 번만 계산)
 const particles = Array.from({ length: 10 }, (_, i) => ({
@@ -303,7 +311,7 @@ const giveSticker = async () => {
                         :style="{ animationDelay: `${0.15 * grantedAmount + 0.2}s` }"
                     >
                         <template v-if="isSingle">{{ firstTarget.name }} {{ targetLabel }}에게 스티커 {{ grantedAmount }}개!</template>
-                        <template v-else>{{ grantedCount }}명에게 스티커 {{ partialItems.length > 0 ? `최대 ${grantedAmount}개` : `${grantedAmount}개씩` }}!</template>
+                        <template v-else>{{ grantedCount }}명에게 스티커 {{ partial.length > 0 ? `최대 ${grantedAmount}개` : `${grantedAmount}개씩` }}!</template>
                     </p>
                     <p
                         v-if="isSingle"
@@ -312,37 +320,42 @@ const giveSticker = async () => {
                     >
                         이제 <UIcon name="i-ph-heart" /> {{ afterCount }}개예요.
                     </p>
-                    <!-- 일괄 지급에서 적게 받았거나 지급하지 못한 사람 -->
-                    <div
-                        v-else-if="partialItems.length > 0 || failedItems.length > 0"
-                        class="mt-4 px-5 text-center animate-fade-up-blur opacity-0 space-y-3"
+                    <!-- 일괄 지급에서 한도 때문에 못 받았거나 일부만 받은 사람 (접이식) -->
+                    <UCollapsible
+                        v-else-if="limitedItems.length > 0"
+                        v-model:open="isLimitedOpen"
+                        class="mt-4 w-full max-w-sm px-5 animate-fade-up-blur opacity-0"
                         :style="{ animationDelay: `${0.15 * grantedAmount + 0.4}s` }"
                     >
-                        <div v-if="partialItems.length > 0">
-                            <p class="text-ui-p1 light:text-black/50 dark:text-white/50">
-                                {{ partialItems.length }}명은 이번 주 남은 한도만큼만 받았어요
-                            </p>
-                            <p
-                                v-for="item in partialItems"
-                                :key="item.user_id"
-                                class="text-ui-p2 mt-1 light:text-black/40 dark:text-white/40"
-                            >
-                                {{ item.name }} · {{ item.granted }}개
-                            </p>
-                        </div>
-                        <div v-if="failedItems.length > 0">
-                            <p class="text-ui-p1 light:text-black/50 dark:text-white/50">
-                                {{ failedItems.length }}명은 지급하지 못했어요
-                            </p>
-                            <p
-                                v-for="item in failedItems"
-                                :key="item.user_id"
-                                class="text-ui-p2 mt-1 light:text-black/40 dark:text-white/40"
-                            >
-                                {{ item.name }} · {{ item.reason }}
-                            </p>
-                        </div>
-                    </div>
+                        <button
+                            type="button"
+                            class="w-full flex items-center justify-center gap-1 text-ui-p1 light:text-black/50 dark:text-white/50 transition-all active:opacity-50"
+                            @click="triggerVibration(10)"
+                        >
+                            {{ limitedItems.length }}명은 이번 주 한도가 차서 다 받지 못했어요
+                            <UIcon
+                                name="i-ph-caret-down"
+                                class="transition-transform duration-200"
+                                :class="{ 'rotate-180': isLimitedOpen }"
+                            />
+                        </button>
+                        <template #content>
+                            <div class="mt-3 rounded-2xl light:bg-default dark:bg-muted px-4 py-2 max-h-48 overflow-y-auto">
+                                <div
+                                    v-for="item in limitedItems"
+                                    :key="item.user_id"
+                                    class="flex items-center justify-between py-2 text-ui-p2"
+                                >
+                                    <p class="light:text-black/60 dark:text-white/60">
+                                        <span class="light:text-black/40 dark:text-white/40 mr-1.5">{{ item.user_id }}</span>{{ item.name }}
+                                    </p>
+                                    <p :class="item.granted > 0 ? 'text-primary' : 'light:text-black/40 dark:text-white/40'">
+                                        {{ item.granted > 0 ? `${item.granted}개 받음` : "못 받음" }}
+                                    </p>
+                                </div>
+                            </div>
+                        </template>
+                    </UCollapsible>
                 </div>
                 <NuxtLink
                     to="/system/userSelect?a=give-sticker"
