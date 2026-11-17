@@ -65,8 +65,12 @@ class StickerBulkFailure(BaseModel):
     reason: str = Field(..., description="지급하지 못한 이유")
 
 
+class StickerBulkGranted(StickerBalance):
+    granted: int = Field(..., description="실제 지급된 수 (이번 주 남은 한도가 요청 수보다 적으면 요청 수보다 작음)")
+
+
 class StickerBulkResult(BaseModel):
-    succeeded: list[StickerBalance] = Field(..., description="지급에 성공한 유저의 지급 후 보유 수")
+    succeeded: list[StickerBulkGranted] = Field(..., description="지급에 성공한 유저의 지급 후 보유 수와 실제 지급 수")
     failed: list[StickerBulkFailure] = Field(..., description="지급하지 못한 유저와 이유")
 
 
@@ -233,9 +237,9 @@ async def grant_sticker(data: StickerOperation, auth_data: LoginDep):
     status_code=status.HTTP_200_OK,
     summary="스티커 일괄 지급",
     description=(
-        f"여러 학생 또는 교사에게 같은 수의 스티커를 한 번에 지급합니다. (최대 {MAX_BULK_TARGETS}명) "
-        "유저마다 따로 처리하므로 한도를 넘거나 찾을 수 없는 유저가 있어도 나머지는 지급되며, "
-        "성공한 유저는 `succeeded`에, 실패한 유저와 이유는 `failed`에 담아 돌려줍니다."
+        f"여러 학생 또는 교사에게 스티커를 한 번에 지급합니다. (최대 {MAX_BULK_TARGETS}명) "
+        "유저마다 따로 처리하며, 이번 주 남은 한도가 요청 수보다 적은 유저에게는 남은 한도만큼만 지급합니다. "
+        "(실제 지급 수는 `granted`) 남은 한도가 없거나 찾을 수 없는 유저는 건너뛰고 `failed`에 이유를 담아 돌려줍니다."
     ),
 )
 async def grant_stickers(data: StickerBulkOperation, auth_data: LoginDep):
@@ -248,7 +252,11 @@ async def grant_stickers(data: StickerBulkOperation, auth_data: LoginDep):
     return ResponseModel(
         success=True,
         data=StickerBulkResult(
-            succeeded=[_balance(item.user_id, item.balance) for item in results if item.balance is not None],
+            succeeded=[
+                StickerBulkGranted(**_balance(item.user_id, item.balance).model_dump(), granted=item.balance.changed)
+                for item in results
+                if item.balance is not None
+            ],
             failed=[
                 StickerBulkFailure(user_id=item.user_id, reason=item.reason or "알 수 없는 오류")
                 for item in results

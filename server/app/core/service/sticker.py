@@ -38,6 +38,8 @@ class StickerCount:
     """이번 주에 지급받은 스티커 수 (학급 전달 기록 제외, 회수는 반영)"""
     week_start: datetime
     """이번 주 한도 계산 시작 시각"""
+    changed: int = 0
+    """이번 처리로 실제 변동된 수량 (지급 +, 회수 · 학급 전달 -, 조회만 한 경우 0)"""
 
 
 @dataclass
@@ -214,29 +216,31 @@ class Sticker(ServiceCore[StickerHistory], _Type):
     ) -> list[StickerBulkItem]:
         """
         여러 유저에게 스티커를 지급합니다. 유저마다 독립된 트랜잭션으로 처리하므로 일부만 성공할 수 있습니다.
+        이번 주 남은 한도가 요청 수보다 적은 유저에게는 남은 한도만큼만 지급하고, 남은 한도가 없으면 실패로 기록합니다.
 
         Args:
             user_ids: 스티커를 받을 유저 ID 목록 (중복은 한 번만 처리)
             actor: 지급하는 유저
-            amount: 유저마다 지급할 스티커 수
+            amount: 유저마다 지급할 최대 스티커 수
             memo: 메모
 
         Returns:
-            list[StickerBulkItem]: 유저별 처리 결과 (성공 시 balance, 실패 시 reason)
+            list[StickerBulkItem]: 유저별 처리 결과 (성공 시 balance와 실제 지급 수 `balance.changed`, 실패 시 reason)
         """
         results: list[StickerBulkItem] = []
         for user_id in dict.fromkeys(user_ids):
             try:
-                balance = await cls.grant(user_id, actor, amount, memo=memo)
+                balance = await cls._change(user_id, actor, amount, memo=memo, clamp_to_limit=True)
             except (NotFound, ValueError, LimitExceeded) as e:
                 results.append(StickerBulkItem(user_id=user_id, balance=None, reason=str(e)))
                 continue
             results.append(StickerBulkItem(user_id=user_id, balance=balance, reason=None))
 
         succeeded = sum(1 for item in results if item.balance is not None)
+        clamped = sum(1 for item in results if item.balance is not None and item.balance.changed < amount)
         LoggerCore.service_sticker.info(
-            f"스티커 일괄 지급 - 처리 {actor.name}({actor.id}) 성공 {succeeded}명 / 실패 {len(results) - succeeded}명 "
-            f"(유저마다 {amount}개)"
+            f"스티커 일괄 지급 - 처리 {actor.name}({actor.id}) 성공 {succeeded}명(한도로 줄어든 {clamped}명) / "
+            f"실패 {len(results) - succeeded}명 (요청 유저마다 {amount}개)"
         )
         return results
 
@@ -262,9 +266,19 @@ class Sticker(ServiceCore[StickerHistory], _Type):
         return await cls._change(target_id, actor, -amount, memo=memo)
 
     @classmethod
-    async def _change(cls, target_id: int, actor: User, changed: int, *, memo: str | None) -> StickerCount:
+    async def _change(
+        cls, target_id: int, actor: User, changed: int, *, memo: str | None, clamp_to_limit: bool = False
+    ) -> StickerCount:
         """
         스티커 지급(changed > 0) 또는 회수(changed < 0)를 처리합니다.
+
+        Args:
+            target_id: 대상 유저 ID
+            actor: 처리하는 유저
+            changed: 변동 수량
+            memo: 메모
+            clamp_to_limit: True면 지급 시 이번 주 남은 한도까지만 줄여서 지급합니다. (일괄 지급용)
+                남은 한도가 없으면 그대로 `LimitExceeded`가 발생합니다.
 
         Raises:
             ServiceError.NotFound: 대상 유저를 찾을 수 없는 경우 발생합니다.
@@ -273,7 +287,7 @@ class Sticker(ServiceCore[StickerHistory], _Type):
             ServiceError.Conflict: 보유 수보다 많이 회수하려는 경우 발생합니다.
 
         Returns:
-            StickerCount: 처리 후 대상 유저의 보유 수와 집계 기간
+            StickerCount: 처리 후 대상 유저의 보유 수와 집계 기간, 실제 변동 수량(`changed`)
         """
         async with DatabaseCore.session() as session:
             # 보유 수 계산과 기록 추가 사이에 다른 요청이 끼어들지 않도록 대상 유저 행을 잠급니다.
@@ -287,11 +301,18 @@ class Sticker(ServiceCore[StickerHistory], _Type):
             week_start = cls.get_week_start(period_start)
             held = await cls.get_count(target.id, period_start)
             week_count = await cls.get_week_count(target.id, week_start)
-            after = held + changed
 
             # 지급 한도는 보유 수가 아니라 이번 주에 받은 수로 검사합니다. (보유 수는 기간 동안 누적)
             if changed > 0 and week_count + changed > STICKER_MAX:
-                raise LimitExceeded(f"이번 주 한도({STICKER_MAX}개)를 넘을 수 없습니다. (이번 주 {week_count}개 받음)")
+                remaining = STICKER_MAX - week_count
+                if not clamp_to_limit or remaining <= 0:
+                    raise LimitExceeded(
+                        f"이번 주 한도({STICKER_MAX}개)를 넘을 수 없습니다. (이번 주 {week_count}개 받음)"
+                    )
+                # 일괄 지급: 요청 수 대신 남은 한도만큼만 지급합니다. 잠금 안에서 계산하므로 동시 요청에도 한도를 넘지 않습니다.
+                changed = remaining
+            after = held + changed
+
             if after < 0:
                 raise Conflict(f"보유한 스티커보다 많이 회수할 수 없습니다. (현재 {held}개)")
 
@@ -308,7 +329,11 @@ class Sticker(ServiceCore[StickerHistory], _Type):
             f"기록 ID {history.id})"
         )
         return StickerCount(
-            count=after, period_start=period_start, week_count=week_count + changed, week_start=week_start
+            count=after,
+            period_start=period_start,
+            week_count=week_count + changed,
+            week_start=week_start,
+            changed=changed,
         )
 
     @classmethod
