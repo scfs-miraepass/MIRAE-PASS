@@ -49,10 +49,14 @@ const onSubmit = async () => {
     }
 
     const { succeeded, failed } = req.data.data;
+    // 이번 주 남은 한도 때문에 요청보다 적게 받은 사용자
+    const partial = succeeded.filter((item) => item.granted < form.value.amount);
     if (succeeded.length > 0) {
         toast.add({
             title: "정상적으로 처리되었습니다.",
-            description: `${succeeded.length}명에게 스티커 ${form.value.amount}개씩 지급했습니다.`,
+            description: partial.length > 0
+                ? `${succeeded.length}명에게 지급했습니다. 그중 ${partial.length}명은 남은 한도만큼만 받았습니다. (${partial.map((p) => `${p.user_id}: ${p.granted}개`).join(", ")})`
+                : `${succeeded.length}명에게 스티커 ${form.value.amount}개씩 지급했습니다.`,
             color: "success",
         });
     }
@@ -72,14 +76,14 @@ const onSubmit = async () => {
 <template>
     <UModal
         :title="`${users.length}명에게 스티커 지급`"
-        :description="`선택한 사용자들에게 같은 수의 스티커를 지급합니다. 이번 주 한도(${STICKER_MAX}개)를 넘는 사용자는 건너뜁니다.`"
+        :description="`선택한 사용자들에게 스티커를 지급합니다. 이번 주 남은 한도가 적은 사용자는 남은 만큼만 받고, 한도(${STICKER_MAX}개)를 다 채운 사용자는 건너뜁니다.`"
         v-model:open="open"
         :close="false"
         :dismissible="!loading"
     >
         <template #body>
             <form @submit.prevent="onSubmit" class="space-y-4">
-                <UFormField label="수량 (1인당)" name="amount">
+                <UFormField label="수량 (1인당 최대)" name="amount">
                     <USelect v-model="form.amount" :items="amountOptions" class="w-28" />
                 </UFormField>
                 <UFormField label="메모 (선택)" name="memo">
