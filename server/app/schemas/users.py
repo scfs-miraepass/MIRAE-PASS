@@ -6,6 +6,8 @@ from pydantic import GetJsonSchemaHandler, field_serializer
 from pydantic_core import core_schema
 from sqlalchemy import Connection, event, insert
 from sqlmodel import Field, Relationship, SQLModel, delete
+from functools import reduce
+from operator import or_
 
 from app.core import LoggerCore
 
@@ -155,6 +157,11 @@ class UserPermission(IntFlag):
         | VIEW_KARAOKE
         | MANAGE_STICKER
         | VIEW_STICKER
+    )
+    ALL = reduce(
+        or_,
+        (value for value in locals().values() if isinstance(value, int)),
+        0,
     )
 
     @classmethod
