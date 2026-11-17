@@ -1,4 +1,4 @@
-"""v1.16.0 #1 (Sticker tables and permissions)
+"""v1.15.0 #2 (Sticker tables and permissions)
 
 Revision ID: 8095336900d4
 Revises: 20dbd40b236a
@@ -33,6 +33,7 @@ class UserPermission(IntFlag):
     VIEW_STICKER = 2**22
     _MANAGE_STICKER = 2**23
     MANAGE_STICKER = _MANAGE_STICKER | SEARCH_USER
+    GIVE_CLASS_STICKER = 2**24
 
 
 class UserType(StrEnum):
@@ -66,6 +67,7 @@ def _migrate_permissions(*, grant: bool):
     스티커 권한 비트를 부여(grant=True)하거나 제거(grant=False)한다.
 
     - 학생 / 교사: VIEW_STICKER (내 스티커, 랭킹 조회)
+    - 교사: GIVE_CLASS_STICKER (받은 스티커를 학급에 전달)
     - 서비스 계정: GIVE_STICKER (스티커 지급)
     - 유저 관리 권한(MANAGE_USER) 보유자: MANAGE_STICKER | VIEW_STICKER (지급/회수/초기화/기록)
     """
@@ -76,6 +78,9 @@ def _migrate_permissions(*, grant: bool):
         conn, users.c.type.in_([UserType.student.value, UserType.teacher.value]), **{key: UserPermission.VIEW_STICKER}
     )
     log.info(f"Sticker permission migration - student/teacher VIEW_STICKER: {n} rows")
+
+    n = _update_permissions(conn, users.c.type == UserType.teacher.value, **{key: UserPermission.GIVE_CLASS_STICKER})
+    log.info(f"Sticker permission migration - teacher GIVE_CLASS_STICKER: {n} rows")
 
     n = _update_permissions(conn, users.c.type == UserType.service.value, **{key: UserPermission.GIVE_STICKER})
     log.info(f"Sticker permission migration - service GIVE_STICKER: {n} rows")
@@ -98,11 +103,14 @@ def upgrade() -> None:
         sa.Column("amount", sa.Integer(), nullable=False),
         sa.Column("actor_id", sa.Integer(), nullable=True),
         sa.Column("memo", sa.String(length=100), nullable=True),
+        sa.Column("class_grade", sa.Integer(), nullable=True),
+        sa.Column("class_number", sa.Integer(), nullable=True),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=True),
         sa.ForeignKeyConstraint(["actor_id"], ["users.id"], ondelete="SET NULL"),
         sa.ForeignKeyConstraint(["user_id"], ["users.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
     )
+    op.create_index("ix_sticker_history_class", "sticker_history", ["class_grade", "class_number"], unique=False)
     op.create_index(op.f("ix_sticker_history_created_at"), "sticker_history", ["created_at"], unique=False)
     op.create_index(op.f("ix_sticker_history_user_id"), "sticker_history", ["user_id"], unique=False)
     op.create_table(
