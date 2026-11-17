@@ -11,7 +11,7 @@ from sqlmodel import col, func, select
 from app.core import LoginDep, ServiceClient
 from app.core.error import Conflict, LimitExceeded, NotFound
 from app.core.redis_keys import Keys
-from app.core.service.sticker import STICKER_MAX, STICKER_TARGET_TYPES, Sticker
+from app.core.service.sticker import STICKER_MAX, STICKER_TARGET_TYPES, Sticker, StickerCount
 from app.schemas import StickerHistory, UserPermission, Users, UserSearch, UserType
 from app.schemas.core import SchemaCore
 from app.schemas.response import ErrorResponse, ResponseModel
@@ -19,6 +19,7 @@ from app.schemas.response import ErrorResponse, ResponseModel
 router = APIRouter(prefix="/sticker", tags=["sticker"])
 client = ServiceClient()
 MAX_PAGE_LIMIT = 100
+MAX_BULK_TARGETS = 100
 
 
 class StickerOperation(BaseModel):
@@ -34,17 +35,60 @@ class StickerClassOperation(BaseModel):
     memo: str | None = Field(None, max_length=100, description="메모")
 
 
+class StickerBulkOperation(BaseModel):
+    user_ids: list[int] = Field(
+        ..., min_length=1, max_length=MAX_BULK_TARGETS, description=f"대상 유저 ID 목록 (1~{MAX_BULK_TARGETS}명)"
+    )
+    amount: int = Field(1, ge=1, le=STICKER_MAX, description=f"유저마다 지급할 스티커 수 (1~{STICKER_MAX})")
+    memo: str | None = Field(None, max_length=100, description="메모")
+
+
 class StickerBalance(BaseModel):
     user_id: int = Field(..., description="유저의 고유 ID")
     count: int = Field(..., description="현재 집계 기간 내 보유 스티커 수")
-    max: int = Field(..., description="보유 가능한 최대 스티커 수")
+    max: int = Field(..., description="한 주 동안 받을 수 있는 최대 스티커 수")
     period_start: datetime = Field(..., description="현재 집계 기간 시작 시각")
+    week_count: int = Field(..., description="이번 주에 지급받은 스티커 수 (학급 전달 제외)")
+    week_start: datetime = Field(
+        ..., description="이번 주 한도 계산 시작 시각 (월요일 00:00 KST, 수동 초기화가 있었다면 그 시각)"
+    )
 
-    @field_serializer("period_start")
-    def serialize_period_start(self, dt: Any, _info):
+    @field_serializer("period_start", "week_start")
+    def serialize_dt(self, dt: Any, _info):
         if isinstance(dt, datetime):
             return SchemaCore.sync_timezone(dt).isoformat()
         return dt
+
+
+class StickerBulkFailure(BaseModel):
+    user_id: int = Field(..., description="지급하지 못한 유저의 고유 ID")
+    reason: str = Field(..., description="지급하지 못한 이유")
+
+
+class StickerBulkResult(BaseModel):
+    succeeded: list[StickerBalance] = Field(..., description="지급에 성공한 유저의 지급 후 보유 수")
+    failed: list[StickerBulkFailure] = Field(..., description="지급하지 못한 유저와 이유")
+
+
+def _balance(user_id: int, result: StickerCount) -> StickerBalance:
+    """
+    서비스 계산 결과를 응답 모델로 바꿉니다.
+
+    Args:
+        user_id: 유저 ID
+        result: 서비스가 계산한 보유 수
+
+    Returns:
+        StickerBalance
+    """
+    return StickerBalance(
+        user_id=user_id,
+        count=result.count,
+        max=STICKER_MAX,
+        period_start=result.period_start,
+        week_count=result.week_count,
+        week_start=result.week_start,
+    )
 
 
 class StickerRankingResponse(BaseModel):
@@ -150,13 +194,14 @@ def _ranking_search_condition(ranked: Subquery, q: str) -> ColumnElement[bool] |
         401: {"model": ErrorResponse, "description": "세션이 만료되었거나 유효하지 않음"},
         403: {"model": ErrorResponse, "description": "권한이 없음"},
         404: {"model": ErrorResponse, "description": "유저를 찾을 수 없음"},
-        409: {"model": ErrorResponse, "description": f"보유 한도({STICKER_MAX}개) 초과"},
+        409: {"model": ErrorResponse, "description": f"이번 주 한도({STICKER_MAX}개) 초과"},
     },
     status_code=status.HTTP_200_OK,
     summary="스티커 지급",
     description=(
         f"학생 또는 교사에게 스티커를 1~{STICKER_MAX}개 지급합니다. "
-        f"현재 집계 기간 내 보유 수는 {STICKER_MAX}개를 넘을 수 없습니다."
+        f"한 명이 이번 주(월요일 00:00 KST 이후)에 받을 수 있는 스티커는 {STICKER_MAX}개까지이며, "
+        "보유 수와 순위는 집계 기간 동안 누적됩니다."
     ),
 )
 async def grant_sticker(data: StickerOperation, auth_data: LoginDep):
@@ -173,10 +218,42 @@ async def grant_sticker(data: StickerOperation, auth_data: LoginDep):
     except LimitExceeded as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
 
+    return ResponseModel(success=True, data=_balance(data.user_id, result))
+
+
+@router.post(
+    "/bulk",
+    operation_id="grant_stickers",
+    response_model=ResponseModel[StickerBulkResult],
+    responses={
+        200: {"description": "일괄 지급 처리 완료 (일부 또는 전부 실패해도 200이며 결과는 본문에 있음)"},
+        401: {"model": ErrorResponse, "description": "세션이 만료되었거나 유효하지 않음"},
+        403: {"model": ErrorResponse, "description": "권한이 없음"},
+    },
+    status_code=status.HTTP_200_OK,
+    summary="스티커 일괄 지급",
+    description=(
+        f"여러 학생 또는 교사에게 같은 수의 스티커를 한 번에 지급합니다. (최대 {MAX_BULK_TARGETS}명) "
+        "유저마다 따로 처리하므로 한도를 넘거나 찾을 수 없는 유저가 있어도 나머지는 지급되며, "
+        "성공한 유저는 `succeeded`에, 실패한 유저와 이유는 `failed`에 담아 돌려줍니다."
+    ),
+)
+async def grant_stickers(data: StickerBulkOperation, auth_data: LoginDep):
+    user, _ = auth_data
+    if not (user.has_permission(UserPermission.GIVE_STICKER) or user.has_permission(UserPermission.MANAGE_STICKER)):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="권한이 없습니다.")
+
+    results = await Sticker.grant_many(data.user_ids, user, data.amount, memo=data.memo)
+
     return ResponseModel(
         success=True,
-        data=StickerBalance(
-            user_id=data.user_id, count=result.count, max=STICKER_MAX, period_start=result.period_start
+        data=StickerBulkResult(
+            succeeded=[_balance(item.user_id, item.balance) for item in results if item.balance is not None],
+            failed=[
+                StickerBulkFailure(user_id=item.user_id, reason=item.reason or "알 수 없는 오류")
+                for item in results
+                if item.balance is None
+            ],
         ),
     )
 
@@ -211,12 +288,7 @@ async def revoke_sticker(data: StickerOperation, auth_data: LoginDep):
     except Conflict as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
 
-    return ResponseModel(
-        success=True,
-        data=StickerBalance(
-            user_id=data.user_id, count=result.count, max=STICKER_MAX, period_start=result.period_start
-        ),
-    )
+    return ResponseModel(success=True, data=_balance(data.user_id, result))
 
 
 @router.post(
@@ -246,10 +318,7 @@ async def give_sticker_to_class(data: StickerClassOperation, auth_data: LoginDep
     except NotFound as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
-    return ResponseModel(
-        success=True,
-        data=StickerBalance(user_id=user.id, count=result.count, max=STICKER_MAX, period_start=result.period_start),
-    )
+    return ResponseModel(success=True, data=_balance(user.id, result))
 
 
 @router.post(
@@ -290,13 +359,15 @@ async def get_my_sticker_balance(auth_data: LoginDep):
     if not user.has_permission(UserPermission.VIEW_STICKER):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="권한이 없습니다.")
 
-    period_start = await Sticker.get_period_start()
-    count = await Sticker.get_count(user.id, period_start) if user.type in STICKER_TARGET_TYPES else 0
+    if user.type in STICKER_TARGET_TYPES:
+        result = await Sticker.get_balance(user.id)
+    else:
+        period_start = await Sticker.get_period_start()
+        result = StickerCount(
+            count=0, period_start=period_start, week_count=0, week_start=Sticker.get_week_start(period_start)
+        )
 
-    return ResponseModel(
-        success=True,
-        data=StickerBalance(user_id=user.id, count=count, max=STICKER_MAX, period_start=period_start),
-    )
+    return ResponseModel(success=True, data=_balance(user.id, result))
 
 
 @router.get(
@@ -322,13 +393,7 @@ async def get_user_sticker_balance(user_id: int, auth_data: LoginDep):
     if target is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="유저를 찾을 수 없습니다.")
 
-    period_start = await Sticker.get_period_start()
-    count = await Sticker.get_count(target.id, period_start)
-
-    return ResponseModel(
-        success=True,
-        data=StickerBalance(user_id=target.id, count=count, max=STICKER_MAX, period_start=period_start),
-    )
+    return ResponseModel(success=True, data=_balance(target.id, await Sticker.get_balance(target.id)))
 
 
 @router.get(

@@ -13,6 +13,7 @@ class StickerHistory(SQLModel, table=True):
     스티커 변동 기록 (지급: 양수, 회수: 음수)
 
     보유 수는 현재 집계 기간(매월 1일 00:00 KST 또는 최근 수동 초기화 시각 이후) 내 `amount` 합계로 계산한다.
+    지급 한도는 이번 주(월요일 00:00 KST 이후, 학급 전달 기록 제외)에 받은 수 기준이다.
     기록은 초기화와 무관하게 영구 보관한다.
     """
 
@@ -26,7 +27,7 @@ class StickerHistory(SQLModel, table=True):
         index=True,
         description="스티커를 받은 학생의 고유 ID",
     )
-    amount: int = Field(description="변동 수량 (지급 +1~+3, 회수 음수)")
+    amount: int = Field(description="변동 수량 (지급 양수, 회수 · 학급 전달 음수)")
     actor_id: int | None = Field(
         default=None,
         foreign_key="users.id",
