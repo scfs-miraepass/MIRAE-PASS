@@ -11,7 +11,11 @@ const links = computed(() => {
     const items: NavigationMenuItem[] = []
 
     if (hasPermission(session.value?.permissions, NOTICE_MANAGEMENT_PERMISSIONS)) {
-        items.push({ label: '공지사항', icon: 'i-lucide-megaphone', to: '/notices' })
+        items.push({
+            label: '공지사항',
+            icon: 'i-lucide-megaphone',
+            to: '/notices'
+        })
     }
 
     if (hasPermission(session.value?.permissions, UserPermission.MANAGE_USER)) {

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { UserPermission } from "@miraepass/api-client";
-import { NOTICE_MANAGEMENT_PERMISSIONS } from "~/utils/permission";
+import { NOTICE_MANAGEMENT_PERMISSIONS } from "~/utils/permission.ts";
 
 definePageMeta({ permissions: NOTICE_MANAGEMENT_PERMISSIONS });
 
