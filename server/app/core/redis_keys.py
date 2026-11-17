@@ -177,12 +177,13 @@ class Keys:
     class Sticker:
         VERSION = RedisKey("sticker:ver", ttl=HOUR, description="스티커 랭킹/학급 랭킹 페이지 캐시 버전")
         RANKING = RedisKey(
-            "sticker:ranking:{ver}:{period}:{limit}:{offset}",
+            "sticker:ranking:{ver}:{period}:{week}:{limit}:{offset}",
             ttl=5 * MINUTE,
             description="""
                 스티커 개인 랭킹 페이지 (검색어가 있는 요청은 캐시하지 않음)
                 - ver: 버전
                 - period: 현재 집계 기간 시작 시각 (YYYYMMDDHHMMSS)
+                - week: 이번 주 한도 계산 시작 시각 (YYYYMMDDHHMMSS, 주가 바뀌면 week_count가 달라지므로 Key에 포함)
                 - limit: 한 페이지당 최대 데이터 개수
                 - offset: 현재 페이지 위치
             """,

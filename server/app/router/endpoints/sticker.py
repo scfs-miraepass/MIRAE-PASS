@@ -101,6 +101,7 @@ class StickerRankingResponse(BaseModel):
     grade: int | None = Field(..., description="학년")
     number: int | None = Field(..., description="반")
     count: int = Field(..., description="현재 집계 기간 내 보유 스티커 수")
+    week_count: int = Field(..., description="이번 주에 지급받은 스티커 수 (하트 표시용, 0~최대 한도)")
     rank: int = Field(..., description="전체 학생 기준 순위")
 
 
@@ -417,6 +418,7 @@ async def get_user_sticker_balance(user_id: int, auth_data: LoginDep):
     summary="스티커 개인 랭킹 조회",
     description=(
         "현재 집계 기간 내 스티커 보유 수 기준 학생 랭킹을 조회합니다. "
+        "`week_count`는 이번 주에 받은 수로, 화면에서 주간 한도 하트를 채우는 데 사용합니다. "
         "`q`로 이름(초성 포함) 또는 학번을 검색할 수 있으며, 검색 결과의 순위는 전체 기준 순위입니다."
     ),
 )
@@ -433,6 +435,7 @@ async def get_sticker_ranking(
 
     q = (q or "").strip()
     period_start = await Sticker.get_period_start()
+    week_start = Sticker.get_week_start(period_start)
 
     # 검색어가 없는 요청만 캐시합니다. (검색어마다 캐시하면 Key가 너무 많아짐)
     cache_key = None
@@ -440,7 +443,13 @@ async def get_sticker_ranking(
     if not q:
         count = await _get_student_count()
         ver = await client.redis.get_version(Keys.Sticker.VERSION())
-        cache_key = Keys.Sticker.RANKING(ver=ver, period=Sticker.period_key(period_start), limit=limit, offset=offset)
+        cache_key = Keys.Sticker.RANKING(
+            ver=ver,
+            period=Sticker.period_key(period_start),
+            week=Sticker.period_key(week_start),
+            limit=limit,
+            offset=offset,
+        )
         cached = await client.redis.get(cache_key)
         if cached is not None:
             response.headers["X-MAX-PAGE"] = str(ceil(count / limit))
@@ -454,6 +463,13 @@ async def get_sticker_ranking(
         .subquery()
     )
     sticker_count = func.coalesce(period_sum.c.cnt, 0)
+    # 이번 주 받은 수 (하트 표시용). 학급 전달 기록은 교사 것이라 학생 랭킹에는 없지만 서비스와 같은 기준으로 제외합니다.
+    week_sum = (
+        select(col(StickerHistory.user_id), func.sum(StickerHistory.amount).label("cnt"))
+        .where(col(StickerHistory.created_at) >= week_start, col(StickerHistory.class_grade).is_(None))
+        .group_by(col(StickerHistory.user_id))
+        .subquery()
+    )
     # 검색 결과에서도 전체 기준 순위를 유지하기 위해 순위를 먼저 계산한 뒤 바깥에서 검색 조건을 적용합니다.
     ranked = (
         select(
@@ -462,9 +478,11 @@ async def get_sticker_ranking(
             col(Users.grade).label("grade"),
             col(Users.number).label("number"),
             sticker_count.label("count"),
+            func.coalesce(week_sum.c.cnt, 0).label("week_count"),
             func.dense_rank().over(order_by=sticker_count.desc()).label("rank"),
         )
         .outerjoin(period_sum, period_sum.c.user_id == Users.id)
+        .outerjoin(week_sum, week_sum.c.user_id == Users.id)
         .where(col(Users.type) == UserType.student)
         .subquery()
     )
@@ -486,7 +504,13 @@ async def get_sticker_ranking(
 
     rankings = [
         StickerRankingResponse(
-            id=row.id, name=row.name, grade=row.grade, number=row.number, count=int(row.count), rank=int(row.rank)
+            id=row.id,
+            name=row.name,
+            grade=row.grade,
+            number=row.number,
+            count=int(row.count),
+            week_count=int(row.week_count),
+            rank=int(row.rank),
         )
         for row in rows
     ]
