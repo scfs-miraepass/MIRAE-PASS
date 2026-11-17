@@ -11,6 +11,8 @@ const actionList = computed<{
         selectUrl: string;
         searchTarget: UserType[];
         permissions: PermissionCondition;
+        // true면 여러 명을 골라 한 번에 넘깁니다. (system.user-select.users 사용)
+        multiple?: boolean;
     }
 }>(() => {
     return {
@@ -24,7 +26,8 @@ const actionList = computed<{
             title: "스티커 지급",
             selectUrl: "/service/sticker",
             searchTarget: ["student", "teacher"],
-            permissions: [ UserPermission.GIVE_STICKER ]
+            permissions: [ UserPermission.GIVE_STICKER ],
+            multiple: true,
         },
         "grant-point": {
             title: "포인트 지급",
@@ -104,12 +107,41 @@ const onSearchInput = async (event: InputEvent) => {
     }, 200);
 };
 
+// 다중 선택 모드에서 고른 사용자 (검색어를 바꿔도 유지)
+const selectedUsers = ref<User[]>([]);
+const isSelected = (user: User) => selectedUsers.value.some((u) => u.id === user.id);
+
+const toggleSelect = (user: User) => {
+    if (isSelected(user)) {
+        selectedUsers.value = selectedUsers.value.filter((u) => u.id !== user.id);
+    } else {
+        selectedUsers.value = [...selectedUsers.value, user];
+    }
+};
+
 const onSelect = (user: User) => {
+    if (action.value.multiple) {
+        toggleSelect(user);
+        return;
+    }
+
     const userData = useState<User | undefined>(
         "system.user-select.uesr",
         () => undefined,
     );
     userData.value = user;
+
+    navigateTo(action.value.selectUrl);
+};
+
+const onSubmitSelected = () => {
+    if (selectedUsers.value.length <= 0) return;
+
+    const users = useState<User[] | undefined>(
+        "system.user-select.users",
+        () => undefined,
+    );
+    users.value = selectedUsers.value;
 
     navigateTo(action.value.selectUrl);
 };
@@ -142,6 +174,23 @@ const onSelect = (user: User) => {
             @input="onSearchInput"
             v-model="search"
         />
+        <!-- 다중 선택 모드: 고른 사용자 칩 (탭하면 해제) -->
+        <div
+            v-if="action.multiple && selectedUsers.length > 0"
+            class="flex flex-wrap gap-2 mt-3"
+        >
+            <UBadge
+                v-for="u in selectedUsers"
+                :key="u.id!"
+                color="neutral"
+                variant="subtle"
+                class="rounded-full cursor-pointer pl-3 pr-2 py-1 gap-1 transition-all active:scale-95"
+                @click="toggleSelect(u)"
+            >
+                {{ u.name }}
+                <UIcon name="i-ph-x" />
+            </UBadge>
+        </div>
         <hr class="my-3 border-default" />
         <div
             class="px-1 py-2.5 light:bg-default dark:bg-muted rounded-2xl flex-1 overflow-y-scroll relative flex flex-col"
@@ -192,10 +241,17 @@ const onSelect = (user: User) => {
                 </div>
 
                 <button
-                    class="px-5 py-4.5 rounded-xl flex flex-col items-start transition-all active:scale-95 active:opacity-50 active:bg-accented"
+                    class="px-5 py-4.5 rounded-xl flex flex-col items-start transition-all active:scale-95 active:opacity-50 active:bg-accented relative"
+                    :class="{ 'bg-accented': action.multiple && isSelected(i) }"
                     v-for="i in searchResult"
+                    :key="i.id!"
                     @click="onSelect(i)"
                 >
+                    <UIcon
+                        v-if="action.multiple && isSelected(i)"
+                        name="i-ph-check-circle-fill"
+                        class="absolute right-5 top-1/2 -translate-y-1/2 text-primary text-h6"
+                    />
                     <div class="flex items-center text-ui-p2">
                         <p
                             class="rounded-full bg-green-400 px-3 py-1.5 mr-2"
@@ -229,5 +285,13 @@ const onSelect = (user: User) => {
                 </button>
             </div>
         </div>
+        <!-- 다중 선택 모드: 고른 사용자들을 다음 화면으로 넘기는 버튼 -->
+        <UButton
+            v-if="action.multiple && selectedUsers.length > 0"
+            class="rounded-2xl justify-center flex py-4.5 transition-opacity w-full mt-3 mb-3"
+            @click="onSubmitSelected"
+        >
+            <p class="text-p0">{{ selectedUsers.length }}명에게 스티커 주기</p>
+        </UButton>
     </div>
 </template>
