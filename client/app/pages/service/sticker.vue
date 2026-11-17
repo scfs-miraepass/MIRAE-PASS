@@ -20,18 +20,38 @@ const userData = useState<User>("system.user-select.uesr");
 const toast = useToast();
 const targetLabel = computed(() => (userData.value.type === "teacher" ? "선생님" : "학생"));
 
-const balance = ref<StickerBalance | undefined>();
 const amount = ref<number>(1);
 const memoValue = ref<string>("");
 const isLoading = ref<boolean>(false);
 const isComplete = ref<boolean>(false);
 const grantedAmount = ref<number>(0);
 
+const { data: balance, refresh: refreshBalance } = await useAsyncData(
+    `sticker.user_balance.${userData.value.id}`,
+    async (_nuxtApp, { signal }): Promise<StickerBalance | null> => {
+        const req = await $API.getUserStickerBalance({
+            path: { user_id: userData.value.id! },
+            signal,
+        });
+        if (req.error) return null;
+        return req.data.data;
+    },
+);
+
 const maxCount = computed(() => balance.value?.max ?? 3);
 const heldCount = computed(() => balance.value?.count ?? 0);
 const remaining = computed(() => Math.max(0, maxCount.value - heldCount.value));
 // 지급 성공 시 balance가 서버 응답(지급 후 보유 수)으로 갱신되므로 그대로 사용
 const afterCount = computed(() => heldCount.value);
+
+// 남은 지급 가능 수보다 많이 선택되어 있으면 줄임
+watch(
+    remaining,
+    (value) => {
+        if (value > 0 && amount.value > value) amount.value = value;
+    },
+    { immediate: true },
+);
 
 // 완료 화면 배경 파티클 위치 (한 번만 계산)
 const particles = Array.from({ length: 10 }, (_, i) => ({
@@ -41,18 +61,6 @@ const particles = Array.from({ length: 10 }, (_, i) => ({
     delay: 0.2 + Math.random() * 0.6,
     size: 14 + Math.round(Math.random() * 14),
 }));
-
-if (import.meta.client) {
-    const req = await $API.getUserStickerBalance({
-        path: { user_id: userData.value.id! },
-    });
-    if (!req.error) {
-        balance.value = req.data.data;
-        if (remaining.value > 0 && amount.value > remaining.value) {
-            amount.value = remaining.value;
-        }
-    }
-}
 
 const triggerVibration = (pattern: number | number[]) => {
     if (typeof window !== "undefined" && window.navigator.vibrate) {
@@ -73,25 +81,9 @@ const giveSticker = async () => {
     });
 
     if (req.error) {
-        if (req.response?.status == 409) {
-            toast.add({
-                title: "지급 실패",
-                description: `이번 달 보유 한도(${maxCount.value}개)를 초과해요.`,
-                color: "error",
-            });
-            // 최신 보유 수로 갱신
-            const refreshed = await $API.getUserStickerBalance({
-                path: { user_id: userData.value.id! },
-            });
-            if (!refreshed.error) balance.value = refreshed.data.data;
-        } else {
-            toast.add({
-                title: "지급 실패",
-                description:
-                    "알 수 없는 이유로 지급에 실패했습니다. 관리자에게 문의하세요.",
-                color: "error",
-            });
-        }
+        toast.add({ title: "지급하지 못했어요.", description: stickerErrorMessage(req.error), color: "error" });
+        // 다른 곳에서 보유 수가 바뀌었을 수 있으므로 최신 보유 수로 갱신
+        await refreshBalance();
         isLoading.value = false;
         return;
     }

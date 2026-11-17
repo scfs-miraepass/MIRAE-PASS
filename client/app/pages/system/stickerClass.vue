@@ -12,7 +12,6 @@ const CLASS_COUNT: Record<number, number> = { 1: 6, 2: 6, 3: 5 };
 
 const toast = useToast();
 
-const balance = ref<StickerBalance | undefined>();
 const grade = ref<number | undefined>();
 const number = ref<number | undefined>();
 const amount = ref<number>(1);
@@ -20,12 +19,29 @@ const isLoading = ref<boolean>(false);
 const isComplete = ref<boolean>(false);
 const givenAmount = ref<number>(0);
 
+const { data: balance, refresh: refreshBalance } = await useAsyncData(
+    "sticker.class_my_balance",
+    async (_nuxtApp, { signal }): Promise<StickerBalance | null> => {
+        const req = await $API.getMyStickerBalance({ signal });
+        if (req.error) return null;
+        return req.data.data;
+    },
+);
+
 const held = computed(() => balance.value?.count ?? 0);
 const maxCount = computed(() => balance.value?.max ?? 3);
 // 전달 성공 시 balance가 서버 응답(전달 후 보유 수)으로 갱신되므로 그대로 사용
 const afterCount = computed(() => held.value);
 const classes = computed(() =>
     grade.value != null ? Array.from({ length: CLASS_COUNT[grade.value] ?? 0 }, (_, i) => i + 1) : [],
+);
+// 보유 수보다 많이 선택되어 있으면 줄임
+watch(
+    held,
+    (value) => {
+        if (value > 0 && amount.value > value) amount.value = value;
+    },
+    { immediate: true },
 );
 const classSelected = computed(() => grade.value != null && number.value != null);
 
@@ -37,13 +53,6 @@ const selectGrade = (g: number) => {
 };
 const canSubmit = computed(() => classSelected.value && held.value > 0 && amount.value <= held.value && !isLoading.value);
 
-const departmentOf = (n: number) =>
-    n <= 2
-        ? { label: "바이오", class: "text-rose-400" }
-        : n <= 4
-          ? { label: "소프트", class: "text-blue-400" }
-          : { label: "전기과", class: "text-yellow-400" };
-
 // 완료 화면 배경 파티클 위치 (한 번만 계산)
 const particles = Array.from({ length: 10 }, (_, i) => ({
     id: i,
@@ -52,18 +61,6 @@ const particles = Array.from({ length: 10 }, (_, i) => ({
     delay: 0.2 + Math.random() * 0.6,
     size: 14 + Math.round(Math.random() * 14),
 }));
-
-const loadBalance = async () => {
-    const req = await $API.getMyStickerBalance();
-    if (!req.error) {
-        balance.value = req.data.data;
-        if (held.value > 0 && amount.value > held.value) amount.value = held.value;
-    }
-};
-
-if (import.meta.client) {
-    await loadBalance();
-}
 
 const triggerVibration = (pattern: number | number[]) => {
     if (typeof window !== "undefined" && window.navigator.vibrate) {
@@ -84,18 +81,9 @@ const giveToClass = async () => {
     });
 
     if (req.error) {
-        if (req.response?.status == 409) {
-            toast.add({ title: "전달 실패", description: "보유한 스티커가 부족해요.", color: "error" });
-            await loadBalance();
-        } else if (req.response?.status == 404) {
-            toast.add({ title: "전달 실패", description: "해당 학급이 없어요.", color: "error" });
-        } else {
-            toast.add({
-                title: "전달 실패",
-                description: "알 수 없는 이유로 전달에 실패했습니다. 관리자에게 문의하세요.",
-                color: "error",
-            });
-        }
+        toast.add({ title: "전달하지 못했어요.", description: stickerErrorMessage(req.error), color: "error" });
+        // 다른 곳에서 보유 수가 바뀌었을 수 있으므로 최신 보유 수로 갱신
+        await refreshBalance();
         isLoading.value = false;
         return;
     }
@@ -160,7 +148,7 @@ const giveToClass = async () => {
                 <p class="text-ui-p2 h-12 flex items-center light:text-black/40 dark:text-white/40" v-else>먼저 학년을 선택하세요</p>
                 <p class="text-ui-p2 mt-2 h-5" v-if="classSelected">
                     {{ grade }}학년 {{ number }}반
-                    <span :class="departmentOf(number!).class">{{ departmentOf(number!).label }}</span>
+                    <span :class="stickerDepartment(number!).class">{{ stickerDepartment(number!).label }}</span>
                 </p>
                 <p class="text-ui-p2 mt-2 h-5 light:text-black/40 dark:text-white/40" v-else>학년과 반을 선택하세요</p>
 

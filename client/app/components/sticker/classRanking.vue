@@ -1,16 +1,14 @@
 <script setup lang="ts">
 import type { StickerClassRankingResponse } from "@miraepass/api-client";
 
-const payload = ref<StickerClassRankingResponse[]>([]);
-
-const { pending } = await useAsyncData(
-    "sticker.ranking.class",
-    async () => {
-        const req = await $API.getStickerClassRanking();
-        if (!req.data?.success || req.response == undefined) return;
-        payload.value = req.data.data;
-        return req;
+const { data: payload, pending } = await useAsyncData(
+    "sticker.class_ranking",
+    async (_nuxtApp, { signal }): Promise<StickerClassRankingResponse[]> => {
+        const req = await $API.getStickerClassRanking({ signal });
+        if (req.error) return [];
+        return req.data.data;
     },
+    { default: () => [] },
 );
 
 // 학년별 그룹 (1학년 → 3학년), 각 그룹 내부는 서버 정렬(반 오름차순) 유지
@@ -28,13 +26,6 @@ const grouped = computed(() => {
             rows: rows.map((row) => ({ ...row, index: index++ })),
         }));
 });
-
-const departmentOf = (number: number) =>
-    number <= 2
-        ? { label: "바이오", class: "text-rose-400" }
-        : number <= 4
-          ? { label: "소프트", class: "text-blue-400" }
-          : { label: "전기과", class: "text-yellow-400" };
 </script>
 
 <template>
@@ -69,8 +60,8 @@ const departmentOf = (number: number) =>
                     <div class="ml-3">
                         <div class="flex items-center mb-0.5">
                             <p class="text-p1">{{ row.grade }}학년 {{ row.number }}반</p>
-                            <p class="text-ui-p2 ml-1" :class="departmentOf(row.number).class">
-                                {{ departmentOf(row.number).label }}
+                            <p class="text-ui-p2 ml-1" :class="stickerDepartment(row.number).class">
+                                {{ stickerDepartment(row.number).label }}
                             </p>
                         </div>
                         <p

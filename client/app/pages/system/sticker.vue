@@ -4,7 +4,7 @@ import StickerRankingList from "@/components/sticker/rankingList.vue";
 import StickerClassRanking from "@/components/sticker/classRanking.vue";
 
 definePageMeta({
-    permissions: [ UserPermission.VIEW_STICKER ]
+    permissions: [ UserPermission.VIEW_STICKER ],
 });
 
 const session = useSession();
@@ -17,26 +17,26 @@ const canGiveClass = computed(
 
 const items = [
     {
-        label: '개인 순위',
-        icon: 'i-hugeicons-student',
-        slot: 'personal' as const
+        label: "개인 순위",
+        icon: "i-ph-student",
+        slot: "personal" as const,
     },
     {
-        label: '학급 순위',
-        icon: 'i-ph-chalkboard-teacher',
-        slot: 'class' as const
-    }
-]
+        label: "학급 순위",
+        icon: "i-ph-chalkboard-teacher",
+        slot: "class" as const,
+    },
+];
 
-const myBalance = ref<StickerBalance | undefined>();
-if (showBalance.value) {
-    await useAsyncData("sticker.me", async () => {
-        const req = await $API.getMyStickerBalance();
-        if (!req.data?.success || req.response == undefined) return;
-        myBalance.value = req.data.data;
-        return req;
-    });
-}
+const { data: myBalance } = await useAsyncData(
+    "sticker.my_balance",
+    async (_nuxtApp, { signal }): Promise<StickerBalance | null> => {
+        if (!showBalance.value) return null;
+        const req = await $API.getMyStickerBalance({ signal });
+        if (req.error) return null;
+        return req.data.data;
+    },
+);
 
 const searchInput = ref<string>("");
 const q = ref<string>("");
@@ -49,6 +49,10 @@ const onSearchInput = (event: Event) => {
         q.value = searchInput.value.trim();
     }, 200);
 };
+
+onBeforeUnmount(() => {
+    if (searchTimeout) clearTimeout(searchTimeout);
+});
 </script>
 
 <template>

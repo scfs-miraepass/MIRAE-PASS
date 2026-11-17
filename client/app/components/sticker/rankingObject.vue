@@ -24,23 +24,13 @@ defineProps<StickerRankingResponse>();
                 <div class="flex items-center mb-0.5">
                     <p class="text-p1">{{ name }}</p>
 
-                    <template v-if="grade != null && grade >= 1">
-                        <p
-                            class="text-ui-p2 text-rose-400 ml-1"
-                            v-if="(number ?? 0) <= 2"
-                        >
-                            {{ grade }}학년 바이오
-                        </p>
-                        <p
-                            class="text-ui-p2 text-blue-400 ml-1"
-                            v-else-if="(number ?? 0) <= 4"
-                        >
-                            {{ grade }}학년 소프트
-                        </p>
-                        <p class="text-ui-p2 text-yellow-400 ml-1" v-else>
-                            {{ grade }}학년 전기과
-                        </p>
-                    </template>
+                    <p
+                        v-if="grade != null && grade >= 1"
+                        class="text-ui-p2 ml-1"
+                        :class="stickerDepartment(number ?? 0).class"
+                    >
+                        {{ grade }}학년 {{ stickerDepartment(number ?? 0).label }}
+                    </p>
                 </div>
                 <p
                     class="text-ui-p2"

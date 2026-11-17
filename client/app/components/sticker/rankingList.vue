@@ -36,10 +36,10 @@ const { pending } = await useAsyncData(
                 ...queryParams.value,
                 q: props.q || undefined,
             },
-            ...signal,
+            signal,
         });
 
-        if (!req.data?.success || req.response == undefined) return;
+        if (req.error || !req.response) return;
         maxOffset.value = Number(req.response.headers.get("X-MAX-PAGE"));
 
         if (dataOffset.value === 1) {
@@ -47,7 +47,7 @@ const { pending } = await useAsyncData(
         } else {
             payloadData.value.push(...req.data.data);
         }
-        return req;
+        return req.data;
     },
     { watch: [queryParams, dataFetchKey] },
 );
