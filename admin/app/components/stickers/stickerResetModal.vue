@@ -1,41 +1,41 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch } from "vue";
 
-const emit = defineEmits(['close', 'success'])
+const emit = defineEmits(["close", "success"]);
 
-const open = ref<boolean>(true)
-const loading = ref<boolean>(false)
-const toast = useToast()
+const open = ref<boolean>(true);
+const loading = ref<boolean>(false);
+const toast = useToast();
 
-watch(open, value => {
+watch(open, (value) => {
     if (!value) {
-        setTimeout(() => emit('close'), 200)
+        setTimeout(() => emit("close"), 200);
     }
-})
+});
 
 const onSubmit = async () => {
-    loading.value = true
-    const req = await $API.resetStickers()
+    loading.value = true;
+    const req = await $API.resetStickers();
 
     if (req.error) {
         toast.add({
-            title: '초기화 실패',
-            description: '문제가 발생했습니다. 지속적으로 발생하는 경우 관리자에게 문의 바랍니다.',
-            color: 'error'
-        })
-        loading.value = false
-        return
+            title: "초기화 실패",
+            description: stickerErrorMessage(req.error),
+            color: "error",
+        });
+        loading.value = false;
+        return;
     }
 
     toast.add({
-        title: '스티커가 초기화되었습니다.',
-        description: '모든 학생의 보유 스티커 수가 0이 되었습니다.',
-        color: 'success'
-    })
+        title: "스티커가 초기화되었습니다.",
+        description: "모든 유저의 보유 스티커 수가 0이 되었습니다.",
+        color: "success",
+    });
 
-    open.value = false
-    emit('success')
-}
+    open.value = false;
+    emit("success");
+};
 </script>
 
 <template>

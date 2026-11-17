@@ -1,168 +1,180 @@
 <script setup lang="ts">
-import { UserPermission, type User, type StickerBalance, type StickerHistoryItem } from '@miraepass/api-client'
-import type { TableColumn } from '@nuxt/ui'
+import { UserPermission, type User, type StickerBalance, type StickerHistoryItem } from "@miraepass/api-client";
+import type { TableColumn } from "@nuxt/ui";
 
-import StickerManageModal from "@/components/stickers/stickerManageModal.vue"
-import StickerResetModal from "@/components/stickers/stickerResetModal.vue"
-import StickerHistoryCancelModal from "@/components/stickers/stickerHistoryCancelModal.vue"
+import StickerManageModal from "@/components/stickers/stickerManageModal.vue";
+import StickerResetModal from "@/components/stickers/stickerResetModal.vue";
+import StickerHistoryCancelModal from "@/components/stickers/stickerHistoryCancelModal.vue";
 
 definePageMeta({
-    permissions: [ UserPermission.MANAGE_STICKER ]
-})
+    permissions: [ UserPermission.MANAGE_STICKER ],
+});
 
-const PAGE_SIZE = 20
+const PAGE_SIZE = 20;
 
-// ---------- 학생 검색 / 선택 ----------
-const search = ref('')
-const searchLoading = ref<boolean>(false)
-const searchUsers = ref<User[]>([])
-let searchTimeout: NodeJS.Timeout | null = null
+const toast = useToast();
 
-const selectedUser = ref<User | undefined>()
-const balance = ref<StickerBalance | undefined>()
-const balanceLoading = ref<boolean>(false)
+// 유저 검색 / 선택
+const search = ref<string>("");
+const searchLoading = ref<boolean>(false);
+const searchUsers = ref<User[]>([]);
+let searchTimeout: ReturnType<typeof setTimeout> | undefined;
 
-const onSearch = async (event: InputEvent) => {
-    search.value = (event.target as HTMLInputElement).value
+const selectedUser = ref<User | undefined>();
+const balance = ref<StickerBalance | undefined>();
+const balanceLoading = ref<boolean>(false);
 
-    if (searchTimeout) clearTimeout(searchTimeout)
+const onSearch = (event: InputEvent) => {
+    search.value = (event.target as HTMLInputElement).value;
+
+    if (searchTimeout) clearTimeout(searchTimeout);
     searchTimeout = setTimeout(async () => {
         if (search.value.replaceAll(" ", "").length <= 0) {
-            searchUsers.value = []
-            return
+            searchUsers.value = [];
+            return;
         }
 
-        searchLoading.value = true
+        searchLoading.value = true;
         const req = await $API.searchSearchGet({
-            query: { q: search.value, t: ['student', 'teacher'] }
-        })
-        searchLoading.value = false
-        if (!req.data?.success || req.response == undefined) return
-        searchUsers.value = req.data.data
-    }, 200)
-}
+            query: { q: search.value, t: ["student", "teacher"] },
+        });
+        searchLoading.value = false;
+        if (req.error) {
+            toast.add({ title: "검색 실패", description: stickerErrorMessage(req.error), color: "error" });
+            return;
+        }
+        searchUsers.value = req.data.data;
+    }, 200);
+};
+
+onBeforeUnmount(() => {
+    if (searchTimeout) clearTimeout(searchTimeout);
+});
 
 const loadBalance = async () => {
     if (!selectedUser.value) {
-        balance.value = undefined
-        return
+        balance.value = undefined;
+        return;
     }
-    balanceLoading.value = true
-    const req = await $API.getUserStickerBalance({ path: { user_id: selectedUser.value.id! } })
-    balanceLoading.value = false
+    balanceLoading.value = true;
+    const req = await $API.getUserStickerBalance({ path: { user_id: selectedUser.value.id! } });
+    balanceLoading.value = false;
     if (req.error) {
-        balance.value = undefined
-        return
+        balance.value = undefined;
+        toast.add({ title: "보유 수 조회 실패", description: stickerErrorMessage(req.error), color: "error" });
+        return;
     }
-    balance.value = req.data.data
-}
+    balance.value = req.data.data;
+};
 
 const selectUser = async (user: User) => {
-    selectedUser.value = user
-    searchUsers.value = []
-    search.value = ''
-    dataPage.value = 1
-    await loadBalance()
-}
+    selectedUser.value = user;
+    searchUsers.value = [];
+    search.value = "";
+    dataPage.value = 1;
+    await loadBalance();
+};
 
 const clearUser = () => {
-    selectedUser.value = undefined
-    balance.value = undefined
-    dataPage.value = 1
-}
+    selectedUser.value = undefined;
+    balance.value = undefined;
+    dataPage.value = 1;
+};
 
-const remaining = computed(() => balance.value ? Math.max(0, balance.value.max - balance.value.count) : 0)
+const remaining = computed(() => (balance.value ? Math.max(0, balance.value.max - balance.value.count) : 0));
 
-// ---------- 모달 ----------
-const manageMode = ref<'grant' | 'revoke' | undefined>()
-const isResetModalOpen = ref(false)
-const cancelTarget = ref<StickerHistoryItem | undefined>()
+// 모달
+const manageMode = ref<"grant" | "revoke" | undefined>();
+const isResetModalOpen = ref<boolean>(false);
+const cancelTarget = ref<StickerHistoryItem | undefined>();
 
-// ---------- 기록 ----------
-const maxPage = ref<number>(0)
-const dataPage = ref<number>(1)
-const periodStart = ref<Date | undefined>()
+// 기록
+const maxPage = ref<number>(0);
+const dataPage = ref<number>(1);
 
 const queryParams = computed(() => ({
     limit: PAGE_SIZE,
     offset: (dataPage.value - 1) * PAGE_SIZE,
-    user_id: selectedUser.value?.id ?? undefined
-}))
+    user_id: selectedUser.value?.id ?? undefined,
+}));
 
-const { data: historyResponse, pending, refresh } = await useAsyncData('sticker.history', async (_nuxtApp, { signal }) => {
-    const req = await $API.getStickerHistory({
-        query: queryParams.value,
-        ...signal
-    })
+const { data: historyPage, pending, refresh } = await useAsyncData(
+    "sticker.history",
+    async (_nuxtApp, { signal }) => {
+        const req = await $API.getStickerHistory({
+            query: queryParams.value,
+            signal,
+        });
+        if (req.error || !req.response) return null;
 
-    if (!req.data?.success || req.response == undefined) return
-    maxPage.value = Number(req.response.headers.get("X-MAX-PAGE"))
-    periodStart.value = req.data.data.period_start
+        maxPage.value = Number(req.response.headers.get("X-MAX-PAGE"));
+        return req.data.data;
+    },
+    { watch: [ queryParams ] },
+);
 
-    return req.data
-}, { watch: [ queryParams ] })
-
-const history = computed<StickerHistoryItem[]>(() => historyResponse.value?.success ? historyResponse.value.data.items : [])
+const history = computed<StickerHistoryItem[]>(() => historyPage.value?.items ?? []);
+const periodStart = computed(() => historyPage.value?.period_start);
 
 const formatDate = (value: Date | string | undefined) =>
-    value ? new Date(value).toLocaleString('ko-KR', { dateStyle: 'medium', timeStyle: 'short' }) : '-'
+    value ? new Date(value).toLocaleString("ko-KR", { dateStyle: "medium", timeStyle: "short" }) : "-";
 
 const columns = computed<TableColumn<StickerHistoryItem>[]>(() => {
-    const UDropdownMenu = resolveComponent('UDropdownMenu')
-    const UButton = resolveComponent('UButton')
+    const UDropdownMenu = resolveComponent("UDropdownMenu");
+    const UButton = resolveComponent("UButton");
 
     return [
-        { accessorKey: 'created_at', header: '일시' },
-        { accessorKey: 'user_id', header: '대상' },
-        { accessorKey: 'amount', header: '수량' },
-        { accessorKey: 'actor_name', header: '처리자' },
-        { accessorKey: 'memo', header: '메모' },
+        { accessorKey: "created_at", header: "일시" },
+        { accessorKey: "user_id", header: "대상" },
+        { accessorKey: "amount", header: "수량" },
+        { accessorKey: "actor_name", header: "처리자" },
+        { accessorKey: "memo", header: "메모" },
         {
-            id: 'actions',
-            meta: { class: { td: 'text-right' } },
+            id: "actions",
+            meta: { class: { td: "text-right" } },
             cell: ({ row }) => h(
                 UDropdownMenu,
                 {
-                    content: { align: 'end' },
+                    content: { align: "end" },
                     items: [
                         {
-                            label: '기록 취소',
-                            icon: 'i-lucide-undo-2',
-                            color: 'error',
+                            label: "기록 취소",
+                            icon: "i-lucide-undo-2",
+                            color: "error",
                             onSelect() {
-                                cancelTarget.value = row.original
-                            }
-                        }
-                    ]
+                                cancelTarget.value = row.original;
+                            },
+                        },
+                    ],
                 },
                 () => h(UButton, {
-                    icon: 'i-lucide-ellipsis-vertical',
-                    color: 'neutral',
-                    variant: 'ghost',
+                    icon: "i-lucide-ellipsis-vertical",
+                    color: "neutral",
+                    variant: "ghost",
                     ui: {
-                        base: 'cursor-pointer hover:bg-accented dark:hover:bg-elevated'
-                    }
-                })
-            )
-        }
-    ]
-})
+                        base: "cursor-pointer hover:bg-accented dark:hover:bg-elevated",
+                    },
+                }),
+            ),
+        },
+    ];
+});
 
 const onChanged = async () => {
-    manageMode.value = undefined
-    await Promise.all([loadBalance(), refresh()])
-}
+    manageMode.value = undefined;
+    await Promise.all([loadBalance(), refresh()]);
+};
 
 const onCancelled = async () => {
-    cancelTarget.value = undefined
-    await Promise.all([loadBalance(), refresh()])
-}
+    cancelTarget.value = undefined;
+    await Promise.all([loadBalance(), refresh()]);
+};
 
 const onReset = async () => {
-    isResetModalOpen.value = false
-    dataPage.value = 1
-    await Promise.all([loadBalance(), refresh()])
-}
+    isResetModalOpen.value = false;
+    dataPage.value = 1;
+    await Promise.all([loadBalance(), refresh()]);
+};
 </script>
 
 <template>
