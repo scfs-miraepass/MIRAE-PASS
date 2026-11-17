@@ -462,7 +462,9 @@ export const zStickerBalance = z.object({
     user_id: z.int(),
     count: z.int(),
     max: z.int(),
-    period_start: z.iso.datetime({ offset: true })
+    period_start: z.iso.datetime({ offset: true }),
+    week_count: z.int(),
+    week_start: z.iso.datetime({ offset: true })
 });
 
 /**
@@ -471,6 +473,39 @@ export const zStickerBalance = z.object({
 export const zResponseModelStickerBalance = z.object({
     success: z.boolean(),
     data: zStickerBalance
+});
+
+/**
+ * StickerBulkFailure
+ */
+export const zStickerBulkFailure = z.object({
+    user_id: z.int(),
+    reason: z.string()
+});
+
+/**
+ * StickerBulkOperation
+ */
+export const zStickerBulkOperation = z.object({
+    user_ids: z.array(z.int()).min(1).max(100),
+    amount: z.int().gte(1).lte(3).optional().default(1),
+    memo: z.string().max(100).nullish()
+});
+
+/**
+ * StickerBulkResult
+ */
+export const zStickerBulkResult = z.object({
+    succeeded: z.array(zStickerBalance),
+    failed: z.array(zStickerBulkFailure)
+});
+
+/**
+ * ResponseModel[StickerBulkResult]
+ */
+export const zResponseModelStickerBulkResult = z.object({
+    success: z.boolean(),
+    data: zStickerBulkResult
 });
 
 /**
@@ -1068,6 +1103,13 @@ export const zGrantStickerBody = zStickerOperation;
  * 스티커 지급 성공
  */
 export const zGrantStickerResponse = zResponseModelStickerBalance;
+
+export const zGrantStickersBody = zStickerBulkOperation;
+
+/**
+ * 일괄 지급 처리 완료 (일부 또는 전부 실패해도 200이며 결과는 본문에 있음)
+ */
+export const zGrantStickersResponse = zResponseModelStickerBulkResult;
 
 export const zRevokeStickerBody = zStickerOperation;
 

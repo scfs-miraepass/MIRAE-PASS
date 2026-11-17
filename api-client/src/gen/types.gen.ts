@@ -1008,6 +1008,20 @@ export type ResponseModelStickerBalance = {
 };
 
 /**
+ * ResponseModel[StickerBulkResult]
+ */
+export type ResponseModelStickerBulkResult = {
+    /**
+     * Success
+     */
+    success: boolean;
+    /**
+     * 응답 데이터
+     */
+    data: StickerBulkResult;
+};
+
+/**
  * ResponseModel[StickerHistoryPage]
  */
 export type ResponseModelStickerHistoryPage = {
@@ -1309,7 +1323,7 @@ export type StickerBalance = {
     /**
      * Max
      *
-     * 보유 가능한 최대 스티커 수
+     * 한 주 동안 받을 수 있는 최대 스티커 수
      */
     max: number;
     /**
@@ -1318,6 +1332,78 @@ export type StickerBalance = {
      * 현재 집계 기간 시작 시각
      */
     period_start: Date;
+    /**
+     * Week Count
+     *
+     * 이번 주에 지급받은 스티커 수 (학급 전달 제외)
+     */
+    week_count: number;
+    /**
+     * Week Start
+     *
+     * 이번 주 한도 계산 시작 시각 (월요일 00:00 KST, 수동 초기화가 있었다면 그 시각)
+     */
+    week_start: Date;
+};
+
+/**
+ * StickerBulkFailure
+ */
+export type StickerBulkFailure = {
+    /**
+     * User Id
+     *
+     * 지급하지 못한 유저의 고유 ID
+     */
+    user_id: number;
+    /**
+     * Reason
+     *
+     * 지급하지 못한 이유
+     */
+    reason: string;
+};
+
+/**
+ * StickerBulkOperation
+ */
+export type StickerBulkOperation = {
+    /**
+     * User Ids
+     *
+     * 대상 유저 ID 목록 (1~100명)
+     */
+    user_ids: Array<number>;
+    /**
+     * Amount
+     *
+     * 유저마다 지급할 스티커 수 (1~3)
+     */
+    amount?: number;
+    /**
+     * Memo
+     *
+     * 메모
+     */
+    memo?: string | null;
+};
+
+/**
+ * StickerBulkResult
+ */
+export type StickerBulkResult = {
+    /**
+     * Succeeded
+     *
+     * 지급에 성공한 유저의 지급 후 보유 수
+     */
+    succeeded: Array<StickerBalance>;
+    /**
+     * Failed
+     *
+     * 지급하지 못한 유저와 이유
+     */
+    failed: Array<StickerBulkFailure>;
 };
 
 /**
@@ -3382,7 +3468,7 @@ export type GrantStickerErrors = {
      */
     404: ErrorResponse;
     /**
-     * 보유 한도(3개) 초과
+     * 이번 주 한도(3개) 초과
      */
     409: ErrorResponse;
     /**
@@ -3401,6 +3487,39 @@ export type GrantStickerResponses = {
 };
 
 export type GrantStickerResponse = GrantStickerResponses[keyof GrantStickerResponses];
+
+export type GrantStickersData = {
+    body: StickerBulkOperation;
+    path?: never;
+    query?: never;
+    url: '/sticker/bulk';
+};
+
+export type GrantStickersErrors = {
+    /**
+     * 세션이 만료되었거나 유효하지 않음
+     */
+    401: ErrorResponse;
+    /**
+     * 권한이 없음
+     */
+    403: ErrorResponse;
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GrantStickersError = GrantStickersErrors[keyof GrantStickersErrors];
+
+export type GrantStickersResponses = {
+    /**
+     * 일괄 지급 처리 완료 (일부 또는 전부 실패해도 200이며 결과는 본문에 있음)
+     */
+    200: ResponseModelStickerBulkResult;
+};
+
+export type GrantStickersResponse = GrantStickersResponses[keyof GrantStickersResponses];
 
 export type RevokeStickerData = {
     body: StickerOperation;

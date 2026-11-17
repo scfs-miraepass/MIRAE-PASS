@@ -1378,6 +1378,25 @@ export const ResponseModel_StickerBalance_Schema = {
     title: 'ResponseModel[StickerBalance]'
 } as const;
 
+export const ResponseModel_StickerBulkResult_Schema = {
+    properties: {
+        success: {
+            type: 'boolean',
+            title: 'Success'
+        },
+        data: {
+            $ref: '#/components/schemas/StickerBulkResult',
+            description: '응답 데이터'
+        }
+    },
+    type: 'object',
+    required: [
+        'success',
+        'data'
+    ],
+    title: 'ResponseModel[StickerBulkResult]'
+} as const;
+
 export const ResponseModel_StickerHistoryPage_Schema = {
     properties: {
         success: {
@@ -1777,13 +1796,24 @@ export const StickerBalanceSchema = {
         max: {
             type: 'integer',
             title: 'Max',
-            description: '보유 가능한 최대 스티커 수'
+            description: '한 주 동안 받을 수 있는 최대 스티커 수'
         },
         period_start: {
             type: 'string',
             format: 'date-time',
             title: 'Period Start',
             description: '현재 집계 기간 시작 시각'
+        },
+        week_count: {
+            type: 'integer',
+            title: 'Week Count',
+            description: '이번 주에 지급받은 스티커 수 (학급 전달 제외)'
+        },
+        week_start: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Week Start',
+            description: '이번 주 한도 계산 시작 시각 (월요일 00:00 KST, 수동 초기화가 있었다면 그 시각)'
         }
     },
     type: 'object',
@@ -1791,9 +1821,100 @@ export const StickerBalanceSchema = {
         'user_id',
         'count',
         'max',
-        'period_start'
+        'period_start',
+        'week_count',
+        'week_start'
     ],
     title: 'StickerBalance'
+} as const;
+
+export const StickerBulkFailureSchema = {
+    properties: {
+        user_id: {
+            type: 'integer',
+            title: 'User Id',
+            description: '지급하지 못한 유저의 고유 ID'
+        },
+        reason: {
+            type: 'string',
+            title: 'Reason',
+            description: '지급하지 못한 이유'
+        }
+    },
+    type: 'object',
+    required: [
+        'user_id',
+        'reason'
+    ],
+    title: 'StickerBulkFailure'
+} as const;
+
+export const StickerBulkOperationSchema = {
+    properties: {
+        user_ids: {
+            items: {
+                type: 'integer'
+            },
+            type: 'array',
+            maxItems: 100,
+            minItems: 1,
+            title: 'User Ids',
+            description: '대상 유저 ID 목록 (1~100명)'
+        },
+        amount: {
+            type: 'integer',
+            maximum: 3,
+            minimum: 1,
+            title: 'Amount',
+            description: '유저마다 지급할 스티커 수 (1~3)',
+            default: 1
+        },
+        memo: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 100
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Memo',
+            description: '메모'
+        }
+    },
+    type: 'object',
+    required: [
+        'user_ids'
+    ],
+    title: 'StickerBulkOperation'
+} as const;
+
+export const StickerBulkResultSchema = {
+    properties: {
+        succeeded: {
+            items: {
+                $ref: '#/components/schemas/StickerBalance'
+            },
+            type: 'array',
+            title: 'Succeeded',
+            description: '지급에 성공한 유저의 지급 후 보유 수'
+        },
+        failed: {
+            items: {
+                $ref: '#/components/schemas/StickerBulkFailure'
+            },
+            type: 'array',
+            title: 'Failed',
+            description: '지급하지 못한 유저와 이유'
+        }
+    },
+    type: 'object',
+    required: [
+        'succeeded',
+        'failed'
+    ],
+    title: 'StickerBulkResult'
 } as const;
 
 export const StickerClassOperationSchema = {
