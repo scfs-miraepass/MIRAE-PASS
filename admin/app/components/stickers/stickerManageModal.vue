@@ -17,9 +17,9 @@ const toast = useToast();
 const isGrant = computed(() => props.mode === "grant");
 const actionLabel = computed(() => (isGrant.value ? "지급" : "회수"));
 const targetLabel = computed(() => (props.user.type === "teacher" ? "선생님" : "학생"));
-// 지급은 남은 한도까지, 회수는 보유 수까지 선택 가능
+// 지급은 이번 주 남은 한도까지, 회수는 보유 수까지 선택 가능
 const limit = computed(() =>
-    isGrant.value ? Math.max(0, props.balance.max - props.balance.count) : props.balance.count,
+    isGrant.value ? Math.max(0, props.balance.max - props.balance.week_count) : props.balance.count,
 );
 const amountOptions = computed(() =>
     Array.from({ length: limit.value }, (_, i) => ({ label: `${i + 1}개`, value: i + 1 })),
@@ -84,7 +84,7 @@ const onSubmit = async () => {
 <template>
     <UModal
         :title="`스티커 ${actionLabel}`"
-        :description="`${user.name} (${user.id}) · 현재 ${balance.count} / ${balance.max}개 보유`"
+        :description="`${user.name} (${user.id}) · 보유 ${balance.count}개 · 이번 주 ${balance.week_count} / ${balance.max}개 받음`"
         v-model:open="open"
         :close="false"
         :dismissible="!loading"

@@ -81,7 +81,8 @@ const clearUser = () => {
     dataPage.value = 1;
 };
 
-const remaining = computed(() => (balance.value ? Math.max(0, balance.value.max - balance.value.count) : 0));
+// 지급 한도는 보유 수가 아니라 이번 주에 받은 수 기준
+const remaining = computed(() => (balance.value ? Math.max(0, balance.value.max - balance.value.week_count) : 0));
 
 // 모달
 const manageMode = ref<"grant" | "revoke" | undefined>();
@@ -215,7 +216,7 @@ const onReset = async () => {
             <p class="text-base mb-4">
                 <span class="text-muted">현재 집계 기간 시작:</span>
                 <span class="font-semibold ml-1">{{ formatDate(periodStart) }}</span>
-                <span class="text-muted ml-2">· 매월 1일 00:00에 자동 초기화됩니다.</span>
+                <span class="text-muted ml-2">· 매월 1일 00:00에 자동 초기화됩니다. · 한 주(월요일 00:00~)에 1인당 최대 3개까지 받을 수 있습니다.</span>
             </p>
 
             <!-- 학생 검색 / 선택 -->
@@ -273,7 +274,10 @@ const onReset = async () => {
                             </p>
                             <p class="text-2xl font-bold mt-1">
                                 <template v-if="balanceLoading">...</template>
-                                <template v-else-if="balance">♡ {{ balance.count }} <span class="text-base text-muted font-normal">/ {{ balance.max }}</span></template>
+                                <template v-else-if="balance">
+                                    <UIcon name="i-lucide-heart" class="inline-block align-[-2px]" /> {{ balance.count }}
+                                    <span class="text-base text-muted font-normal">· 이번 주 {{ balance.week_count }} / {{ balance.max }}</span>
+                                </template>
                                 <template v-else>-</template>
                             </p>
                         </div>
