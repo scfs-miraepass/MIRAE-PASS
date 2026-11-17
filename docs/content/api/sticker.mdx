@@ -224,10 +224,15 @@ if (!req.error && req.data.data.failed.length > 0) {
 {
     "success": true,
     "data": [
-        { "id": 1101, "name": "홍길동", "grade": 1, "number": 1, "count": 3, "rank": 1 }
+        { "id": 1101, "name": "홍길동", "grade": 1, "number": 1, "count": 5, "week_count": 2, "rank": 1 }
     ]
 }
 ```
+
+| 항목 | 설명 |
+| --- | --- |
+| `count` | 현재 집계 기간의 보유 수입니다. 순위는 이 값 기준입니다. |
+| `week_count` | 이번 주에 받은 수입니다. 화면에서 [주간 한도](#주간-한도) 하트를 채우는 데 사용합니다. |
 
 ## 학급 순위
 
