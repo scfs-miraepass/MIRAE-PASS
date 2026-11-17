@@ -1767,7 +1767,7 @@ export const StickerBalanceSchema = {
         user_id: {
             type: 'integer',
             title: 'User Id',
-            description: '학생의 고유 ID'
+            description: '유저의 고유 ID'
         },
         count: {
             type: 'integer',
@@ -1884,12 +1884,13 @@ export const StickerHistoryItemSchema = {
     properties: {
         id: {
             type: 'integer',
-            title: 'Id'
+            title: 'Id',
+            description: '스티커 기록 ID'
         },
         user_id: {
             type: 'integer',
             title: 'User Id',
-            description: '대상 유저(학생/교사)의 고유 ID'
+            description: '대상 유저(학생 / 교사)의 고유 ID'
         },
         user_name: {
             anyOf: [
@@ -1906,14 +1907,13 @@ export const StickerHistoryItemSchema = {
         user_type: {
             anyOf: [
                 {
-                    type: 'string'
+                    $ref: '#/components/schemas/UserType'
                 },
                 {
                     type: 'null'
                 }
             ],
-            title: 'User Type',
-            description: '대상 유저 타입 (student / teacher)'
+            description: '대상 유저 타입'
         },
         class_grade: {
             anyOf: [
@@ -1966,7 +1966,7 @@ export const StickerHistoryItemSchema = {
         amount: {
             type: 'integer',
             title: 'Amount',
-            description: '변동 수량 (지급 +, 회수 -)'
+            description: '변동 수량 (지급 +, 회수 · 학급 전달 -)'
         },
         actor_id: {
             anyOf: [
@@ -2001,12 +2001,14 @@ export const StickerHistoryItemSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Memo'
+            title: 'Memo',
+            description: '메모'
         },
         created_at: {
             type: 'string',
             format: 'date-time',
-            title: 'Created At'
+            title: 'Created At',
+            description: '처리 일시'
         }
     },
     type: 'object',
@@ -2041,7 +2043,8 @@ export const StickerHistoryPageSchema = {
                 $ref: '#/components/schemas/StickerHistoryItem'
             },
             type: 'array',
-            title: 'Items'
+            title: 'Items',
+            description: '스티커 기록 목록'
         }
     },
     type: 'object',
@@ -2057,7 +2060,7 @@ export const StickerOperationSchema = {
         user_id: {
             type: 'integer',
             title: 'User Id',
-            description: '대상 학생의 고유 ID (학번)'
+            description: '대상 유저(학생 / 교사)의 고유 ID'
         },
         amount: {
             type: 'integer',
@@ -2273,7 +2276,8 @@ export const UserPermissionSchema = {
         16777216,
         5652928,
         22464962,
-        14296592
+        14296592,
+        33554431
     ],
     title: 'UserPermission',
     description: '유저 권한 IntFlag.\n작명시 `동사_목적`으로 작성하며, 대문자로만 작성한다.\n예) 포인트 관리 -> MANAGE_POINT',
@@ -2314,7 +2318,8 @@ export const UserPermissionSchema = {
         'GIVE_CLASS_STICKER',
         'STUDENT',
         'TEACHER',
-        'ADMIN'
+        'ADMIN',
+        'ALL'
     ],
     'x-enumNames': [
         'NONE',
@@ -2353,7 +2358,8 @@ export const UserPermissionSchema = {
         'GIVE_CLASS_STICKER',
         'STUDENT',
         'TEACHER',
-        'ADMIN'
+        'ADMIN',
+        'ALL'
     ]
 } as const;
 

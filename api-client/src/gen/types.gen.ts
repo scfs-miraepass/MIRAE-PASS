@@ -1297,7 +1297,7 @@ export type StickerBalance = {
     /**
      * User Id
      *
-     * 학생의 고유 ID
+     * 유저의 고유 ID
      */
     user_id: number;
     /**
@@ -1392,12 +1392,14 @@ export type StickerClassRankingResponse = {
 export type StickerHistoryItem = {
     /**
      * Id
+     *
+     * 스티커 기록 ID
      */
     id: number;
     /**
      * User Id
      *
-     * 대상 유저(학생/교사)의 고유 ID
+     * 대상 유저(학생 / 교사)의 고유 ID
      */
     user_id: number;
     /**
@@ -1407,11 +1409,9 @@ export type StickerHistoryItem = {
      */
     user_name: string | null;
     /**
-     * User Type
-     *
-     * 대상 유저 타입 (student / teacher)
+     * 대상 유저 타입
      */
-    user_type: string | null;
+    user_type: UserType | null;
     /**
      * Class Grade
      *
@@ -1439,7 +1439,7 @@ export type StickerHistoryItem = {
     /**
      * Amount
      *
-     * 변동 수량 (지급 +, 회수 -)
+     * 변동 수량 (지급 +, 회수 · 학급 전달 -)
      */
     amount: number;
     /**
@@ -1456,10 +1456,14 @@ export type StickerHistoryItem = {
     actor_name: string | null;
     /**
      * Memo
+     *
+     * 메모
      */
     memo: string | null;
     /**
      * Created At
+     *
+     * 처리 일시
      */
     created_at: Date;
 };
@@ -1476,6 +1480,8 @@ export type StickerHistoryPage = {
     period_start: Date;
     /**
      * Items
+     *
+     * 스티커 기록 목록
      */
     items: Array<StickerHistoryItem>;
 };
@@ -1487,7 +1493,7 @@ export type StickerOperation = {
     /**
      * User Id
      *
-     * 대상 학생의 고유 ID (학번)
+     * 대상 유저(학생 / 교사)의 고유 ID
      */
     user_id: number;
     /**
@@ -1757,7 +1763,11 @@ export const UserPermission = {
     /**
      * ADMIN
      */
-    ADMIN: 14296592
+    ADMIN: 14296592,
+    /**
+     * ALL
+     */
+    ALL: 33554431
 } as const;
 
 /**
@@ -3356,9 +3366,13 @@ export type GrantStickerData = {
 
 export type GrantStickerErrors = {
     /**
-     * 학생이 아닌 유저에게 지급 시도
+     * 학생 또는 교사가 아닌 유저에게 지급 시도
      */
     400: ErrorResponse;
+    /**
+     * 세션이 만료되었거나 유효하지 않음
+     */
+    401: ErrorResponse;
     /**
      * 권한이 없음
      */
@@ -3381,7 +3395,7 @@ export type GrantStickerError = GrantStickerErrors[keyof GrantStickerErrors];
 
 export type GrantStickerResponses = {
     /**
-     * 정상 처리
+     * 스티커 지급 성공
      */
     200: ResponseModelStickerBalance;
 };
@@ -3397,9 +3411,13 @@ export type RevokeStickerData = {
 
 export type RevokeStickerErrors = {
     /**
-     * 학생이 아닌 유저
+     * 학생 또는 교사가 아닌 유저
      */
     400: ErrorResponse;
+    /**
+     * 세션이 만료되었거나 유효하지 않음
+     */
+    401: ErrorResponse;
     /**
      * 권한이 없음
      */
@@ -3422,7 +3440,7 @@ export type RevokeStickerError = RevokeStickerErrors[keyof RevokeStickerErrors];
 
 export type RevokeStickerResponses = {
     /**
-     * 정상 처리
+     * 스티커 회수 성공
      */
     200: ResponseModelStickerBalance;
 };
@@ -3437,6 +3455,10 @@ export type GiveStickerToClassData = {
 };
 
 export type GiveStickerToClassErrors = {
+    /**
+     * 세션이 만료되었거나 유효하지 않음
+     */
+    401: ErrorResponse;
     /**
      * 권한이 없음
      */
@@ -3459,7 +3481,7 @@ export type GiveStickerToClassError = GiveStickerToClassErrors[keyof GiveSticker
 
 export type GiveStickerToClassResponses = {
     /**
-     * 정상 처리
+     * 학급 전달 성공
      */
     200: ResponseModelStickerBalance;
 };
@@ -3475,6 +3497,10 @@ export type ResetStickersData = {
 
 export type ResetStickersErrors = {
     /**
+     * 세션이 만료되었거나 유효하지 않음
+     */
+    401: ErrorResponse;
+    /**
      * 권한이 없음
      */
     403: ErrorResponse;
@@ -3484,7 +3510,7 @@ export type ResetStickersError = ResetStickersErrors[keyof ResetStickersErrors];
 
 export type ResetStickersResponses = {
     /**
-     * 정상 처리
+     * 스티커 초기화 성공
      */
     204: void;
 };
@@ -3500,6 +3526,10 @@ export type GetMyStickerBalanceData = {
 
 export type GetMyStickerBalanceErrors = {
     /**
+     * 세션이 만료되었거나 유효하지 않음
+     */
+    401: ErrorResponse;
+    /**
      * 권한이 없음
      */
     403: ErrorResponse;
@@ -3509,7 +3539,7 @@ export type GetMyStickerBalanceError = GetMyStickerBalanceErrors[keyof GetMyStic
 
 export type GetMyStickerBalanceResponses = {
     /**
-     * 정상 처리
+     * 내 스티커 보유 수 조회 성공
      */
     200: ResponseModelStickerBalance;
 };
@@ -3530,6 +3560,10 @@ export type GetUserStickerBalanceData = {
 
 export type GetUserStickerBalanceErrors = {
     /**
+     * 세션이 만료되었거나 유효하지 않음
+     */
+    401: ErrorResponse;
+    /**
      * 권한이 없음
      */
     403: ErrorResponse;
@@ -3547,7 +3581,7 @@ export type GetUserStickerBalanceError = GetUserStickerBalanceErrors[keyof GetUs
 
 export type GetUserStickerBalanceResponses = {
     /**
-     * 정상 처리
+     * 유저 스티커 보유 수 조회 성공
      */
     200: ResponseModelStickerBalance;
 };
@@ -3580,6 +3614,10 @@ export type GetStickerRankingData = {
 
 export type GetStickerRankingErrors = {
     /**
+     * 세션이 만료되었거나 유효하지 않음
+     */
+    401: ErrorResponse;
+    /**
      * 권한이 없음
      */
     403: ErrorResponse;
@@ -3593,7 +3631,7 @@ export type GetStickerRankingError = GetStickerRankingErrors[keyof GetStickerRan
 
 export type GetStickerRankingResponses = {
     /**
-     * 정상 처리
+     * 스티커 개인 랭킹 조회 성공
      */
     200: ResponseModelListStickerRankingResponse;
 };
@@ -3609,6 +3647,10 @@ export type GetStickerClassRankingData = {
 
 export type GetStickerClassRankingErrors = {
     /**
+     * 세션이 만료되었거나 유효하지 않음
+     */
+    401: ErrorResponse;
+    /**
      * 권한이 없음
      */
     403: ErrorResponse;
@@ -3618,7 +3660,7 @@ export type GetStickerClassRankingError = GetStickerClassRankingErrors[keyof Get
 
 export type GetStickerClassRankingResponses = {
     /**
-     * 정상 처리
+     * 스티커 학급 랭킹 조회 성공
      */
     200: ResponseModelListStickerClassRankingResponse;
 };
@@ -3632,7 +3674,7 @@ export type GetStickerHistoryData = {
         /**
          * User Id
          *
-         * 특정 학생의 기록만 조회
+         * 특정 유저의 기록만 조회
          */
         user_id?: number | null;
         /**
@@ -3651,6 +3693,10 @@ export type GetStickerHistoryData = {
 
 export type GetStickerHistoryErrors = {
     /**
+     * 세션이 만료되었거나 유효하지 않음
+     */
+    401: ErrorResponse;
+    /**
      * 권한이 없음
      */
     403: ErrorResponse;
@@ -3664,7 +3710,7 @@ export type GetStickerHistoryError = GetStickerHistoryErrors[keyof GetStickerHis
 
 export type GetStickerHistoryResponses = {
     /**
-     * 정상 처리
+     * 스티커 기록 조회 성공
      */
     200: ResponseModelStickerHistoryPage;
 };
@@ -3685,6 +3731,10 @@ export type DeleteStickerHistoryData = {
 
 export type DeleteStickerHistoryErrors = {
     /**
+     * 세션이 만료되었거나 유효하지 않음
+     */
+    401: ErrorResponse;
+    /**
      * 권한이 없음
      */
     403: ErrorResponse;
@@ -3693,7 +3743,7 @@ export type DeleteStickerHistoryErrors = {
      */
     404: ErrorResponse;
     /**
-     * 취소 시 학생의 보유 수가 0 미만이 됨
+     * 취소 시 대상 유저의 보유 수가 0 미만이 됨
      */
     409: ErrorResponse;
     /**
@@ -3706,7 +3756,7 @@ export type DeleteStickerHistoryError = DeleteStickerHistoryErrors[keyof DeleteS
 
 export type DeleteStickerHistoryResponses = {
     /**
-     * 정상 처리
+     * 스티커 기록 취소 성공
      */
     204: void;
 };

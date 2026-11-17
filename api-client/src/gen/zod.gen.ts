@@ -503,41 +503,6 @@ export const zResponseModelListStickerClassRankingResponse = z.object({
 });
 
 /**
- * StickerHistoryItem
- */
-export const zStickerHistoryItem = z.object({
-    id: z.int(),
-    user_id: z.int(),
-    user_name: z.string().nullable(),
-    user_type: z.string().nullable(),
-    class_grade: z.int().nullable(),
-    class_number: z.int().nullable(),
-    grade: z.int().nullable(),
-    number: z.int().nullable(),
-    amount: z.int(),
-    actor_id: z.int().nullable(),
-    actor_name: z.string().nullable(),
-    memo: z.string().nullable(),
-    created_at: z.iso.datetime({ offset: true })
-});
-
-/**
- * StickerHistoryPage
- */
-export const zStickerHistoryPage = z.object({
-    period_start: z.iso.datetime({ offset: true }),
-    items: z.array(zStickerHistoryItem)
-});
-
-/**
- * ResponseModel[StickerHistoryPage]
- */
-export const zResponseModelStickerHistoryPage = z.object({
-    success: z.boolean(),
-    data: zStickerHistoryPage
-});
-
-/**
  * StickerOperation
  */
 export const zStickerOperation = z.object({
@@ -610,7 +575,8 @@ export const zUserPermission = z.union([
     z.literal(16777216),
     z.literal(5652928),
     z.literal(22464962),
-    z.literal(14296592)
+    z.literal(14296592),
+    z.literal(33554431)
 ]);
 
 /**
@@ -631,6 +597,41 @@ export const zAdminUserCreateRequest = z.object({
     grade: z.int().nullish(),
     number: z.int().nullish(),
     student_no: z.int().nullish()
+});
+
+/**
+ * StickerHistoryItem
+ */
+export const zStickerHistoryItem = z.object({
+    id: z.int(),
+    user_id: z.int(),
+    user_name: z.string().nullable(),
+    user_type: zUserType.nullable(),
+    class_grade: z.int().nullable(),
+    class_number: z.int().nullable(),
+    grade: z.int().nullable(),
+    number: z.int().nullable(),
+    amount: z.int(),
+    actor_id: z.int().nullable(),
+    actor_name: z.string().nullable(),
+    memo: z.string().nullable(),
+    created_at: z.iso.datetime({ offset: true })
+});
+
+/**
+ * StickerHistoryPage
+ */
+export const zStickerHistoryPage = z.object({
+    period_start: z.iso.datetime({ offset: true }),
+    items: z.array(zStickerHistoryItem)
+});
+
+/**
+ * ResponseModel[StickerHistoryPage]
+ */
+export const zResponseModelStickerHistoryPage = z.object({
+    success: z.boolean(),
+    data: zStickerHistoryPage
 });
 
 /**
@@ -1064,31 +1065,31 @@ export const zCreateStampStampPostResponse = z.void();
 export const zGrantStickerBody = zStickerOperation;
 
 /**
- * 정상 처리
+ * 스티커 지급 성공
  */
 export const zGrantStickerResponse = zResponseModelStickerBalance;
 
 export const zRevokeStickerBody = zStickerOperation;
 
 /**
- * 정상 처리
+ * 스티커 회수 성공
  */
 export const zRevokeStickerResponse = zResponseModelStickerBalance;
 
 export const zGiveStickerToClassBody = zStickerClassOperation;
 
 /**
- * 정상 처리
+ * 학급 전달 성공
  */
 export const zGiveStickerToClassResponse = zResponseModelStickerBalance;
 
 /**
- * 정상 처리
+ * 스티커 초기화 성공
  */
 export const zResetStickersResponse = z.void();
 
 /**
- * 정상 처리
+ * 내 스티커 보유 수 조회 성공
  */
 export const zGetMyStickerBalanceResponse = zResponseModelStickerBalance;
 
@@ -1097,7 +1098,7 @@ export const zGetUserStickerBalancePath = z.object({
 });
 
 /**
- * 정상 처리
+ * 유저 스티커 보유 수 조회 성공
  */
 export const zGetUserStickerBalanceResponse = zResponseModelStickerBalance;
 
@@ -1108,12 +1109,12 @@ export const zGetStickerRankingQuery = z.object({
 });
 
 /**
- * 정상 처리
+ * 스티커 개인 랭킹 조회 성공
  */
 export const zGetStickerRankingResponse = zResponseModelListStickerRankingResponse;
 
 /**
- * 정상 처리
+ * 스티커 학급 랭킹 조회 성공
  */
 export const zGetStickerClassRankingResponse = zResponseModelListStickerClassRankingResponse;
 
@@ -1124,7 +1125,7 @@ export const zGetStickerHistoryQuery = z.object({
 });
 
 /**
- * 정상 처리
+ * 스티커 기록 조회 성공
  */
 export const zGetStickerHistoryResponse = zResponseModelStickerHistoryPage;
 
@@ -1133,7 +1134,7 @@ export const zDeleteStickerHistoryPath = z.object({
 });
 
 /**
- * 정상 처리
+ * 스티커 기록 취소 성공
  */
 export const zDeleteStickerHistoryResponse = z.void();
 

@@ -844,7 +844,7 @@ export class MiraepassApi extends HeyApiClient {
     /**
      * 스티커 지급
      *
-     * 학생에게 스티커를 1~3개 지급합니다. 현재 집계 기간 내 보유 수는 3개를 넘을 수 없습니다.
+     * 학생 또는 교사에게 스티커를 1~3개 지급합니다. 현재 집계 기간 내 보유 수는 3개를 넘을 수 없습니다.
      */
     public grantSticker<ThrowOnError extends boolean = false>(options: Options<GrantStickerData, ThrowOnError>): RequestResult<GrantStickerResponses, GrantStickerErrors, ThrowOnError> {
         return (options.client ?? this.client).post<GrantStickerResponses, GrantStickerErrors, ThrowOnError>({
@@ -866,7 +866,7 @@ export class MiraepassApi extends HeyApiClient {
     /**
      * 스티커 회수
      *
-     * 학생의 스티커를 회수합니다. 현재 집계 기간 내 보유 수 이하로만 회수할 수 있습니다.
+     * 유저의 스티커를 회수합니다. 현재 집계 기간 내 보유 수 이하로만 회수할 수 있습니다.
      */
     public revokeSticker<ThrowOnError extends boolean = false>(options: Options<RevokeStickerData, ThrowOnError>): RequestResult<RevokeStickerResponses, RevokeStickerErrors, ThrowOnError> {
         return (options.client ?? this.client).post<RevokeStickerResponses, RevokeStickerErrors, ThrowOnError>({
@@ -910,7 +910,7 @@ export class MiraepassApi extends HeyApiClient {
     /**
      * 스티커 수동 초기화
      *
-     * 모든 학생의 현재 스티커 보유 수를 0으로 만듭니다. 기록은 삭제되지 않으며 새 집계 기간이 시작됩니다.
+     * 모든 유저의 현재 스티커 보유 수를 0으로 만듭니다. 기록은 삭제되지 않으며 새 집계 기간이 시작됩니다.
      */
     public resetStickers<ThrowOnError extends boolean = false>(options?: Options<ResetStickersData, ThrowOnError>): RequestResult<ResetStickersResponses, ResetStickersErrors, ThrowOnError> {
         return (options?.client ?? this.client).post<ResetStickersResponses, ResetStickersErrors, ThrowOnError>({
@@ -928,7 +928,7 @@ export class MiraepassApi extends HeyApiClient {
     /**
      * 내 스티커 보유 수 조회
      *
-     * 현재 집계 기간 내 내 스티커 보유 수를 조회합니다. 학생/교사가 아닌 경우 0을 반환합니다.
+     * 현재 집계 기간 내 내 스티커 보유 수를 조회합니다. 학생 또는 교사가 아닌 경우 0을 반환합니다.
      */
     public getMyStickerBalance<ThrowOnError extends boolean = false>(options?: Options<GetMyStickerBalanceData, ThrowOnError>): RequestResult<GetMyStickerBalanceResponses, GetMyStickerBalanceErrors, ThrowOnError> {
         return (options?.client ?? this.client).get<GetMyStickerBalanceResponses, GetMyStickerBalanceErrors, ThrowOnError>({
@@ -944,9 +944,9 @@ export class MiraepassApi extends HeyApiClient {
     }
     
     /**
-     * 특정 학생 스티커 보유 수 조회
+     * 특정 유저 스티커 보유 수 조회
      *
-     * 지급/관리 권한이 있는 유저가 특정 학생의 현재 스티커 보유 수를 조회합니다.
+     * 지급 · 관리 권한이 있는 유저가 특정 유저의 현재 스티커 보유 수를 조회합니다.
      */
     public getUserStickerBalance<ThrowOnError extends boolean = false>(options: Options<GetUserStickerBalanceData, ThrowOnError>): RequestResult<GetUserStickerBalanceResponses, GetUserStickerBalanceErrors, ThrowOnError> {
         return (options.client ?? this.client).get<GetUserStickerBalanceResponses, GetUserStickerBalanceErrors, ThrowOnError>({
@@ -1000,7 +1000,7 @@ export class MiraepassApi extends HeyApiClient {
     /**
      * 스티커 기록 조회 (관리자)
      *
-     * 현재 집계 기간 내 스티커 지급/회수/학급 전달 기록을 최신순으로 조회합니다. `user_id`로 특정 유저만 필터링할 수 있습니다.
+     * 현재 집계 기간 내 스티커 지급 · 회수 · 학급 전달 기록을 최신순으로 조회합니다. `user_id`로 특정 유저의 기록만 조회할 수 있습니다.
      */
     public getStickerHistory<ThrowOnError extends boolean = false>(options?: Options<GetStickerHistoryData, ThrowOnError>): RequestResult<GetStickerHistoryResponses, GetStickerHistoryErrors, ThrowOnError> {
         return (options?.client ?? this.client).get<GetStickerHistoryResponses, GetStickerHistoryErrors, ThrowOnError>({
@@ -1018,7 +1018,7 @@ export class MiraepassApi extends HeyApiClient {
     /**
      * 스티커 기록 취소 (관리자)
      *
-     * 스티커 지급/회수 기록 하나를 삭제해 해당 변동을 없던 것으로 만듭니다. 삭제 후 학생의 현재 기간 보유 수가 0 미만이 되는 경우 거부됩니다.
+     * 스티커 기록 하나를 삭제해 해당 변동을 없던 것으로 만듭니다. 삭제 후 대상 유저의 현재 기간 보유 수가 0 미만이 되는 경우 거부됩니다.
      */
     public deleteStickerHistory<ThrowOnError extends boolean = false>(options: Options<DeleteStickerHistoryData, ThrowOnError>): RequestResult<DeleteStickerHistoryResponses, DeleteStickerHistoryErrors, ThrowOnError> {
         return (options.client ?? this.client).delete<DeleteStickerHistoryResponses, DeleteStickerHistoryErrors, ThrowOnError>({
