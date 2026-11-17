@@ -67,7 +67,7 @@ export const updateQuestQuestQuestIdPutResponseTransformer = async (data: any): 
     return data;
 };
 
-const postsSchemaResponseTransformer = (data: any) => {
+const postResponseSchemaResponseTransformer = (data: any) => {
     if (data.created_at) {
         data.created_at = new Date(data.created_at);
     }
@@ -77,13 +77,23 @@ const postsSchemaResponseTransformer = (data: any) => {
     return data;
 };
 
-const responseModelListPostsSchemaResponseTransformer = (data: any) => {
-    data.data = data.data.map((item: any) => postsSchemaResponseTransformer(item));
+const responseModelListPostResponseSchemaResponseTransformer = (data: any) => {
+    data.data = data.data.map((item: any) => postResponseSchemaResponseTransformer(item));
     return data;
 };
 
 export const getPostsPostsGetResponseTransformer = async (data: any): Promise<GetPostsPostsGetResponse> => {
-    data = responseModelListPostsSchemaResponseTransformer(data);
+    data = responseModelListPostResponseSchemaResponseTransformer(data);
+    return data;
+};
+
+const postsSchemaResponseTransformer = (data: any) => {
+    if (data.created_at) {
+        data.created_at = new Date(data.created_at);
+    }
+    if (data.updated_at) {
+        data.updated_at = new Date(data.updated_at);
+    }
     return data;
 };
 
@@ -97,8 +107,13 @@ export const createPostPostsPostResponseTransformer = async (data: any): Promise
     return data;
 };
 
+const responseModelPostResponseSchemaResponseTransformer = (data: any) => {
+    data.data = postResponseSchemaResponseTransformer(data.data);
+    return data;
+};
+
 export const getPostPostsPostIdGetResponseTransformer = async (data: any): Promise<GetPostPostsPostIdGetResponse> => {
-    data = responseModelPostsSchemaResponseTransformer(data);
+    data = responseModelPostResponseSchemaResponseTransformer(data);
     return data;
 };
 

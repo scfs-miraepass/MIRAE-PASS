@@ -10,6 +10,20 @@ import DeductPoint from "@/components/home/section/deductPoint.vue";
 import Karaoke from "@/components/home/section/karaoke.vue";
 
 const session = useSession()
+const toast = useToast()
+const canViewNotices = computed(() => hasPermission(session.value?.permissions, UserPermission.VIEW_POST))
+const { data: notices } = useAsyncData("notices.home", async (_nuxtApp, { signal }) => {
+    if (!canViewNotices.value) return []
+    const req = await $API.getPostsPostsGet({ query: { content_kind: "notice", size: 5 }, signal })
+    if (req.error) {
+        if (!signal.aborted) toast.add({ title: "공지 목록을 불러오지 못했습니다.", color: "error" })
+        return []
+    }
+    return req.data.data.flatMap((post) => {
+        if (post.id == null || typeof post.content_data?.text !== "string") return []
+        return [{ id: post.id, title: post.title }]
+    })
+}, { server: false, watch: [canViewNotices] })
 const sectionItem = computed(() => {
     const items = []
     const permissions = session.value!.permissions
@@ -34,6 +48,20 @@ const sectionItem = computed(() => {
         </NuxtLink>
     </div>
     <div class="pb-2 mt-2.5 flex-1 flex flex-col">
+        <section v-if="canViewNotices && notices?.length" class="mb-3 rounded-xl border border-default bg-elevated p-4" aria-labelledby="notices-heading">
+            <h2 id="notices-heading" class="mb-2 font-bold text-highlighted">공지사항</h2>
+            <ul>
+                <li v-for="notice in notices" :key="notice.id" class="border-t border-default">
+                    <NuxtLink
+                        :to="`/notices/${notice.id}`"
+                        class="flex min-h-11 items-center justify-between gap-3 py-2 font-medium text-highlighted focus-visible:outline-2 focus-visible:outline-primary"
+                    >
+                        <span class="min-w-0 break-words">{{ notice.title }}</span>
+                        <UIcon name="i-ph-caret-right" class="shrink-0" aria-hidden="true" />
+                    </NuxtLink>
+                </li>
+            </ul>
+        </section>
         <Point v-if="hasPermission(session!.permissions, UserPermission.VIEW_POINT)" />
         <Section class="mt-3" v-if="sectionItem.length > 0">
             <component v-for="i in sectionItem" :is="i" />

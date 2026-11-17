@@ -1,4 +1,4 @@
-import type { UserPermission } from "@miraepass/api-client";
+import type { PermissionCondition } from "~/utils/permission";
 import type { RouteLocationNormalized } from "#vue-router";
 
 const consoleLog = (message: string, ...args: any[]) => {
@@ -13,12 +13,12 @@ const consoleLog = (message: string, ...args: any[]) => {
 export const permissionsMiddleware = (
     to: RouteLocationNormalized,
     from: RouteLocationNormalized,
-    permissions?: UserPermission[],
+    permissions?: PermissionCondition,
 ) => {
     if (import.meta.client) {
         const session = useSession();
         const requiredPermissions =
-            permissions ?? (to.meta.permissions as UserPermission[]);
+            permissions ?? (to.meta.permissions as PermissionCondition | null | undefined);
 
         console.debug(
             `%cPermissions Middleware%c ${requiredPermissions}`,
@@ -27,7 +27,10 @@ export const permissionsMiddleware = (
         );
 
         // 페이지에 필요한 역할이 정의되지 않았으면 통과
-        if (!requiredPermissions || requiredPermissions.length <= 0) {
+        if (
+            requiredPermissions == null ||
+            (Array.isArray(requiredPermissions) && requiredPermissions.length === 0)
+        ) {
             consoleLog("페이지 권한이 설정되어 있지 않음.");
             return;
         }

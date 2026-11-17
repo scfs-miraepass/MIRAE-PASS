@@ -842,6 +842,70 @@ export const PostCreateRequestSchema = {
     title: 'PostCreateRequest'
 } as const;
 
+export const PostResponseSchema = {
+    properties: {
+        id: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Id',
+            description: '게시글 고유 ID'
+        },
+        title: {
+            type: 'string',
+            title: 'Title',
+            description: '게시글 제목'
+        },
+        views: {
+            type: 'integer',
+            title: 'Views',
+            description: '게시글 조회수',
+            default: 0
+        },
+        created_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Created At',
+            description: '게시글이 작성된 시간'
+        },
+        updated_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Updated At',
+            description: '게시글이 수정된 마지막 시간'
+        },
+        author_id: {
+            type: 'integer',
+            title: 'Author Id',
+            description: '게시글 작성자의 고유 ID'
+        },
+        content_data: {
+            anyOf: [
+                {
+                    additionalProperties: true,
+                    type: 'object'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Content Data',
+            description: '게시글의 본문 JSON 데이터'
+        }
+    },
+    type: 'object',
+    required: [
+        'title',
+        'author_id'
+    ],
+    title: 'PostResponse'
+} as const;
+
 export const PostUpdateRequestSchema = {
     properties: {
         title: {
@@ -1321,6 +1385,25 @@ export const ResponseModel_PointHistory_Schema = {
     title: 'ResponseModel[PointHistory]'
 } as const;
 
+export const ResponseModel_PostResponse_Schema = {
+    properties: {
+        success: {
+            type: 'boolean',
+            title: 'Success'
+        },
+        data: {
+            $ref: '#/components/schemas/PostResponse',
+            description: '응답 데이터'
+        }
+    },
+    type: 'object',
+    required: [
+        'success',
+        'data'
+    ],
+    title: 'ResponseModel[PostResponse]'
+} as const;
+
 export const ResponseModel_Posts_Schema = {
     properties: {
         success: {
@@ -1487,7 +1570,7 @@ export const ResponseModel_list_PointHistory__Schema = {
     title: 'ResponseModel[list[PointHistory]]'
 } as const;
 
-export const ResponseModel_list_Posts__Schema = {
+export const ResponseModel_list_PostResponse__Schema = {
     properties: {
         success: {
             type: 'boolean',
@@ -1495,7 +1578,7 @@ export const ResponseModel_list_Posts__Schema = {
         },
         data: {
             items: {
-                $ref: '#/components/schemas/Posts'
+                $ref: '#/components/schemas/PostResponse'
             },
             type: 'array',
             title: 'Data',
@@ -1507,7 +1590,7 @@ export const ResponseModel_list_Posts__Schema = {
         'success',
         'data'
     ],
-    title: 'ResponseModel[list[Posts]]'
+    title: 'ResponseModel[list[PostResponse]]'
 } as const;
 
 export const ResponseModel_list_Quests__Schema = {
@@ -1798,7 +1881,8 @@ export const UserPermissionSchema = {
         1048576,
         1458624,
         1493442,
-        1713680
+        1713680,
+        2097151
     ],
     title: 'UserPermission',
     description: '유저 권한 IntFlag.\n작명시 `동사_목적`으로 작성하며, 대문자로만 작성한다.\n예) 포인트 관리 -> MANAGE_POINT',
@@ -1833,7 +1917,8 @@ export const UserPermissionSchema = {
         'VIEW_KARAOKE',
         'STUDENT',
         'TEACHER',
-        'ADMIN'
+        'ADMIN',
+        'ALL'
     ],
     'x-enumNames': [
         'NONE',
@@ -1866,7 +1951,8 @@ export const UserPermissionSchema = {
         'VIEW_KARAOKE',
         'STUDENT',
         'TEACHER',
-        'ADMIN'
+        'ADMIN',
+        'ALL'
     ]
 } as const;
 

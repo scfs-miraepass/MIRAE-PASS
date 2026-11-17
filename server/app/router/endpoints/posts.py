@@ -2,11 +2,11 @@ from math import ceil
 
 from fastapi import APIRouter, HTTPException, Query, Response, status
 from pydantic import BaseModel, Field
-from sqlmodel import func, select
 
 from app.core import LoginDep, ServiceClient
-from app.core.redis_keys import Keys
+from app.core.service import Post
 from app.schemas import Posts, UserPermission
+from app.schemas.post import PostResponse
 from app.schemas.response import ErrorResponse, ResponseModel
 
 router = APIRouter(prefix="/posts", tags=["posts"])
@@ -25,7 +25,7 @@ class PostUpdateRequest(BaseModel):
 
 @router.get(
     "",
-    response_model=ResponseModel[list[Posts]],
+    response_model=ResponseModel[list[PostResponse]],
     responses={
         200: {"description": "게시글 목록 조회 성공"},
         401: {"model": ErrorResponse, "description": "인증되지 않은 사용자"},
@@ -33,64 +33,35 @@ class PostUpdateRequest(BaseModel):
     },
     status_code=status.HTTP_200_OK,
     summary="게시글 목록 조회",
-    description="전체 게시글 목록을 페이징하여 조회합니다.",
+    description="게시글 목록을 페이징하여 조회합니다. 본문 유형을 지정하면 해당 게시글의 본문도 반환합니다.",
 )
 async def get_posts(
     response: Response,
     auth: LoginDep,
     page: int = Query(1, ge=1, description="페이지 번호"),
     size: int = Query(20, ge=1, le=100, description="페이지 당 게시글 데이터 갯수 (최대 100)"),
+    content_kind: str | None = Query(None, description="필터링할 게시글 본문 유형"),
 ):
     user, _ = auth
-
-    if not user.has_permission(UserPermission.VIEW_POST):
+    can_manage_notices = content_kind == "notice" and (
+        user.has_permission(UserPermission.MANAGE_POST) or user.has_permission(UserPermission.CREATE_POST)
+    )
+    if not user.has_permission(UserPermission.VIEW_POST) and not can_manage_notices:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Permission denied.",
         )
 
-    # 1. 총 게시글 수 조회 (캐싱 적용)
-    count_cache_key = Keys.Post.COUNT()
-    cached_count = await client.redis.get(count_cache_key)
+    posts, total_count, cached = await Post.list_posts(page=page, size=size, content_kind=content_kind)
+    response.headers["X-MAX-PAGE"] = str(max(1, ceil(total_count / size)))
+    response.headers["X-CACHED"] = str(cached).lower()
 
-    async with client.session as session:
-        if cached_count is not None:
-            total_count = int(cached_count)
-        else:
-            count_query = select(func.count()).select_from(Posts)
-            total_count = (await session.execute(count_query)).scalar_one()
-            # 캐시 저장 (TTL: 1일)
-            await client.redis.set(count_cache_key, total_count)
-
-        # 최대 페이지 계산 (데이터가 없으면 1페이지)
-        max_page = ceil(total_count / size) if total_count > 0 else 1
-
-        response.headers["X-MAX-PAGE"] = str(max_page)
-
-        # 2. 목록 데이터 조회 (캐싱 적용)
-        list_ver = await client.redis.get_version(Keys.Post.VERSION())
-        list_cache_key = Keys.Post.PAGE(ver=list_ver, page=page, size=size)
-        cached_list = await client.redis.get(list_cache_key)
-
-        if cached_list is not None:
-            posts = [Posts(**item) for item in cached_list]
-            response.headers["X-CACHED"] = "true"
-        else:
-            response.headers["X-CACHED"] = "false"
-            offset = (page - 1) * size
-            query = select(Posts).order_by(Posts.id.desc()).offset(offset).limit(size)
-
-            result = await session.execute(query)
-            posts = list(result.scalars().all())
-            posts_data = [item.model_dump() for item in posts]
-            await client.redis.set(list_cache_key, posts_data)
-
-    return ResponseModel[list[Posts]](success=True, data=posts)
+    return ResponseModel[list[PostResponse]](success=True, data=posts)
 
 
 @router.get(
     "/{post_id}",
-    response_model=ResponseModel[Posts],
+    response_model=ResponseModel[PostResponse],
     responses={
         200: {"description": "게시글 상세 조회 성공"},
         401: {"model": ErrorResponse, "description": "인증되지 않은 사용자"},
@@ -117,7 +88,7 @@ async def get_post(post_id: int, auth: LoginDep):
             detail="Post not found.",
         )
 
-    return ResponseModel[Posts](success=True, data=post)
+    return ResponseModel[PostResponse](success=True, data=await post.get_detail())
 
 
 @router.post(

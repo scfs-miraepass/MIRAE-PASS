@@ -100,7 +100,7 @@ export class MiraepassApi extends HeyApiClient {
     /**
      * 키오스크 비밀번호 검사
      *
-     * 특정 유저의 키오스크 비밀번호가 일치한지 응답합니다. service 타입의 사용자만 이용할 수 있습니다.
+     * 특정 유저의 키오스크 비밀번호가 일치한지 응답합니다. service 타입 또는 유저 본인만 요청할 수 있습니다.
      */
     public kioskPasswordVerify<ThrowOnError extends boolean = false>(options: Options<KioskPasswordVerifyData, ThrowOnError>): RequestResult<KioskPasswordVerifyResponses, KioskPasswordVerifyErrors, ThrowOnError> {
         return (options.client ?? this.client).post<KioskPasswordVerifyResponses, KioskPasswordVerifyErrors, ThrowOnError>({
@@ -706,7 +706,7 @@ export class MiraepassApi extends HeyApiClient {
     /**
      * 게시글 목록 조회
      *
-     * 전체 게시글 목록을 페이징하여 조회합니다.
+     * 게시글 목록을 페이징하여 조회합니다. 본문 유형을 지정하면 해당 게시글의 본문도 반환합니다.
      */
     public getPostsPostsGet<ThrowOnError extends boolean = false>(options?: Options<GetPostsPostsGetData, ThrowOnError>): RequestResult<GetPostsPostsGetResponses, GetPostsPostsGetErrors, ThrowOnError> {
         return (options?.client ?? this.client).get<GetPostsPostsGetResponses, GetPostsPostsGetErrors, ThrowOnError>({
