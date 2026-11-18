@@ -233,10 +233,25 @@ scope에는 바뀐 영역을 적습니다: `server`, `client`, `admin`, `sdk`, `
     버전과 `CHANGELOG.md`는 semantic-release가 커밋 메시지를 읽어 자동으로 관리합니다. `package.json`, `pyproject.toml`의 버전을 직접 수정하지 마세요.
 </Callout>
 
+### 머지 방식
+
+PR을 머지할 때는 대상 브랜치에 따라 아래 방식을 사용합니다.
+
+| PR | 머지 방식 | 이유 |
+| --- | --- | --- |
+| 작업 브랜치 → `dev` | **Squash and merge** | PR의 커밋을 하나로 합쳐 `dev` 기록을 깔끔하게 유지합니다. |
+| `dev` → `master` (릴리스 PR) | **Create a merge commit** | 각 커밋의 type을 semantic-release가 읽어 버전을 정하고, [dev 동기화](/docs/development/deploy#dev-동기화)가 충돌 없이 동작합니다. |
+
+<Callout type="warning">
+    Squash and merge를 하면 **PR 제목**이 그대로 `dev`의 커밋 메시지가 되고, 이 메시지로 버전이 정해집니다.
+    그래서 `dev`로 가는 PR의 제목은 반드시 [커밋 메시지](#커밋-메시지) 형식(예: `feat(client): 노래방 파티 초대 화면 추가`)으로 씁니다.
+</Callout>
+
 ### 마이그레이션 이름
 
 Alembic 마이그레이션 메시지는 해당 릴리스 버전으로 짓습니다.
 ```bash
 uv run alembic revision --autogenerate -m "v1.14.0"
 ```
+같은 버전의 마이그레이션이 여러 개여도 됩니다. [PR 검사](#pr-검사)가 자동으로 추가하는 합류 마이그레이션은 `v1.14.0_merge`처럼 뒤에 `_merge`가 붙습니다.
 데이터베이스 마이그레이션에 대한 내용은 [백엔드 개발 가이드](/docs/development/server#마이그레이션)를 확인하세요.
