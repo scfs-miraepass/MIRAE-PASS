@@ -2,7 +2,7 @@ from app.schemas import Posts, Quests
 
 from .core import BaseCore
 from .redis_keys import Keys
-from .service import History, Karaoke, Post, Quest, User
+from .service import History, Karaoke, Post, Quest, Sticker, User
 
 
 class ServiceClient(BaseCore):
@@ -133,3 +133,16 @@ class ServiceClient(BaseCore):
             Karaoke | None
         """
         return await Karaoke.get_by_id(karaoke_id=_id, cache=cache, save_cache=save_cache, lock=lock)
+
+    @staticmethod
+    async def get_sticker(_id: int, /) -> Sticker | None:
+        """
+        ID를 이용해 스티커 기록을 가져옵니다.
+
+        Args:
+            _id: 스티커 기록 ID
+
+        Returns:
+            Sticker | None
+        """
+        return await Sticker.get_by_id(history_id=_id)

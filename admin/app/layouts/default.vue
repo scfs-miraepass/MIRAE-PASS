@@ -26,6 +26,14 @@ const links = computed(() => {
         })
     }
 
+    if (hasPermission(session.value?.permissions, UserPermission.MANAGE_STICKER)) {
+        items.push({
+            label: "스티커 관리",
+            icon: 'i-lucide-sticker',
+            to: '/stickers'
+        })
+    }
+
     if (hasPermission(session.value?.permissions, UserPermission.MANAGE_KARAOKE)) {
         items.push({
             label: "노래방 경매 관리",
