@@ -279,17 +279,14 @@ if (!req.error && req.data.data.failed.length > 0) {
             {
                 "id": 12,
                 "user_id": 4001,
-                "user_name": "김선생",
-                "user_type": "teacher",
-                "class_grade": 1,
-                "class_number": 2,
-                "grade": null,
-                "number": null,
                 "amount": -1,
                 "actor_id": 4001,
-                "actor_name": "김선생",
                 "memo": null,
-                "created_at": "2026-11-15T09:30:00+09:00"
+                "class_grade": 1,
+                "class_number": 2,
+                "created_at": "2026-11-15T09:30:00+09:00",
+                "user": { "id": 4001, "type": "teacher", "name": "김선생", "grade": null, "number": null },
+                "actor": { "id": 4001, "type": "teacher", "name": "김선생", "grade": null, "number": null }
             }
         ]
     }
@@ -300,8 +297,8 @@ if (!req.error && req.data.data.failed.length > 0) {
 | --- | --- |
 | `amount` | 변동 수입니다. 지급은 양수, 회수와 학급 전달은 음수입니다. |
 | `class_grade`, `class_number` | 학급 전달 기록이면 전달한 학급, 아니면 `null`입니다. |
-| `grade`, `number` | 대상 유저의 학년 · 반입니다. |
-| `actor_id`, `actor_name` | 처리한 유저입니다. |
+| `user` | 대상 유저 요약 정보(`id`, `type`, `name`, `grade`, `number`)입니다. |
+| `actor` | 처리한 유저 요약 정보입니다. 처리한 유저가 삭제되었으면 `null`입니다. |
 
 ## 스티커 기록 취소
 
