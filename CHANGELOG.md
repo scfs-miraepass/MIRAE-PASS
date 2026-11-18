@@ -1,3 +1,10 @@
+# [1.15.0-dev.3](https://github.com/scfs-miraepass/MIRAE-PASS/compare/v1.15.0-dev.2...v1.15.0-dev.3) (2026-11-18)
+
+
+### Features
+
+* 스티커 지급, 순위, 학급 전달 기능 추가 ([#17](https://github.com/scfs-miraepass/MIRAE-PASS/issues/17)) ([1c06c2b](https://github.com/scfs-miraepass/MIRAE-PASS/commit/1c06c2b3aa765dbd7ab6090a1ea3dda412e6cf60))
+
 # [1.15.0-dev.2](https://github.com/scfs-miraepass/MIRAE-PASS/compare/v1.15.0-dev.1...v1.15.0-dev.2) (2026-11-17)
 
 
