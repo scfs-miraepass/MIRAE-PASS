@@ -2,7 +2,7 @@ from enum import IntFlag, StrEnum
 from typing import Any, cast
 
 from hangulpy import get_chosung_string, split_hangul_string
-from pydantic import GetJsonSchemaHandler, field_serializer
+from pydantic import ConfigDict, GetJsonSchemaHandler, field_serializer
 from pydantic_core import core_schema
 from sqlalchemy import Connection, event, insert
 from sqlmodel import Field, Relationship, SQLModel, delete
@@ -227,6 +227,18 @@ class User(SQLModel):
                 diff = value - current_point
                 self.total_point = getattr(self, "total_point", 0) + diff
         super().__setattr__(name, value)
+
+
+class UserSummary(SQLModel):
+    """다른 응답에 함께 담는 유저 요약 정보"""
+
+    model_config = ConfigDict(json_schema_serialization_defaults_required=True)
+
+    id: int = Field(description="고유 ID")
+    type: UserType = Field(description="유저 종류 (학생, 교사, 서비스)")
+    name: str = Field(description="이름")
+    grade: int | None = Field(None, description="학년")
+    number: int | None = Field(None, description="반")
 
 
 class Users(User, table=True):

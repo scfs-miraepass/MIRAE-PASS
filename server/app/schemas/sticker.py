@@ -1,24 +1,16 @@
 from datetime import datetime
 from typing import Any
 
-from pydantic import field_serializer
+from pydantic import ConfigDict, field_serializer
 from sqlalchemy import Column, DateTime, Index, String, func
 from sqlmodel import Field, SQLModel
 
 from .core import SchemaCore
+from .users import UserSummary
 
 
-class StickerHistory(SQLModel, table=True):
-    """
-    스티커 변동 기록 (지급: 양수, 회수: 음수)
-
-    보유 수는 현재 집계 기간(매월 1일 00:00 KST 또는 최근 수동 초기화 시각 이후) 내 `amount` 합계로 계산한다.
-    지급 한도는 이번 주(월요일 00:00 KST 이후, 학급 전달 기록 제외)에 받은 수 기준이다.
-    기록은 초기화와 무관하게 영구 보관한다.
-    """
-
-    __tablename__ = "sticker_history"  # type: ignore[assignment]
-    __table_args__ = (Index("ix_sticker_history_class", "class_grade", "class_number"),)
+class StickerHistoryBase(SQLModel):
+    """`StickerHistory` 테이블과 응답 모델이 함께 쓰는 필드"""
 
     id: int | None = Field(default=None, primary_key=True, description="고유 ID")
     user_id: int = Field(
@@ -48,6 +40,29 @@ class StickerHistory(SQLModel, table=True):
         if isinstance(dt, datetime):
             return SchemaCore.sync_timezone(dt).isoformat()
         return dt
+
+
+class StickerHistory(StickerHistoryBase, table=True):
+    """
+    스티커 변동 기록 (지급: 양수, 회수: 음수)
+
+    보유 수는 현재 집계 기간(매월 1일 00:00 KST 또는 최근 수동 초기화 시각 이후) 내 `amount` 합계로 계산한다.
+    지급 한도는 이번 주(월요일 00:00 KST 이후, 학급 전달 기록 제외)에 받은 수 기준이다.
+    기록은 초기화와 무관하게 영구 보관한다.
+    """
+
+    __tablename__ = "sticker_history"  # type: ignore[assignment]
+    __table_args__ = (Index("ix_sticker_history_class", "class_grade", "class_number"),)
+
+
+class StickerHistoryItem(StickerHistoryBase):
+    """스티커 기록 조회 응답. 대상 · 처리 유저 정보를 함께 담는다."""
+
+    model_config = ConfigDict(json_schema_serialization_defaults_required=True)
+
+    id: int = Field(..., description="고유 ID")  # type: ignore[assignment]
+    user: UserSummary | None = Field(None, description="대상 유저")
+    actor: UserSummary | None = Field(None, description="처리한 유저 (삭제된 유저면 null)")
 
 
 class StickerReset(SQLModel, table=True):

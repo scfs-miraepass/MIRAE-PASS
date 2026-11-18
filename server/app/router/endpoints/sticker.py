@@ -12,7 +12,7 @@ from app.core import LoginDep, ServiceClient
 from app.core.error import Conflict, LimitExceeded, NotFound
 from app.core.redis_keys import Keys
 from app.core.service.sticker import STICKER_MAX, STICKER_TARGET_TYPES, Sticker, StickerCount
-from app.schemas import StickerHistory, UserPermission, Users, UserSearch, UserType
+from app.schemas import StickerHistory, StickerHistoryItem, UserPermission, Users, UserSearch, UserSummary, UserType
 from app.schemas.core import SchemaCore
 from app.schemas.response import ErrorResponse, ResponseModel
 
@@ -111,28 +111,6 @@ class StickerClassRankingResponse(BaseModel):
     count: int = Field(..., description="학급 스티커 합계 (학생 보유 + 교사 전달)")
     teacher_count: int = Field(..., description="교사가 이 학급에 전달한 스티커 수")
     rank: int = Field(..., description="합계 기준 순위")
-
-
-class StickerHistoryItem(BaseModel):
-    id: int = Field(..., description="스티커 기록 ID")
-    user_id: int = Field(..., description="대상 유저(학생 / 교사)의 고유 ID")
-    user_name: str | None = Field(..., description="대상 유저 이름")
-    user_type: UserType | None = Field(..., description="대상 유저 타입")
-    class_grade: int | None = Field(..., description="교사가 학급에 전달한 기록인 경우 대상 학년")
-    class_number: int | None = Field(..., description="교사가 학급에 전달한 기록인 경우 대상 반")
-    grade: int | None = Field(..., description="대상 학생 학년")
-    number: int | None = Field(..., description="대상 학생 반")
-    amount: int = Field(..., description="변동 수량 (지급 +, 회수 · 학급 전달 -)")
-    actor_id: int | None = Field(..., description="처리한 유저의 고유 ID")
-    actor_name: str | None = Field(..., description="처리한 유저 이름")
-    memo: str | None = Field(..., description="메모")
-    created_at: datetime = Field(..., description="처리 일시")
-
-    @field_serializer("created_at")
-    def serialize_created_at(self, dt: Any, _info):
-        if isinstance(dt, datetime):
-            return SchemaCore.sync_timezone(dt).isoformat()
-        return dt
 
 
 class StickerHistoryPage(BaseModel):
@@ -643,14 +621,7 @@ async def get_sticker_history(
     target = aliased(Users)
     actor = aliased(Users)
     query = (
-        select(
-            StickerHistory,
-            col(target.name).label("user_name"),
-            col(target.type).label("user_type"),
-            col(target.grade).label("grade"),
-            col(target.number).label("number"),
-            col(actor.name).label("actor_name"),
-        )
+        select(StickerHistory, target, actor)
         .outerjoin(target, col(target.id) == StickerHistory.user_id)
         .outerjoin(actor, col(actor.id) == StickerHistory.actor_id)
         .where(*conditions)
@@ -665,22 +636,14 @@ async def get_sticker_history(
         rows = (await session.execute(query)).all()
 
     items = [
-        StickerHistoryItem(
-            id=history.id,
-            user_id=history.user_id,
-            user_name=user_name,
-            user_type=user_type,
-            class_grade=history.class_grade,
-            class_number=history.class_number,
-            grade=grade,
-            number=number,
-            amount=history.amount,
-            actor_id=history.actor_id,
-            actor_name=actor_name,
-            memo=history.memo,
-            created_at=history.created_at,
+        StickerHistoryItem.model_validate(
+            history,
+            update={
+                "user": UserSummary.model_validate(target_user) if target_user else None,
+                "actor": UserSummary.model_validate(actor_user) if actor_user else None,
+            },
         )
-        for history, user_name, user_type, grade, number, actor_name in rows
+        for history, target_user, actor_user in rows
     ]
 
     response.headers["X-MAX-PAGE"] = str(ceil(count / limit))
