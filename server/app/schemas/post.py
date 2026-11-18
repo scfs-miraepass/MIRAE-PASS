@@ -63,6 +63,11 @@ class Posts(Post, table=True):
     )
 
 
+class PostResponse(Post):
+    author_id: int = Field(description="게시글 작성자의 고유 ID")
+    content_data: dict | None = Field(default=None, description="게시글의 본문 JSON 데이터")
+
+
 class PostContent(SQLModel, table=True):
     # 관계
     post: Posts = Relationship(back_populates="content")

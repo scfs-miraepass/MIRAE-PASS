@@ -1,3 +1,10 @@
+# [1.15.0-dev.2](https://github.com/scfs-miraepass/MIRAE-PASS/compare/v1.15.0-dev.1...v1.15.0-dev.2) (2026-11-17)
+
+
+### Features
+
+* **server:** 공지사항 조회 및 관리 기능 추가 ([#15](https://github.com/scfs-miraepass/MIRAE-PASS/issues/15)) ([13eb87a](https://github.com/scfs-miraepass/MIRAE-PASS/commit/13eb87afe4f8f669cd1fb3317583b087ec3e0d22))
+
 # [1.15.0-dev.1](https://github.com/scfs-miraepass/MIRAE-PASS/compare/v1.14.1...v1.15.0-dev.1) (2026-11-12)
 
 

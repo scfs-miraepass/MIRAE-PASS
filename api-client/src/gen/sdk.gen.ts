@@ -706,7 +706,7 @@ export class MiraepassApi extends HeyApiClient {
     /**
      * 게시글 목록 조회
      *
-     * 전체 게시글 목록을 페이징하여 조회합니다.
+     * 게시글 목록을 페이징하여 조회합니다. 본문 유형을 지정하면 해당 게시글의 본문도 반환합니다.
      */
     public getPostsPostsGet<ThrowOnError extends boolean = false>(options?: Options<GetPostsPostsGetData, ThrowOnError>): RequestResult<GetPostsPostsGetResponses, GetPostsPostsGetErrors, ThrowOnError> {
         return (options?.client ?? this.client).get<GetPostsPostsGetResponses, GetPostsPostsGetErrors, ThrowOnError>({

@@ -1,11 +1,15 @@
 from typing import TYPE_CHECKING
 
-from sqlmodel import col, delete, select
+from sqlmodel import col, delete, func, select
 
 from app.schemas import PostContent, Posts
+from app.schemas.post import PostResponse
 
 from ..cache_events import on_post_changed
 from ..core import ServiceCore
+from ..database import DatabaseCore
+from ..redis import RedisCore
+from ..redis_keys import Keys
 
 if TYPE_CHECKING:
     _Type = Posts
@@ -14,23 +18,60 @@ else:
 
 
 class Post(ServiceCore[Posts], _Type):
-    async def get_content(self) -> dict:
-        """
-        게시글의 내용 데이터를 가져옵니다.
+    @staticmethod
+    async def list_posts(*, page: int, size: int, content_kind: str | None) -> tuple[list[PostResponse], int, bool]:
+        """게시글 목록과 전체 개수를 조회합니다."""
+        offset = (page - 1) * size
+        if content_kind is not None:
+            kind_filter = PostContent.data["kind"].as_string() == content_kind
+            async with DatabaseCore.session() as session:
+                count_query = select(func.count()).select_from(PostContent).where(kind_filter)
+                total_count = (await session.execute(count_query)).scalar_one()
+                query = (
+                    select(Posts, PostContent.data)
+                    .join(PostContent, col(PostContent.post_id) == col(Posts.id))
+                    .where(kind_filter)
+                    .order_by(col(Posts.id).desc())
+                    .offset(offset)
+                    .limit(size)
+                )
+                rows = (await session.execute(query)).all()
+            posts = [PostResponse(**post.model_dump(), content_data=data) for post, data in rows]
+            return posts, total_count, False
 
-        Returns:
-            Dict (Tiptap Editor JSON DATA)
-        """
-        content: PostContent
-        if self.content is None:
-            async with self.session as session:
-                query = select(PostContent).where(PostContent.post_id == self.id)
-                result = await session.execute(query)
-                content = result.scalar_one()
-        else:
-            content = self.content
+        count_cache_key = Keys.Post.COUNT()
+        cached_count = await RedisCore.get(count_cache_key)
+        list_version = await RedisCore.get_version(Keys.Post.VERSION())
+        list_cache_key = Keys.Post.PAGE(ver=list_version, page=page, size=size)
+        cached_posts = await RedisCore.get(list_cache_key)
 
-        return content.data
+        async with DatabaseCore.session() as session:
+            if cached_count is None:
+                count_query = select(func.count()).select_from(Posts)
+                total_count = (await session.execute(count_query)).scalar_one()
+                await RedisCore.set(count_cache_key, total_count)
+            else:
+                total_count = int(cached_count)
+
+            if cached_posts is not None:
+                return [PostResponse.model_validate(post) for post in cached_posts], total_count, True
+
+            query = select(Posts).order_by(col(Posts.id).desc()).offset(offset).limit(size)
+            rows = (await session.execute(query)).scalars().all()
+            posts = [PostResponse.model_validate(post) for post in rows]
+            await RedisCore.set(list_cache_key, [post.model_dump(exclude_unset=True) for post in posts])
+
+        return posts, total_count, False
+
+    async def get_content(self) -> dict | None:
+        """게시글 본문 데이터를 가져옵니다."""
+        async with self.session as session:
+            content = await session.get(PostContent, self.id)
+            return content.data if content is not None else None
+
+    async def get_detail(self) -> PostResponse:
+        """게시글 상세 응답에 메타데이터와 본문을 담습니다."""
+        return PostResponse(**self.model_dump(), content_data=await self.get_content())
 
     async def delete(self):
         """
@@ -60,8 +101,9 @@ class Post(ServiceCore[Posts], _Type):
                 post.title = title
 
             if content is not None:
-                if post.content:
-                    post.content.data = content
+                post_content = await session.get(PostContent, post.id)
+                if post_content is not None:
+                    post_content.data = content
                 else:
                     post.content = PostContent(data=content)
             await session.flush()
