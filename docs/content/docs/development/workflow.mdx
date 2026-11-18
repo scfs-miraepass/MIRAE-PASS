@@ -1,0 +1,68 @@
+import { Callout, Steps } from 'nextra/components'
+
+# 작업 흐름
+
+기능 요청부터 정식 릴리스까지, **사람이 하는 일**과 **자동으로 되는 일**을 한눈에 정리합니다.<br />
+Git이나 GitHub Actions의 동작을 몰라도 이 문서의 버튼과 순서만 따르면 됩니다.
+
+## 한눈에 보기
+
+| 단계 | 사람이 하는 일 | 자동으로 되는 일 |
+| --- | --- | --- |
+| 1. 작업 요청 | 인공지능 작업자에게 요구사항을 전달합니다. | 인공지능 작업자가 브랜치를 만들고 작업해 `dev`로 PR을 올립니다. |
+| 2. PR 검사 | **PR 검사 결과**가 초록색인지 확인합니다. | 코드·마이그레이션·SDK·화면을 검사하고, 마이그레이션 합류와 SDK 재생성을 커밋합니다. |
+| 3. 검토·머지 | 코드를 검토하고 [머지 전 확인](/docs/development/ai#human-merge-check)을 마친 뒤 머지합니다. | `dev` 프리릴리스(`x.y.z-dev.n`)와 `dev` 이미지가 만들어집니다. |
+| 4. 릴리스 PR | **Release PR** 버튼을 누르고, 만들어진 PR의 예상 버전과 변경 목록을 확인합니다. | `dev` → `master` PR이 만들어집니다. |
+| 5. 정식 릴리스 | 릴리스 PR을 **Create a merge commit**으로 머지합니다. | 정식 버전과 `latest` 이미지가 만들어지고, `dev`가 `master`와 자동으로 맞춰집니다. |
+
+## 단계별 안내
+
+<Steps>
+
+### 작업 요청하기
+
+인공지능 작업자에게 무엇을 바꾸고 싶은지 전달합니다. 인공지능 작업자는 [AI 활용 가이드](/docs/development/ai)의 규칙에 따라 작업하고, 판단이 필요한 일은 먼저 묻습니다.
+
+### PR 검사 확인하기
+
+PR 화면 아래의 검사 목록에서 **PR 검사 결과**를 확인합니다.
+
+- 🟡 노란색: 검사 중입니다. 기다립니다. 자동 수정 커밋이 올라오면 검사가 처음부터 다시 실행됩니다.
+- 🟢 초록색: 다음 단계로 넘어갑니다.
+- 🔴 빨간색: [검사가 실패한 경우](/docs/development/convention#pr-검사)를 따릅니다.
+
+머지 버튼 대신 **This branch is out-of-date** 와 **Update branch** 버튼이 보이면, 다른 PR이 먼저 머지된 것입니다.
+**Update branch**를 누르면 최신 `dev`가 합쳐지고 검사가 다시 실행됩니다.
+
+### 검토하고 머지하기
+
+바뀐 코드를 검토하고, PR 맨 아래의 **사람 작업자 확인** 체크리스트를 직접 체크한 뒤 머지합니다.
+
+<Callout type="info">
+    `dev`로 머지할 때 **Squash and merge**를 쓰면 PR 제목이 그대로 커밋 메시지가 됩니다.
+    이때는 PR 제목이 [커밋 메시지](/docs/development/convention#커밋-메시지) 형식(예: `feat(client): ...`)이어야 버전이 의도대로 바뀝니다.
+</Callout>
+
+### 정식 릴리스하기
+
+`dev`에 모인 변경 사항을 운영에 내보낼 때 진행합니다. 자세한 내용은 [정식 릴리스 하기](/docs/development/deploy#정식-릴리스-하기)를 참고합니다.
+
+1. GitHub의 **Actions → Release PR → Run workflow**를 누릅니다.
+2. 만들어진 PR에서 예상 버전과 변경 목록을 확인합니다.
+3. **Create a merge commit**으로 머지합니다.
+
+</Steps>
+
+## 문제가 생겼을 때
+
+| 상황 | 할 일 | 참고 |
+| --- | --- | --- |
+| **PR 검사 결과**가 빨간색 | 실패한 검사의 **Details**에서 작업 요약을 확인하고 안내를 따릅니다. 해결 방법이 프롬프트로 나오면 인공지능 작업자에게 그대로 전달합니다. | [PR 검사](/docs/development/convention#pr-검사) |
+| 머지 버튼 대신 **Update branch**가 보임 | **Update branch**를 누르고 검사를 기다립니다. | [PR 검사](/docs/development/convention#pr-검사) |
+| `[자동] master를 dev에 반영하지 못했습니다` 이슈가 생김 | 저장소 관리자가 이슈의 안내에 따라 직접 반영합니다. | [dev 동기화](/docs/development/deploy#dev-동기화) |
+| 마이그레이션을 고친 뒤 내 로컬 서버에서 DB 에러가 남 | 로컬 DB를 비우고 다시 적용합니다. | [로컬 DB 다시 맞추기](/docs/development/server#로컬-db-다시-맞추기) |
+| Release PR 버튼을 눌렀는데 PR이 안 만들어짐 | `dev`에 `master`로 보낼 변경이 없거나, 릴리스용 GitHub App 권한이 부족한 경우입니다. 실행 로그를 확인합니다. | [릴리스에 필요한 저장소 설정](/docs/development/deploy#릴리스에-필요한-저장소-설정) |
+
+<Callout type="warning">
+    `master`와 `dev`에는 직접 push하지 않습니다. 모든 변경은 PR로 올리고, 위 순서대로 머지합니다.
+</Callout>

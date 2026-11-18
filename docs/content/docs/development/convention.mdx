@@ -239,4 +239,5 @@ Alembic 마이그레이션 메시지는 해당 릴리스 버전으로 짓습니�
 ```bash
 uv run alembic revision --autogenerate -m "v1.14.0"
 ```
+같은 버전의 마이그레이션이 여러 개여도 됩니다. [PR 검사](#pr-검사)가 자동으로 추가하는 합류 마이그레이션은 `v1.14.0_merge`처럼 뒤에 `_merge`가 붙습니다.
 데이터베이스 마이그레이션에 대한 내용은 [백엔드 개발 가이드](/docs/development/server#마이그레이션)를 확인하세요.
