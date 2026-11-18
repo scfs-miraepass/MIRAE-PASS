@@ -215,10 +215,13 @@ const giveSticker = async () => {
                         :key="n"
                         :variant="amount === n ? 'solid' : 'subtle'"
                         :disabled="n > remaining || isLoading"
-                        class="rounded-xl w-16 h-14 justify-center text-ui-p1"
+                        class="rounded-lg w-16 h-14 justify-center"
+                        :class="[amount === n? 'text-white dark:text-black':'text-black dark:text-white']"
                         @click="amount = n; triggerVibration(10)"
                     >
-                        {{ n }}개
+                        <p class="text-p0 font-bold">
+                            {{ n }}개
+                        </p>
                     </UButton>
                 </div>
 
