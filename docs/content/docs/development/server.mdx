@@ -410,6 +410,9 @@ uv run alembic revision --autogenerate -m "v1.15.0"
 uv run alembic upgrade head
 ```
 
+PR을 올리면 [PR 검사](/docs/development/convention#pr-검사)가 빈 DB에 마이그레이션을 적용해 보고, 모델 변경에 맞는 마이그레이션이 있는지(`alembic check`) 검사합니다.
+다른 PR의 마이그레이션과 갈라지면 합류 마이그레이션이 자동으로 추가됩니다.
+
 <Callout type="warning">
     Alembic 자동 생성은 컬럼 이름 변경을 "삭제 후 추가"로 만들거나, Enum · 기본값 변경을 놓치기도 합니다. 데이터가 사라지지 않는지 확인하고, 필요하면 직접 수정하세요.
 </Callout>
