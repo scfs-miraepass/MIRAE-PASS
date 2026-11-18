@@ -2059,88 +2059,17 @@ export const StickerHistoryItemSchema = {
         id: {
             type: 'integer',
             title: 'Id',
-            description: '스티커 기록 ID'
+            description: '고유 ID'
         },
         user_id: {
             type: 'integer',
             title: 'User Id',
-            description: '대상 유저(학생 / 교사)의 고유 ID'
-        },
-        user_name: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'User Name',
-            description: '대상 유저 이름'
-        },
-        user_type: {
-            anyOf: [
-                {
-                    $ref: '#/components/schemas/UserType'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: '대상 유저 타입'
-        },
-        class_grade: {
-            anyOf: [
-                {
-                    type: 'integer'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Class Grade',
-            description: '교사가 학급에 전달한 기록인 경우 대상 학년'
-        },
-        class_number: {
-            anyOf: [
-                {
-                    type: 'integer'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Class Number',
-            description: '교사가 학급에 전달한 기록인 경우 대상 반'
-        },
-        grade: {
-            anyOf: [
-                {
-                    type: 'integer'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Grade',
-            description: '대상 학생 학년'
-        },
-        number: {
-            anyOf: [
-                {
-                    type: 'integer'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Number',
-            description: '대상 학생 반'
+            description: '스티커를 받은 학생의 고유 ID'
         },
         amount: {
             type: 'integer',
             title: 'Amount',
-            description: '변동 수량 (지급 +, 회수 · 학급 전달 -)'
+            description: '변동 수량 (지급 양수, 회수 · 학급 전달 음수)'
         },
         actor_id: {
             anyOf: [
@@ -2152,19 +2081,7 @@ export const StickerHistoryItemSchema = {
                 }
             ],
             title: 'Actor Id',
-            description: '처리한 유저의 고유 ID'
-        },
-        actor_name: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Actor Name',
-            description: '처리한 유저 이름'
+            description: '지급/회수를 처리한 유저의 고유 ID'
         },
         memo: {
             anyOf: [
@@ -2178,30 +2095,74 @@ export const StickerHistoryItemSchema = {
             title: 'Memo',
             description: '메모'
         },
+        class_grade: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Class Grade',
+            description: '교사가 학급에 전달한 경우 대상 학년'
+        },
+        class_number: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Class Number',
+            description: '교사가 학급에 전달한 경우 대상 반'
+        },
         created_at: {
             type: 'string',
             format: 'date-time',
             title: 'Created At',
             description: '처리 일시'
+        },
+        user: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/UserSummary'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: '대상 유저'
+        },
+        actor: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/UserSummary'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: '처리한 유저 (삭제된 유저면 null)'
         }
     },
     type: 'object',
     required: [
         'id',
         'user_id',
-        'user_name',
-        'user_type',
-        'class_grade',
-        'class_number',
-        'grade',
-        'number',
         'amount',
         'actor_id',
-        'actor_name',
         'memo',
-        'created_at'
+        'class_grade',
+        'class_number',
+        'created_at',
+        'user',
+        'actor'
     ],
-    title: 'StickerHistoryItem'
+    title: 'StickerHistoryItem',
+    description: '스티커 기록 조회 응답. 대상 · 처리 유저 정보를 함께 담는다.'
 } as const;
 
 export const StickerHistoryPageSchema = {
@@ -2541,6 +2502,59 @@ export const UserPermissionSchema = {
         'ADMIN',
         'ALL'
     ]
+} as const;
+
+export const UserSummarySchema = {
+    properties: {
+        id: {
+            type: 'integer',
+            title: 'Id',
+            description: '고유 ID'
+        },
+        type: {
+            $ref: '#/components/schemas/UserType',
+            description: '유저 종류 (학생, 교사, 서비스)'
+        },
+        name: {
+            type: 'string',
+            title: 'Name',
+            description: '이름'
+        },
+        grade: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Grade',
+            description: '학년'
+        },
+        number: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Number',
+            description: '반'
+        }
+    },
+    type: 'object',
+    required: [
+        'id',
+        'type',
+        'name',
+        'grade',
+        'number'
+    ],
+    title: 'UserSummary',
+    description: '다른 응답에 함께 담는 유저 요약 정보'
 } as const;
 
 export const UserTypeSchema = {

@@ -1522,72 +1522,34 @@ export type StickerClassRankingResponse = {
 
 /**
  * StickerHistoryItem
+ *
+ * 스티커 기록 조회 응답. 대상 · 처리 유저 정보를 함께 담는다.
  */
 export type StickerHistoryItem = {
     /**
      * Id
      *
-     * 스티커 기록 ID
+     * 고유 ID
      */
     id: number;
     /**
      * User Id
      *
-     * 대상 유저(학생 / 교사)의 고유 ID
+     * 스티커를 받은 학생의 고유 ID
      */
     user_id: number;
     /**
-     * User Name
-     *
-     * 대상 유저 이름
-     */
-    user_name: string | null;
-    /**
-     * 대상 유저 타입
-     */
-    user_type: UserType | null;
-    /**
-     * Class Grade
-     *
-     * 교사가 학급에 전달한 기록인 경우 대상 학년
-     */
-    class_grade: number | null;
-    /**
-     * Class Number
-     *
-     * 교사가 학급에 전달한 기록인 경우 대상 반
-     */
-    class_number: number | null;
-    /**
-     * Grade
-     *
-     * 대상 학생 학년
-     */
-    grade: number | null;
-    /**
-     * Number
-     *
-     * 대상 학생 반
-     */
-    number: number | null;
-    /**
      * Amount
      *
-     * 변동 수량 (지급 +, 회수 · 학급 전달 -)
+     * 변동 수량 (지급 양수, 회수 · 학급 전달 음수)
      */
     amount: number;
     /**
      * Actor Id
      *
-     * 처리한 유저의 고유 ID
+     * 지급/회수를 처리한 유저의 고유 ID
      */
     actor_id: number | null;
-    /**
-     * Actor Name
-     *
-     * 처리한 유저 이름
-     */
-    actor_name: string | null;
     /**
      * Memo
      *
@@ -1595,11 +1557,31 @@ export type StickerHistoryItem = {
      */
     memo: string | null;
     /**
+     * Class Grade
+     *
+     * 교사가 학급에 전달한 경우 대상 학년
+     */
+    class_grade: number | null;
+    /**
+     * Class Number
+     *
+     * 교사가 학급에 전달한 경우 대상 반
+     */
+    class_number: number | null;
+    /**
      * Created At
      *
      * 처리 일시
      */
     created_at: Date;
+    /**
+     * 대상 유저
+     */
+    user: UserSummary | null;
+    /**
+     * 처리한 유저 (삭제된 유저면 null)
+     */
+    actor: UserSummary | null;
 };
 
 /**
@@ -1918,6 +1900,42 @@ export const UserPermission = {
  * 예) 포인트 관리 -> MANAGE_POINT
  */
 export type UserPermission = typeof UserPermission[keyof typeof UserPermission];
+
+/**
+ * UserSummary
+ *
+ * 다른 응답에 함께 담는 유저 요약 정보
+ */
+export type UserSummary = {
+    /**
+     * Id
+     *
+     * 고유 ID
+     */
+    id: number;
+    /**
+     * 유저 종류 (학생, 교사, 서비스)
+     */
+    type: UserType;
+    /**
+     * Name
+     *
+     * 이름
+     */
+    name: string;
+    /**
+     * Grade
+     *
+     * 학년
+     */
+    grade: number | null;
+    /**
+     * Number
+     *
+     * 반
+     */
+    number: number | null;
+};
 
 /**
  * UserType

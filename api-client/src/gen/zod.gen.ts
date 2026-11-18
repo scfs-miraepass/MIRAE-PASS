@@ -649,41 +649,6 @@ export const zAdminUserCreateRequest = z.object({
 });
 
 /**
- * StickerHistoryItem
- */
-export const zStickerHistoryItem = z.object({
-    id: z.int(),
-    user_id: z.int(),
-    user_name: z.string().nullable(),
-    user_type: zUserType.nullable(),
-    class_grade: z.int().nullable(),
-    class_number: z.int().nullable(),
-    grade: z.int().nullable(),
-    number: z.int().nullable(),
-    amount: z.int(),
-    actor_id: z.int().nullable(),
-    actor_name: z.string().nullable(),
-    memo: z.string().nullable(),
-    created_at: z.iso.datetime({ offset: true })
-});
-
-/**
- * StickerHistoryPage
- */
-export const zStickerHistoryPage = z.object({
-    period_start: z.iso.datetime({ offset: true }),
-    items: z.array(zStickerHistoryItem)
-});
-
-/**
- * ResponseModel[StickerHistoryPage]
- */
-export const zResponseModelStickerHistoryPage = z.object({
-    success: z.boolean(),
-    data: zStickerHistoryPage
-});
-
-/**
  * User
  */
 export const zUser = z.object({
@@ -754,6 +719,53 @@ export const zResponseModelUser = z.object({
 export const zResponseModelListUser = z.object({
     success: z.boolean(),
     data: z.array(zUser)
+});
+
+/**
+ * UserSummary
+ *
+ * 다른 응답에 함께 담는 유저 요약 정보
+ */
+export const zUserSummary = z.object({
+    id: z.int(),
+    type: zUserType,
+    name: z.string(),
+    grade: z.int().nullable(),
+    number: z.int().nullable()
+});
+
+/**
+ * StickerHistoryItem
+ *
+ * 스티커 기록 조회 응답. 대상 · 처리 유저 정보를 함께 담는다.
+ */
+export const zStickerHistoryItem = z.object({
+    id: z.int(),
+    user_id: z.int(),
+    amount: z.int(),
+    actor_id: z.int().nullable(),
+    memo: z.string().nullable(),
+    class_grade: z.int().nullable(),
+    class_number: z.int().nullable(),
+    created_at: z.iso.datetime({ offset: true }),
+    user: zUserSummary.nullable(),
+    actor: zUserSummary.nullable()
+});
+
+/**
+ * StickerHistoryPage
+ */
+export const zStickerHistoryPage = z.object({
+    period_start: z.iso.datetime({ offset: true }),
+    items: z.array(zStickerHistoryItem)
+});
+
+/**
+ * ResponseModel[StickerHistoryPage]
+ */
+export const zResponseModelStickerHistoryPage = z.object({
+    success: z.boolean(),
+    data: zStickerHistoryPage
 });
 
 /**
