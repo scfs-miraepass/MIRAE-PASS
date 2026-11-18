@@ -11,7 +11,7 @@ Git이나 GitHub Actions의 동작을 몰라도 이 문서의 버튼과 순서�
 | --- | --- | --- |
 | 1. 작업 요청 | 인공지능 작업자에게 요구사항을 전달합니다. | 인공지능 작업자가 브랜치를 만들고 작업해 `dev`로 PR을 올립니다. |
 | 2. PR 검사 | **PR 검사 결과**가 초록색인지 확인합니다. | 코드·마이그레이션·SDK·화면을 검사하고, 마이그레이션 합류와 SDK 재생성을 커밋합니다. |
-| 3. 검토·머지 | 코드를 검토하고 [머지 전 확인](/docs/development/ai#human-merge-check)을 마친 뒤 머지합니다. | `dev` 프리릴리스(`x.y.z-dev.n`)와 `dev` 이미지가 만들어집니다. |
+| 3. 검토·머지 | 코드를 검토하고 [머지 전 확인](/docs/development/ai#human-merge-check)을 마친 뒤 **Squash and merge**로 머지합니다. | `dev` 프리릴리스(`x.y.z-dev.n`)와 `dev` 이미지가 만들어집니다. |
 | 4. 릴리스 PR | **Release PR** 버튼을 누르고, 만들어진 PR의 예상 버전과 변경 목록을 확인합니다. | `dev` → `master` PR이 만들어집니다. |
 | 5. 정식 릴리스 | 릴리스 PR을 **Create a merge commit**으로 머지합니다. | 정식 버전과 `latest` 이미지가 만들어지고, `dev`가 `master`와 자동으로 맞춰집니다. |
 
@@ -36,11 +36,11 @@ PR 화면 아래의 검사 목록에서 **PR 검사 결과**를 확인합니다.
 
 ### 검토하고 머지하기
 
-바뀐 코드를 검토하고, PR 맨 아래의 **사람 작업자 확인** 체크리스트를 직접 체크한 뒤 머지합니다.
+바뀐 코드를 검토하고, PR 맨 아래의 **사람 작업자 확인** 체크리스트를 직접 체크한 뒤 **Squash and merge**로 머지합니다.
 
-<Callout type="info">
-    `dev`로 머지할 때 **Squash and merge**를 쓰면 PR 제목이 그대로 커밋 메시지가 됩니다.
-    이때는 PR 제목이 [커밋 메시지](/docs/development/convention#커밋-메시지) 형식(예: `feat(client): ...`)이어야 버전이 의도대로 바뀝니다.
+<Callout type="warning">
+    Squash and merge를 하면 PR 제목이 그대로 커밋 메시지가 되고, 이 메시지로 버전이 정해집니다.
+    머지하기 전에 PR 제목이 [커밋 메시지](/docs/development/convention#커밋-메시지) 형식(예: `feat(client): ...`)인지 확인합니다. ([머지 방식](/docs/development/convention#머지-방식) 참고)
 </Callout>
 
 ### 정식 릴리스하기
