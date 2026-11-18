@@ -241,8 +241,8 @@ const onSubmitSelected = () => {
                 </div>
 
                 <button
-                    class="px-5 py-4.5 rounded-xl flex flex-col items-start transition-all active:scale-95 active:opacity-50 active:bg-accented relative"
-                    :class="{ 'bg-accented': action.multiple && isSelected(i) }"
+                    class="px-5 py-4.5 rounded-xl flex flex-col items-start transition-all active:opacity-50 active:bg-accented relative"
+                    :class="[{ 'bg-elevated scale-95': action.multiple && isSelected(i) }, action.multiple && isSelected(i) ?'active:scale-92':'active:scale-95']"
                     v-for="i in searchResult"
                     :key="i.id!"
                     @click="onSelect(i)"
