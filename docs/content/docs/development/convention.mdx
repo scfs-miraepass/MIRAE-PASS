@@ -29,7 +29,7 @@ import { FileTree, Callout } from 'nextra/components'
 | `api-client` | 백엔드 OpenAPI로 생성한 TypeScript SDK (`@miraepass/api-client`) |
 | `docs` | 이 문서 사이트 (Nextra) |
 | `docker` | 운영·개발용 Docker Compose 구성 |
-| `.github` | 릴리스 및 Docker 이미지 배포 워크플로 |
+| `.github` | 릴리스, Docker 이미지 배포, 릴리스 PR, dev 동기화 워크플로 |
 
 ### 백엔드 (`server`)
 
@@ -133,8 +133,8 @@ import { FileTree, Callout } from 'nextra/components'
 
 | 브랜치 | 용도 |
 | --- | --- |
-| `master` | 정식 릴리스. 푸시되면 버전이 올라가고 Docker 이미지가 배포됩니다. |
-| `dev` | 개발 통합 브랜치. 푸시되면 `x.y.z-dev.n` 프리릴리스가 만들어집니다. |
+| `master` | 정식 릴리스. `dev`에서 [릴리스 PR](/docs/development/deploy#정식-릴리스-하기)로만 머지합니다. 푸시되면 버전이 올라가고 Docker 이미지가 배포됩니다. |
+| `dev` | 개발 통합 브랜치. 푸시되면 `x.y.z-dev.n` 프리릴리스가 만들어집니다. 정식 릴리스 후 `master`의 변경 사항이 [자동으로 반영](/docs/development/deploy#dev-동기화)됩니다. |
 | `feat/*`, `fix/*`, `docs/*` | 작업 브랜치. `dev`로 PR을 보냅니다. |
 
 ### 커밋 메시지

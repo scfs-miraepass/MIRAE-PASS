@@ -1,0 +1,34 @@
+name: Release PR
+
+# Actions 탭에서 버튼으로 실행해 dev → master 릴리스 PR을 만들거나 갱신합니다.
+on:
+  workflow_dispatch:
+
+jobs:
+  release-pr:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      # GITHUB_TOKEN으로 만든 PR에서는 다른 워크플로(PR 검사 등)가 실행되지 않으므로 App 토큰을 사용합니다.
+      - name: Generate release token
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Create or update release PR
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: node .github/scripts/release-pr.mjs
