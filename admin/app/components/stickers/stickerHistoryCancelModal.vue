@@ -19,12 +19,12 @@ watch(open, (value) => {
 });
 
 const successDescription = () => {
-    const name = props.item.user_name ?? props.item.user_id;
+    const name = props.item.user?.name ?? props.item.user_id;
     const amount = Math.abs(props.item.amount);
     if (props.item.class_grade != null) {
         return `${name} 선생님의 ${props.item.class_grade}학년 ${props.item.class_number}반 전달 ${amount}개 기록을 취소했습니다.`;
     }
-    const label = props.item.user_type === "teacher" ? "선생님" : "학생";
+    const label = props.item.user?.type === "teacher" ? "선생님" : "학생";
     return `${name} ${label}의 스티커 ${props.item.amount > 0 ? "지급" : "회수"} ${amount}개 기록을 취소했습니다.`;
 };
 
@@ -69,7 +69,7 @@ const onSubmit = async () => {
         <template #body>
             <div class="text-sm space-y-1">
                 <p>
-                    <span class="font-semibold">{{ item.user_name ?? '-' }}</span>
+                    <span class="font-semibold">{{ item.user?.name ?? '-' }}</span>
                     <span class="text-muted ml-1">{{ item.user_id }}</span>
                 </p>
                 <p>

@@ -128,7 +128,7 @@ const columns = computed<TableColumn<StickerHistoryItem>[]>(() => {
         { accessorKey: "created_at", header: "일시" },
         { accessorKey: "user_id", header: "대상" },
         { accessorKey: "amount", header: "수량" },
-        { accessorKey: "actor_name", header: "처리자" },
+        { accessorKey: "actor_id", header: "처리자" },
         { accessorKey: "memo", header: "메모" },
         {
             id: "actions",
@@ -324,11 +324,11 @@ const onReset = async () => {
                     <span class="text-muted">{{ formatDate(row.original.created_at) }}</span>
                 </template>
                 <template #user_id-cell="{ row }">
-                    <span class="font-medium">{{ row.original.user_name ?? '-' }}</span>
-                    <UBadge v-if="row.original.user_type === 'teacher'" color="neutral" variant="subtle" size="sm" class="ml-1">교사</UBadge>
+                    <span class="font-medium">{{ row.original.user?.name ?? '-' }}</span>
+                    <UBadge v-if="row.original.user?.type === 'teacher'" color="neutral" variant="subtle" size="sm" class="ml-1">교사</UBadge>
                     <span class="text-muted ml-1.5">
                         {{ row.original.user_id }}
-                        <template v-if="row.original.grade != null"> · {{ row.original.grade }}학년 {{ row.original.number }}반</template>
+                        <template v-if="row.original.user?.grade != null"> · {{ row.original.user.grade }}학년 {{ row.original.user.number }}반</template>
                     </span>
                     <span v-if="row.original.class_grade != null" class="ml-2 text-primary">
                         → {{ row.original.class_grade }}학년 {{ row.original.class_number }}반
@@ -342,8 +342,8 @@ const onReset = async () => {
                         {{ row.original.amount > 0 ? `+${row.original.amount}` : row.original.amount }}
                     </UBadge>
                 </template>
-                <template #actor_name-cell="{ row }">
-                    <span>{{ row.original.actor_name ?? '-' }}</span>
+                <template #actor_id-cell="{ row }">
+                    <span>{{ row.original.actor?.name ?? '-' }}</span>
                     <span class="text-muted ml-1.5" v-if="row.original.actor_id != null">{{ row.original.actor_id }}</span>
                 </template>
                 <template #memo-cell="{ row }">
