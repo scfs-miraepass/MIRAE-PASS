@@ -1,7 +1,8 @@
 import { defineConfig } from "@hey-api/openapi-ts";
 
 export default defineConfig({
-    input: "http://localhost:8000/openapi.json",
+    // CI는 서버를 띄우지 않고 뽑은 openapi.json 파일 경로를 OPENAPI_INPUT으로 넘깁니다.
+    input: process.env.OPENAPI_INPUT ?? "http://localhost:8000/openapi.json",
     output: "src/gen",
     plugins: [
         {
