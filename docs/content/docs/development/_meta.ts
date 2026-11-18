@@ -1,5 +1,6 @@
 export default {
     develop: '',
+    workflow: '',
     convention: '',
     server: '',
     frontend: '',

@@ -1,4 +1,4 @@
-import { FileTree, Callout } from 'nextra/components'
+import { FileTree, Callout, Steps } from 'nextra/components'
 
 # 프로젝트 구조와 컨벤션
 
@@ -29,7 +29,7 @@ import { FileTree, Callout } from 'nextra/components'
 | `api-client` | 백엔드 OpenAPI로 생성한 TypeScript SDK (`@miraepass/api-client`) |
 | `docs` | 이 문서 사이트 (Nextra) |
 | `docker` | 운영·개발용 Docker Compose 구성 |
-| `.github` | 릴리스 및 Docker 이미지 배포 워크플로 |
+| `.github` | 릴리스, Docker 이미지 배포, 릴리스 PR, dev 동기화 워크플로 |
 
 ### 백엔드 (`server`)
 
@@ -127,14 +127,81 @@ import { FileTree, Callout } from 'nextra/components'
 
 전체를 한 번에 검사하려면 `yarn typecheck`를 실행합니다.
 
+### PR 검사 [#pr-검사]
+
+`dev`나 `master`로 PR을 열거나 커밋을 올리면 [`pr-check.yml`](https://github.com/scfs-miraepass/MIRAE-PASS/blob/master/.github/workflows/pr-check.yml)이 실행됩니다.
+PR 화면 아래의 **PR 검사 결과**가 초록색이면 머지할 수 있고, 빨간색이면 고쳐야 합니다.
+
+#### 자동 수정
+
+`dev`로 가는 PR에서 서버(`server`)나 SDK(`api-client`)가 바뀌면, 사람이 하지 않아도 되는 정리를 봇이 PR 브랜치에 커밋합니다.
+자동 수정 커밋이 올라가면 검사가 처음부터 다시 실행됩니다.
+
+| 상황 | 자동 수정 | 커밋 메시지 |
+| --- | --- | --- |
+| 다른 PR의 마이그레이션과 갈라짐 (head가 여러 개) | 합류 마이그레이션(`v{버전}_merge`)을 추가합니다. 기존 마이그레이션 파일은 수정하지 않습니다. | `chore(server): 마이그레이션 합류 (...)` |
+| 서버 API와 SDK가 다름 | `yarn sdk-gen`과 같은 방법으로 SDK를 다시 만듭니다. | `chore(sdk): SDK 재생성 (기준 ...)` |
+
+<Callout type="info">
+    합류 마이그레이션은 내용이 없는 파일로, 갈라진 마이그레이션들을 하나로 이어 줍니다.
+    로컬 DB에 어느 쪽 마이그레이션이 먼저 적용되어 있든 `uv run alembic upgrade head` 한 번이면 빠진 것만 적용됩니다.
+</Callout>
+
+같은 저장소의 브랜치에서 올라온 PR에서만 동작합니다. fork에서 올라온 PR과 릴리스 PR(`dev` → `master`)은 자동 수정하지 않습니다.
+
+#### 검사 항목
+
+바뀐 영역만 검사합니다. 워크플로나 검사 스크립트가 바뀌면 모두 검사합니다.
+
+| 검사 | 대상 | 내용 |
+| --- | --- | --- |
+| 서버 코드 검사 | `server/` | `ruff check`, `ruff format` ([커밋 전 검사](#커밋-전-검사)와 같은 설정) |
+| 마이그레이션 검사 | `server/` | 빈 MySQL에 `alembic upgrade head` 적용, head가 하나인지, `alembic check`로 모델 변경에 맞는 마이그레이션이 있는지 |
+| SDK 검사 | `server/`, `api-client/` | 서버 API로 다시 만든 SDK가 커밋된 SDK와 같은지 |
+| 프론트엔드 검사 | `client/`, `admin/`, `api-client/`, Yarn 설정 | `nuxt typecheck`, `nuxt build` |
+| PR 검사 결과 | 항상 | 위 검사 중 실패한 것이 있으면 실패 |
+
+#### 검사가 실패한 경우
+
+<Steps>
+
+### 원인 확인하기
+
+PR 화면에서 실패한 검사의 **Details**를 누릅니다. 작업 요약(Summary)에 실패 원인과 해결 방법이 적혀 있습니다.
+
+### 안내에 따라 고치기
+
+| 실패 | 해결 방법 |
+| --- | --- |
+| 마이그레이션이 갈라졌습니다 | PR 화면에서 **Update branch**를 누릅니다. 자동 수정이 합류 마이그레이션을 추가합니다. |
+| SDK가 서버 API와 다릅니다 | **Update branch**를 누르거나, 로컬에서 `yarn sdk-gen`을 실행해 커밋합니다. |
+| 그 밖의 실패 | 작업 요약에 있는 프롬프트나 로그를 인공지능 작업자에게 전달해 수정을 요청합니다. |
+
+### 다시 검사하기
+
+고친 커밋을 올리면 검사가 자동으로 다시 실행됩니다.
+
+</Steps>
+
+#### 필요한 저장소 설정
+
+저장소 **Settings → Branches**(또는 **Rules**)의 `dev`, `master` 보호 규칙에서 아래를 켭니다.
+
+| 설정 | 이유 |
+| --- | --- |
+| Require status checks to pass → **PR 검사 결과** 추가 | 검사가 실패한 PR을 머지하지 못하게 합니다. |
+| Require branches to be up to date before merging | 다른 PR이 먼저 머지되면 **Update branch**를 눌러 최신 `dev` 기준으로 다시 검사하게 합니다. 갈라진 마이그레이션이 `dev`에 들어가는 것을 막습니다. |
+
+자동 수정은 릴리스용 GitHub App 토큰으로 커밋합니다. ([릴리스에 필요한 저장소 설정](/docs/development/deploy#릴리스에-필요한-저장소-설정) 참고)
+
 ## Git 컨벤션
 
 ### 브랜치
 
 | 브랜치 | 용도 |
 | --- | --- |
-| `master` | 정식 릴리스. 푸시되면 버전이 올라가고 Docker 이미지가 배포됩니다. |
-| `dev` | 개발 통합 브랜치. 푸시되면 `x.y.z-dev.n` 프리릴리스가 만들어집니다. |
+| `master` | 정식 릴리스. `dev`에서 [릴리스 PR](/docs/development/deploy#정식-릴리스-하기)로만 머지합니다. 푸시되면 버전이 올라가고 Docker 이미지가 배포됩니다. |
+| `dev` | 개발 통합 브랜치. 푸시되면 `x.y.z-dev.n` 프리릴리스가 만들어집니다. 정식 릴리스 후 `master`의 변경 사항이 [자동으로 반영](/docs/development/deploy#dev-동기화)됩니다. |
 | `feat/*`, `fix/*`, `docs/*` | 작업 브랜치. `dev`로 PR을 보냅니다. |
 
 ### 커밋 메시지
@@ -166,10 +233,25 @@ scope에는 바뀐 영역을 적습니다: `server`, `client`, `admin`, `sdk`, `
     버전과 `CHANGELOG.md`는 semantic-release가 커밋 메시지를 읽어 자동으로 관리합니다. `package.json`, `pyproject.toml`의 버전을 직접 수정하지 마세요.
 </Callout>
 
+### 머지 방식
+
+PR을 머지할 때는 대상 브랜치에 따라 아래 방식을 사용합니다.
+
+| PR | 머지 방식 | 이유 |
+| --- | --- | --- |
+| 작업 브랜치 → `dev` | **Squash and merge** | PR의 커밋을 하나로 합쳐 `dev` 기록을 깔끔하게 유지합니다. |
+| `dev` → `master` (릴리스 PR) | **Create a merge commit** | 각 커밋의 type을 semantic-release가 읽어 버전을 정하고, [dev 동기화](/docs/development/deploy#dev-동기화)가 충돌 없이 동작합니다. |
+
+<Callout type="warning">
+    Squash and merge를 하면 **PR 제목**이 그대로 `dev`의 커밋 메시지가 되고, 이 메시지로 버전이 정해집니다.
+    그래서 `dev`로 가는 PR의 제목은 반드시 [커밋 메시지](#커밋-메시지) 형식(예: `feat(client): 노래방 파티 초대 화면 추가`)으로 씁니다.
+</Callout>
+
 ### 마이그레이션 이름
 
 Alembic 마이그레이션 메시지는 해당 릴리스 버전으로 짓습니다.
 ```bash
 uv run alembic revision --autogenerate -m "v1.14.0"
 ```
+같은 버전의 마이그레이션이 여러 개여도 됩니다. [PR 검사](#pr-검사)가 자동으로 추가하는 합류 마이그레이션은 `v1.14.0_merge`처럼 뒤에 `_merge`가 붙습니다.
 데이터베이스 마이그레이션에 대한 내용은 [백엔드 개발 가이드](/docs/development/server#마이그레이션)를 확인하세요.
