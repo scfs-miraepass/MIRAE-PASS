@@ -2,6 +2,7 @@
 import { Motion } from "motion-v";
 import type { User, GetLimitResponse } from '@miraepass/api-client'
 import { useElementSize } from '@vueuse/core'
+import type { InputEmit } from '@/components/numberPad/index.vue'
 
 definePageMeta({
     middleware: [
@@ -40,8 +41,6 @@ const pointLimit = ref<GetLimitResponse>({
 const pointError = ref<boolean>(false);
 const [pointScope, pointAnimate] = useAnimate();
 
-const keypad = ["1", "2", "3", "4", "5", "6", "7", "8", "9"];
-
 if (import.meta.client) {
     if (!isDeduct.value) {
         const req = await $API.getLimitPointLimitTargetUserIdGet({
@@ -56,60 +55,6 @@ if (import.meta.client) {
         }
     }
 }
-
-const triggerVibration = (pattern?: number) => {
-    // 모바일에서 진동 함수
-    // TODO: iOS 사파리에선 API 지원 안하는데 어떻게 하실
-    if (typeof window !== "undefined" && window.navigator.vibrate) {
-        window.navigator.vibrate(pattern ?? 10);
-    }
-};
-
-const onInput = (val: string) => {
-    triggerVibration();
-    const currentStr = String(amount.value);
-    if (currentStr.length >= 6) return; // 최대 6자리 제한
-
-    // 초기값이 0이면 새 숫자로 교체, 아니면 뒤에 추가
-    const _new = Number(amount.value === 0 ? val : currentStr + val);
-    const limit = isDeduct.value
-        ? userData.value.point!
-        : Math.min(pointLimit.value!.target_limit, pointLimit.value!.limit)!;
-    if (_new > limit) {
-        triggerVibration(20);
-        setTimeout(() => triggerVibration(100), 100);
-
-        pointError.value = true;
-        pointAnimate(
-            pointScope.value,
-            { translate: "20px" },
-            { type: "spring", stiffness: 700, damping: 3, mass: 0.5 },
-        );
-        setTimeout(
-            () =>
-                pointAnimate(
-                    pointScope.value,
-                    { translate: "0" },
-                    { type: "spring", stiffness: 700, damping: 3, mass: 0.5 },
-                ),
-            25,
-        );
-        return;
-    }
-    pointError.value = false;
-    amount.value = _new;
-};
-
-const onDelete = () => {
-    triggerVibration();
-    const currentStr = String(amount.value);
-    if (currentStr.length <= 1) {
-        amount.value = 0;
-    } else {
-        amount.value = Number(currentStr.slice(0, -1));
-    }
-    pointError.value = false;
-};
 
 const onButton = async () => {
     isLoading.value = true;
@@ -137,6 +82,50 @@ const onButton = async () => {
 const onMemoInput = (event: InputEvent) => {
     memoValue.value = (event.target as HTMLInputElement).value;
 }
+
+const onInput = ({ value: val, vibration }: InputEmit) => {
+    const currentStr = String(amount.value);
+    if (currentStr.length >= 6) return; // 최대 6자리 제한
+
+    // 초기값이 0이면 새 숫자로 교체, 아니면 뒤에 추가
+    const _new = Number(amount.value === 0 ? val : currentStr + val);
+    const limit = isDeduct.value
+        ? userData.value.point!
+        : Math.min(pointLimit.value!.target_limit, pointLimit.value!.limit)!;
+    if (_new > limit) {
+        vibration(20);
+        setTimeout(() => vibration(100), 100);
+
+        pointError.value = true;
+        pointAnimate(
+            pointScope.value,
+            { translate: "20px" },
+            { type: "spring", stiffness: 700, damping: 3, mass: 0.5 },
+        );
+        setTimeout(
+            () =>
+                pointAnimate(
+                    pointScope.value,
+                    { translate: "0" },
+                    { type: "spring", stiffness: 700, damping: 3, mass: 0.5 },
+                ),
+            25,
+        );
+        return;
+    }
+    pointError.value = false;
+    amount.value = _new;
+};
+
+const onDelete = () => {
+    const currentStr = String(amount.value);
+    if (currentStr.length <= 1) {
+        amount.value = 0;
+    } else {
+        amount.value = Number(currentStr.slice(0, -1));
+    }
+    pointError.value = false;
+};
 </script>
 
 <template>
@@ -242,6 +231,8 @@ const onMemoInput = (event: InputEvent) => {
                     </Motion>
                 </div>
             </div>
+
+            <!-- 하단 경고 -->
             <p
                 class="text-ui-p2 mb-5 flex items-center justify-center light:text-black/50 dark:text-white/50 transition-opacity"
                 :class="[isConfirm ? 'opacity-100' : 'opacity-0']"
@@ -253,6 +244,8 @@ const onMemoInput = (event: InputEvent) => {
                         : "지급된 이후에는 회수할 수 없어요."
                 }}
             </p>
+
+            <!-- 버튼(다음, 취소, 진행) UI -->
             <div class="flex gap-3 mb-3">
                 <UButton
                     class="rounded-2xl justify-center flex py-4.5 transition-opacity w-full"
@@ -310,40 +303,9 @@ const onMemoInput = (event: InputEvent) => {
                     </UButton>
                 </Motion>
             </div>
-            <Motion
-                as="div"
-                class="w-full h-[30vh] grid grid-cols-3 grid-rows-4"
-                :initial="{ marginBottom: 0 }"
-                :animate="{ marginBottom: isConfirm ? '-30vh' : 0 }"
-                :transition="{
-                    type: 'spring',
-                    stiffness: 950,
-                    damping: 80,
-                    mass: 1,
-                }"
-            >
-                <button
-                    v-for="num in keypad"
-                    :key="num"
-                    @click="onInput(num)"
-                    class="rounded-xl gap-2 px-5.5 py-3 transition-all active:scale-95 active:opacity-50 active:bg-accented text-h6 text-center"
-                >
-                    {{ num }}
-                </button>
-                <div />
-                <button
-                    @click="onInput('0')"
-                    class="rounded-xl gap-2 px-5.5 py-3 transition-all active:scale-95 active:opacity-50 active:bg-accented text-h6 text-center"
-                >
-                    0
-                </button>
-                <button
-                    @click="onDelete"
-                    class="rounded-xl gap-2 px-5.5 py-3 transition-all active:scale-95 active:opacity-50 active:bg-accented text-h5 text-center"
-                >
-                    <UIcon name="i-ph-arrow-left" />
-                </button>
-            </Motion>
+
+            <!-- 키패드 UI -->
+            <NumberPad @input="onInput" @delete="onDelete" :hidden="isConfirm" />
         </div>
         <div
             class="pt-10 h-full w-full flex flex-col items-center justify-center absolute transition"

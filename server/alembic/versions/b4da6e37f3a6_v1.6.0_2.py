@@ -90,18 +90,14 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(["user_id"], ["users.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.create_index(
-        op.f("ix_questcompletion_id"), "questcompletion", ["id"], unique=False
-    )
+    op.create_index(op.f("ix_questcompletion_id"), "questcompletion", ["id"], unique=False)
     op.create_index(
         op.f("ix_questcompletion_quest_id"),
         "questcompletion",
         ["quest_id"],
         unique=False,
     )
-    op.create_index(
-        op.f("ix_questcompletion_user_id"), "questcompletion", ["user_id"], unique=False
-    )
+    op.create_index(op.f("ix_questcompletion_user_id"), "questcompletion", ["user_id"], unique=False)
     op.create_index(
         "ix_questcompletion_user_id_quest_id",
         "questcompletion",
@@ -116,13 +112,9 @@ def upgrade() -> None:
         existing_nullable=True,
     )
     op.create_index(op.f("ix_pointhistory_id"), "pointhistory", ["id"], unique=False)
-    op.create_index(
-        op.f("ix_pointhistory_user_id"), "pointhistory", ["user_id"], unique=False
-    )
+    op.create_index(op.f("ix_pointhistory_user_id"), "pointhistory", ["user_id"], unique=False)
     op.create_index(op.f("ix_users_type"), "users", ["type"], unique=False)
-    op.create_index(
-        op.f("ix_usersearch_user_id"), "usersearch", ["user_id"], unique=False
-    )
+    op.create_index(op.f("ix_usersearch_user_id"), "usersearch", ["user_id"], unique=False)
     # ### end Alembic commands ###
 
 

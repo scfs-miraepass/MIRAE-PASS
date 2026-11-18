@@ -6,6 +6,7 @@ import DeleteModal from "@/components/users/userDeleteModal.vue"
 import PasswordResetModal from "@/components/users/userPasswordResetModal.vue"
 import EditSlideover from "@/components/users/userEditSlideover.vue"
 import PointManageModal from "@/components/users/userPointManageModal.vue"
+import StickerBulkGrantModal from "@/components/stickers/stickerBulkGrantModal.vue"
 
 definePageMeta({
     permissions: [ UserPermission.MANAGE_USER ]
@@ -36,6 +37,11 @@ const isPointManageModalOpen = ref(false)
 const canGrantPoint = computed(() => ((session.value?.permissions || 0) & UserPermission._GRANT_POINT) === UserPermission._GRANT_POINT)
 const canDeductPoint = computed(() => ((session.value?.permissions || 0) & UserPermission._DEDUCT_POINT) === UserPermission._DEDUCT_POINT)
 const canManagePoint = computed(() => canGrantPoint.value || canDeductPoint.value)
+// admin의 hasPermission은 OR 조건이 없어 두 권한을 따로 확인
+const canGiveSticker = computed(() =>
+    hasPermission(session.value?.permissions, UserPermission.GIVE_STICKER)
+    || hasPermission(session.value?.permissions, UserPermission.MANAGE_STICKER))
+const isStickerGrantModalOpen = ref(false)
 
 const queryParams = computed(() => ({
     limit: 20,
@@ -214,6 +220,12 @@ const onSearch = async (event: InputEvent) => {
         @close="isPointManageModalOpen = false"
         @success="() => { isPointManageModalOpen = false; refresh(); rowSelection = {}; }"
     />
+    <StickerBulkGrantModal
+        v-if="isStickerGrantModalOpen"
+        :users="selectedIds"
+        @close="isStickerGrantModalOpen = false"
+        @success="() => { isStickerGrantModalOpen = false; rowSelection = {}; }"
+    />
 
     <UDashboardPanel :ui="{
         root: 'overflow-y-auto',
@@ -239,6 +251,15 @@ const onSearch = async (event: InputEvent) => {
                         @click="isPointManageModalOpen = true"
                     >
                         포인트 관리 ({{ selectedIds.length }}명)
+                    </UButton>
+                    <UButton
+                        v-if="selectedIds.length > 0 && canGiveSticker"
+                        color="primary"
+                        variant="soft"
+                        icon="i-lucide-heart"
+                        @click="isStickerGrantModalOpen = true"
+                    >
+                        스티커 지급 ({{ selectedIds.length }}명)
                     </UButton>
                 </div>
             </div>

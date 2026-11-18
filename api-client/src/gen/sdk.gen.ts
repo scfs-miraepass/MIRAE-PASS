@@ -4,8 +4,8 @@ import * as z from 'zod';
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { ChangePasswordAuthPasswordPutData, ChangePasswordAuthPasswordPutErrors, ChangePasswordAuthPasswordPutResponses, ChangePasswordNewAuthPasswordPostData, ChangePasswordNewAuthPasswordPostErrors, ChangePasswordNewAuthPasswordPostResponses, CheckPasswordExistsAuthPasswordExistsUserIdGetData, CheckPasswordExistsAuthPasswordExistsUserIdGetErrors, CheckPasswordExistsAuthPasswordExistsUserIdGetResponses, CompleteQuestQuestQuestIdCompletePostData, CompleteQuestQuestQuestIdCompletePostErrors, CompleteQuestQuestQuestIdCompletePostResponses, CreateKaraokeBidData, CreateKaraokeBidErrors, CreateKaraokeBidResponses, CreateKaraokeData, CreateKaraokeErrors, CreateKaraokePartyData, CreateKaraokePartyErrors, CreateKaraokePartyResponses, CreateKaraokeResponses, CreatePostPostsPostData, CreatePostPostsPostErrors, CreatePostPostsPostResponses, CreateQuestQuestCreatePostData, CreateQuestQuestCreatePostErrors, CreateQuestQuestCreatePostResponses, CreateStampStampPostData, CreateStampStampPostErrors, CreateStampStampPostResponses, CreateUserAdminUserPostData, CreateUserAdminUserPostErrors, CreateUserAdminUserPostResponses, DecideKaraokePartyInviteData, DecideKaraokePartyInviteErrors, DecideKaraokePartyInviteResponses, DeductPointsPointDeductPostData, DeductPointsPointDeductPostErrors, DeductPointsPointDeductPostResponses, DeleteKaraokeData, DeleteKaraokeErrors, DeleteKaraokeResponses, DeletePostPostsPostIdDeleteData, DeletePostPostsPostIdDeleteErrors, DeletePostPostsPostIdDeleteResponses, DeleteQuestQuestQuestIdDeleteData, DeleteQuestQuestQuestIdDeleteErrors, DeleteQuestQuestQuestIdDeleteResponses, DeleteUserAdminUsersUserIdDeleteData, DeleteUserAdminUsersUserIdDeleteErrors, DeleteUserAdminUsersUserIdDeleteResponses, DisperseKaraokePartyData, DisperseKaraokePartyErrors, DisperseKaraokePartyResponses, GetCurrentUserAuthGetData, GetCurrentUserAuthGetErrors, GetCurrentUserAuthGetResponses, GetHistoryListPointHistoryGetData, GetHistoryListPointHistoryGetErrors, GetHistoryListPointHistoryGetResponses, GetHistoryPointHistoryTargetIdGetData, GetHistoryPointHistoryTargetIdGetErrors, GetHistoryPointHistoryTargetIdGetResponses, GetKaraokeData, GetKaraokeErrors, GetKaraokeFinalBidData, GetKaraokeFinalBidErrors, GetKaraokeFinalBidResponses, GetKaraokeListData, GetKaraokeListErrors, GetKaraokeListResponses, GetKaraokePartyData, GetKaraokePartyErrors, GetKaraokePartyResponses, GetKaraokeResponses, GetLimitPointLimitTargetUserIdGetData, GetLimitPointLimitTargetUserIdGetErrors, GetLimitPointLimitTargetUserIdGetResponses, GetLimitSessionPointLimitGetData, GetLimitSessionPointLimitGetErrors, GetLimitSessionPointLimitGetResponses, GetMyKaraokePartyData, GetMyKaraokePartyErrors, GetMyKaraokePartyInvitesData, GetMyKaraokePartyInvitesResponses, GetMyKaraokePartyResponses, GetPointBalancePointTargetUserIdGetData, GetPointBalancePointTargetUserIdGetErrors, GetPointBalancePointTargetUserIdGetResponses, GetPostPostsPostIdGetData, GetPostPostsPostIdGetErrors, GetPostPostsPostIdGetResponses, GetPostsPostsGetData, GetPostsPostsGetErrors, GetPostsPostsGetResponses, GetQuestQuestQuestIdGetData, GetQuestQuestQuestIdGetErrors, GetQuestQuestQuestIdGetResponses, GetRankingPointRankingGetData, GetRankingPointRankingGetErrors, GetRankingPointRankingGetResponses, GetStudentRankingPointRankingStudentGetData, GetStudentRankingPointRankingStudentGetErrors, GetStudentRankingPointRankingStudentGetResponses, GetTeacherRankingPointRankingTeacherGetData, GetTeacherRankingPointRankingTeacherGetErrors, GetTeacherRankingPointRankingTeacherGetResponses, GetUsersAdminUsersGetData, GetUsersAdminUsersGetErrors, GetUsersAdminUsersGetResponses, GetUserStampsStampGetData, GetUserStampsStampGetErrors, GetUserStampsStampGetResponses, GrantPointsPointGrantPostData, GrantPointsPointGrantPostErrors, GrantPointsPointGrantPostResponses, InviteKaraokePartyMemberData, InviteKaraokePartyMemberErrors, InviteKaraokePartyMemberResponses, KickKaraokePartyMemberData, KickKaraokePartyMemberErrors, KickKaraokePartyMemberResponses, LeaveKaraokePartyData, LeaveKaraokePartyErrors, LeaveKaraokePartyResponses, ListQuestsQuestGetData, ListQuestsQuestGetErrors, ListQuestsQuestGetResponses, LoginAuthLoginPostData, LoginAuthLoginPostErrors, LoginAuthLoginPostResponses, LogoutAuthLogoutPostData, LogoutAuthLogoutPostResponses, ReadRootGetData, ReadRootGetErrors, ReadRootGetResponses, ResetUserPasswordAdminUsersUserIdPasswordPatchData, ResetUserPasswordAdminUsersUserIdPasswordPatchErrors, ResetUserPasswordAdminUsersUserIdPasswordPatchResponses, SearchSearchGetData, SearchSearchGetErrors, SearchSearchGetResponses, TeacherGetByNameSearchTeacherUserNameGetData, TeacherGetByNameSearchTeacherUserNameGetErrors, TeacherGetByNameSearchTeacherUserNameGetResponses, UpdatePostPostsPostIdPatchData, UpdatePostPostsPostIdPatchErrors, UpdatePostPostsPostIdPatchResponses, UpdateQuestQuestQuestIdPutData, UpdateQuestQuestQuestIdPutErrors, UpdateQuestQuestQuestIdPutResponses, UpdateUserAdminUsersUserIdPatchData, UpdateUserAdminUsersUserIdPatchErrors, UpdateUserAdminUsersUserIdPatchResponses, UpdateUsersPointAdminPointPostData, UpdateUsersPointAdminPointPostErrors, UpdateUsersPointAdminPointPostResponses } from './types.gen';
-import { zChangePasswordAuthPasswordPutBody, zChangePasswordAuthPasswordPutResponse, zChangePasswordNewAuthPasswordPostBody, zChangePasswordNewAuthPasswordPostResponse, zCheckPasswordExistsAuthPasswordExistsUserIdGetPath, zCheckPasswordExistsAuthPasswordExistsUserIdGetQuery, zCheckPasswordExistsAuthPasswordExistsUserIdGetResponse, zCompleteQuestQuestQuestIdCompletePostPath, zCompleteQuestQuestQuestIdCompletePostResponse, zCreateKaraokeBidBody, zCreateKaraokeBidPath, zCreateKaraokeBidResponse, zCreateKaraokeBody, zCreateKaraokePartyPath, zCreateKaraokePartyResponse, zCreateKaraokeResponse, zCreatePostPostsPostBody, zCreatePostPostsPostResponse, zCreateQuestQuestCreatePostBody, zCreateQuestQuestCreatePostResponse, zCreateStampStampPostBody, zCreateStampStampPostResponse, zCreateUserAdminUserPostBody, zCreateUserAdminUserPostResponse, zDecideKaraokePartyInviteBody, zDecideKaraokePartyInvitePath, zDecideKaraokePartyInviteResponse, zDeductPointsPointDeductPostBody, zDeductPointsPointDeductPostResponse, zDeleteKaraokePath, zDeleteKaraokeResponse, zDeletePostPostsPostIdDeletePath, zDeletePostPostsPostIdDeleteResponse, zDeleteQuestQuestQuestIdDeletePath, zDeleteQuestQuestQuestIdDeleteResponse, zDeleteUserAdminUsersUserIdDeletePath, zDeleteUserAdminUsersUserIdDeleteResponse, zDisperseKaraokePartyPath, zDisperseKaraokePartyResponse, zGetCurrentUserAuthGetResponse, zGetHistoryListPointHistoryGetQuery, zGetHistoryListPointHistoryGetResponse, zGetHistoryPointHistoryTargetIdGetPath, zGetHistoryPointHistoryTargetIdGetResponse, zGetKaraokeFinalBidPath, zGetKaraokeFinalBidResponse, zGetKaraokeListQuery, zGetKaraokeListResponse, zGetKaraokePartyPath, zGetKaraokePartyResponse, zGetKaraokePath, zGetKaraokeResponse, zGetLimitPointLimitTargetUserIdGetPath, zGetLimitPointLimitTargetUserIdGetResponse, zGetLimitSessionPointLimitGetResponse, zGetMyKaraokePartyInvitesResponse, zGetMyKaraokePartyPath, zGetMyKaraokePartyResponse, zGetPointBalancePointTargetUserIdGetPath, zGetPointBalancePointTargetUserIdGetResponse, zGetPostPostsPostIdGetPath, zGetPostPostsPostIdGetResponse, zGetPostsPostsGetQuery, zGetPostsPostsGetResponse, zGetQuestQuestQuestIdGetPath, zGetQuestQuestQuestIdGetResponse, zGetRankingPointRankingGetQuery, zGetRankingPointRankingGetResponse, zGetStudentRankingPointRankingStudentGetQuery, zGetStudentRankingPointRankingStudentGetResponse, zGetTeacherRankingPointRankingTeacherGetQuery, zGetTeacherRankingPointRankingTeacherGetResponse, zGetUsersAdminUsersGetQuery, zGetUsersAdminUsersGetResponse, zGetUserStampsStampGetResponse, zGrantPointsPointGrantPostBody, zGrantPointsPointGrantPostResponse, zInviteKaraokePartyMemberBody, zInviteKaraokePartyMemberPath, zInviteKaraokePartyMemberResponse, zKickKaraokePartyMemberPath, zKickKaraokePartyMemberResponse, zLeaveKaraokePartyPath, zLeaveKaraokePartyResponse, zListQuestsQuestGetQuery, zListQuestsQuestGetResponse, zLoginAuthLoginPostBody, zLoginAuthLoginPostResponse, zLogoutAuthLogoutPostResponse, zReadRootGetQuery, zResetUserPasswordAdminUsersUserIdPasswordPatchPath, zResetUserPasswordAdminUsersUserIdPasswordPatchResponse, zSearchSearchGetQuery, zSearchSearchGetResponse, zTeacherGetByNameSearchTeacherUserNameGetPath, zTeacherGetByNameSearchTeacherUserNameGetResponse, zUpdatePostPostsPostIdPatchBody, zUpdatePostPostsPostIdPatchPath, zUpdatePostPostsPostIdPatchResponse, zUpdateQuestQuestQuestIdPutBody, zUpdateQuestQuestQuestIdPutPath, zUpdateQuestQuestQuestIdPutResponse, zUpdateUserAdminUsersUserIdPatchBody, zUpdateUserAdminUsersUserIdPatchPath, zUpdateUserAdminUsersUserIdPatchResponse, zUpdateUsersPointAdminPointPostBody, zUpdateUsersPointAdminPointPostResponse } from './zod.gen';
+import type { ChangeKioskPasswordData, ChangeKioskPasswordErrors, ChangeKioskPasswordResponses, ChangePasswordAuthPasswordPutData, ChangePasswordAuthPasswordPutErrors, ChangePasswordAuthPasswordPutResponses, ChangePasswordNewAuthPasswordPostData, ChangePasswordNewAuthPasswordPostErrors, ChangePasswordNewAuthPasswordPostResponses, CheckPasswordExistsAuthPasswordExistsUserIdGetData, CheckPasswordExistsAuthPasswordExistsUserIdGetErrors, CheckPasswordExistsAuthPasswordExistsUserIdGetResponses, CompleteQuestQuestQuestIdCompletePostData, CompleteQuestQuestQuestIdCompletePostErrors, CompleteQuestQuestQuestIdCompletePostResponses, CreateKaraokeBidData, CreateKaraokeBidErrors, CreateKaraokeBidResponses, CreateKaraokeData, CreateKaraokeErrors, CreateKaraokePartyData, CreateKaraokePartyErrors, CreateKaraokePartyResponses, CreateKaraokeResponses, CreatePostPostsPostData, CreatePostPostsPostErrors, CreatePostPostsPostResponses, CreateQuestQuestCreatePostData, CreateQuestQuestCreatePostErrors, CreateQuestQuestCreatePostResponses, CreateStampStampPostData, CreateStampStampPostErrors, CreateStampStampPostResponses, CreateUserAdminUserPostData, CreateUserAdminUserPostErrors, CreateUserAdminUserPostResponses, DecideKaraokePartyInviteData, DecideKaraokePartyInviteErrors, DecideKaraokePartyInviteResponses, DeductPointsPointDeductPostData, DeductPointsPointDeductPostErrors, DeductPointsPointDeductPostResponses, DeleteKaraokeData, DeleteKaraokeErrors, DeleteKaraokeResponses, DeletePostPostsPostIdDeleteData, DeletePostPostsPostIdDeleteErrors, DeletePostPostsPostIdDeleteResponses, DeleteQuestQuestQuestIdDeleteData, DeleteQuestQuestQuestIdDeleteErrors, DeleteQuestQuestQuestIdDeleteResponses, DeleteStickerHistoryData, DeleteStickerHistoryErrors, DeleteStickerHistoryResponses, DeleteUserAdminUsersUserIdDeleteData, DeleteUserAdminUsersUserIdDeleteErrors, DeleteUserAdminUsersUserIdDeleteResponses, DisperseKaraokePartyData, DisperseKaraokePartyErrors, DisperseKaraokePartyResponses, GetCurrentUserAuthGetData, GetCurrentUserAuthGetErrors, GetCurrentUserAuthGetResponses, GetHistoryListPointHistoryGetData, GetHistoryListPointHistoryGetErrors, GetHistoryListPointHistoryGetResponses, GetHistoryPointHistoryTargetIdGetData, GetHistoryPointHistoryTargetIdGetErrors, GetHistoryPointHistoryTargetIdGetResponses, GetKaraokeData, GetKaraokeErrors, GetKaraokeFinalBidData, GetKaraokeFinalBidErrors, GetKaraokeFinalBidResponses, GetKaraokeListData, GetKaraokeListErrors, GetKaraokeListResponses, GetKaraokePartyData, GetKaraokePartyErrors, GetKaraokePartyResponses, GetKaraokeResponses, GetLimitPointLimitTargetUserIdGetData, GetLimitPointLimitTargetUserIdGetErrors, GetLimitPointLimitTargetUserIdGetResponses, GetLimitSessionPointLimitGetData, GetLimitSessionPointLimitGetErrors, GetLimitSessionPointLimitGetResponses, GetMyKaraokePartyData, GetMyKaraokePartyErrors, GetMyKaraokePartyInvitesData, GetMyKaraokePartyInvitesResponses, GetMyKaraokePartyResponses, GetMyStickerBalanceData, GetMyStickerBalanceErrors, GetMyStickerBalanceResponses, GetPointBalancePointTargetUserIdGetData, GetPointBalancePointTargetUserIdGetErrors, GetPointBalancePointTargetUserIdGetResponses, GetPostPostsPostIdGetData, GetPostPostsPostIdGetErrors, GetPostPostsPostIdGetResponses, GetPostsPostsGetData, GetPostsPostsGetErrors, GetPostsPostsGetResponses, GetQuestQuestQuestIdGetData, GetQuestQuestQuestIdGetErrors, GetQuestQuestQuestIdGetResponses, GetRankingPointRankingGetData, GetRankingPointRankingGetErrors, GetRankingPointRankingGetResponses, GetStickerClassRankingData, GetStickerClassRankingErrors, GetStickerClassRankingResponses, GetStickerHistoryData, GetStickerHistoryErrors, GetStickerHistoryResponses, GetStickerRankingData, GetStickerRankingErrors, GetStickerRankingResponses, GetStudentRankingPointRankingStudentGetData, GetStudentRankingPointRankingStudentGetErrors, GetStudentRankingPointRankingStudentGetResponses, GetTeacherRankingPointRankingTeacherGetData, GetTeacherRankingPointRankingTeacherGetErrors, GetTeacherRankingPointRankingTeacherGetResponses, GetUsersAdminUsersGetData, GetUsersAdminUsersGetErrors, GetUsersAdminUsersGetResponses, GetUserStampsStampGetData, GetUserStampsStampGetErrors, GetUserStampsStampGetResponses, GetUserStickerBalanceData, GetUserStickerBalanceErrors, GetUserStickerBalanceResponses, GiveStickerToClassData, GiveStickerToClassErrors, GiveStickerToClassResponses, GrantPointsPointGrantPostData, GrantPointsPointGrantPostErrors, GrantPointsPointGrantPostResponses, GrantStickerData, GrantStickerErrors, GrantStickerResponses, GrantStickersData, GrantStickersErrors, GrantStickersResponses, InviteKaraokePartyMemberData, InviteKaraokePartyMemberErrors, InviteKaraokePartyMemberResponses, KickKaraokePartyMemberData, KickKaraokePartyMemberErrors, KickKaraokePartyMemberResponses, KioskPasswordVerifyData, KioskPasswordVerifyErrors, KioskPasswordVerifyResponses, LeaveKaraokePartyData, LeaveKaraokePartyErrors, LeaveKaraokePartyResponses, ListQuestsQuestGetData, ListQuestsQuestGetErrors, ListQuestsQuestGetResponses, LoginAuthLoginPostData, LoginAuthLoginPostErrors, LoginAuthLoginPostResponses, LogoutAuthLogoutPostData, LogoutAuthLogoutPostResponses, ReadRootGetData, ReadRootGetErrors, ReadRootGetResponses, ResetStickersData, ResetStickersErrors, ResetStickersResponses, ResetUserPasswordAdminUsersUserIdPasswordPatchData, ResetUserPasswordAdminUsersUserIdPasswordPatchErrors, ResetUserPasswordAdminUsersUserIdPasswordPatchResponses, RevokeStickerData, RevokeStickerErrors, RevokeStickerResponses, SearchSearchGetData, SearchSearchGetErrors, SearchSearchGetResponses, TeacherGetByNameSearchTeacherUserNameGetData, TeacherGetByNameSearchTeacherUserNameGetErrors, TeacherGetByNameSearchTeacherUserNameGetResponses, UpdatePostPostsPostIdPatchData, UpdatePostPostsPostIdPatchErrors, UpdatePostPostsPostIdPatchResponses, UpdateQuestQuestQuestIdPutData, UpdateQuestQuestQuestIdPutErrors, UpdateQuestQuestQuestIdPutResponses, UpdateUserAdminUsersUserIdPatchData, UpdateUserAdminUsersUserIdPatchErrors, UpdateUserAdminUsersUserIdPatchResponses, UpdateUsersPointAdminPointPostData, UpdateUsersPointAdminPointPostErrors, UpdateUsersPointAdminPointPostResponses } from './types.gen';
+import { zChangeKioskPasswordBody, zChangeKioskPasswordResponse, zChangePasswordAuthPasswordPutBody, zChangePasswordAuthPasswordPutResponse, zChangePasswordNewAuthPasswordPostBody, zChangePasswordNewAuthPasswordPostResponse, zCheckPasswordExistsAuthPasswordExistsUserIdGetPath, zCheckPasswordExistsAuthPasswordExistsUserIdGetQuery, zCheckPasswordExistsAuthPasswordExistsUserIdGetResponse, zCompleteQuestQuestQuestIdCompletePostPath, zCompleteQuestQuestQuestIdCompletePostResponse, zCreateKaraokeBidBody, zCreateKaraokeBidPath, zCreateKaraokeBidResponse, zCreateKaraokeBody, zCreateKaraokePartyPath, zCreateKaraokePartyResponse, zCreateKaraokeResponse, zCreatePostPostsPostBody, zCreatePostPostsPostResponse, zCreateQuestQuestCreatePostBody, zCreateQuestQuestCreatePostResponse, zCreateStampStampPostBody, zCreateStampStampPostResponse, zCreateUserAdminUserPostBody, zCreateUserAdminUserPostResponse, zDecideKaraokePartyInviteBody, zDecideKaraokePartyInvitePath, zDecideKaraokePartyInviteResponse, zDeductPointsPointDeductPostBody, zDeductPointsPointDeductPostResponse, zDeleteKaraokePath, zDeleteKaraokeResponse, zDeletePostPostsPostIdDeletePath, zDeletePostPostsPostIdDeleteResponse, zDeleteQuestQuestQuestIdDeletePath, zDeleteQuestQuestQuestIdDeleteResponse, zDeleteStickerHistoryPath, zDeleteStickerHistoryResponse, zDeleteUserAdminUsersUserIdDeletePath, zDeleteUserAdminUsersUserIdDeleteResponse, zDisperseKaraokePartyPath, zDisperseKaraokePartyResponse, zGetCurrentUserAuthGetResponse, zGetHistoryListPointHistoryGetQuery, zGetHistoryListPointHistoryGetResponse, zGetHistoryPointHistoryTargetIdGetPath, zGetHistoryPointHistoryTargetIdGetResponse, zGetKaraokeFinalBidPath, zGetKaraokeFinalBidResponse, zGetKaraokeListQuery, zGetKaraokeListResponse, zGetKaraokePartyPath, zGetKaraokePartyResponse, zGetKaraokePath, zGetKaraokeResponse, zGetLimitPointLimitTargetUserIdGetPath, zGetLimitPointLimitTargetUserIdGetResponse, zGetLimitSessionPointLimitGetResponse, zGetMyKaraokePartyInvitesResponse, zGetMyKaraokePartyPath, zGetMyKaraokePartyResponse, zGetMyStickerBalanceResponse, zGetPointBalancePointTargetUserIdGetPath, zGetPointBalancePointTargetUserIdGetResponse, zGetPostPostsPostIdGetPath, zGetPostPostsPostIdGetResponse, zGetPostsPostsGetQuery, zGetPostsPostsGetResponse, zGetQuestQuestQuestIdGetPath, zGetQuestQuestQuestIdGetResponse, zGetRankingPointRankingGetQuery, zGetRankingPointRankingGetResponse, zGetStickerClassRankingResponse, zGetStickerHistoryQuery, zGetStickerHistoryResponse, zGetStickerRankingQuery, zGetStickerRankingResponse, zGetStudentRankingPointRankingStudentGetQuery, zGetStudentRankingPointRankingStudentGetResponse, zGetTeacherRankingPointRankingTeacherGetQuery, zGetTeacherRankingPointRankingTeacherGetResponse, zGetUsersAdminUsersGetQuery, zGetUsersAdminUsersGetResponse, zGetUserStampsStampGetResponse, zGetUserStickerBalancePath, zGetUserStickerBalanceResponse, zGiveStickerToClassBody, zGiveStickerToClassResponse, zGrantPointsPointGrantPostBody, zGrantPointsPointGrantPostResponse, zGrantStickerBody, zGrantStickerResponse, zGrantStickersBody, zGrantStickersResponse, zInviteKaraokePartyMemberBody, zInviteKaraokePartyMemberPath, zInviteKaraokePartyMemberResponse, zKickKaraokePartyMemberPath, zKickKaraokePartyMemberResponse, zKioskPasswordVerifyBody, zKioskPasswordVerifyResponse, zLeaveKaraokePartyPath, zLeaveKaraokePartyResponse, zListQuestsQuestGetQuery, zListQuestsQuestGetResponse, zLoginAuthLoginPostBody, zLoginAuthLoginPostResponse, zLogoutAuthLogoutPostResponse, zReadRootGetQuery, zResetStickersResponse, zResetUserPasswordAdminUsersUserIdPasswordPatchPath, zResetUserPasswordAdminUsersUserIdPasswordPatchResponse, zRevokeStickerBody, zRevokeStickerResponse, zSearchSearchGetQuery, zSearchSearchGetResponse, zTeacherGetByNameSearchTeacherUserNameGetPath, zTeacherGetByNameSearchTeacherUserNameGetResponse, zUpdatePostPostsPostIdPatchBody, zUpdatePostPostsPostIdPatchPath, zUpdatePostPostsPostIdPatchResponse, zUpdateQuestQuestQuestIdPutBody, zUpdateQuestQuestQuestIdPutPath, zUpdateQuestQuestQuestIdPutResponse, zUpdateUserAdminUsersUserIdPatchBody, zUpdateUserAdminUsersUserIdPatchPath, zUpdateUserAdminUsersUserIdPatchResponse, zUpdateUsersPointAdminPointPostBody, zUpdateUsersPointAdminPointPostResponse } from './zod.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -89,6 +89,50 @@ export class MiraepassApi extends HeyApiClient {
             }).parseAsync(data),
             responseTransformer: async (data) => await zLoginAuthLoginPostResponse.parseAsync(data),
             url: '/auth/login',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+    
+    /**
+     * 키오스크 비밀번호 검사
+     *
+     * 특정 유저의 키오스크 비밀번호가 일치한지 응답합니다. service 타입 또는 유저 본인만 요청할 수 있습니다.
+     */
+    public kioskPasswordVerify<ThrowOnError extends boolean = false>(options: Options<KioskPasswordVerifyData, ThrowOnError>): RequestResult<KioskPasswordVerifyResponses, KioskPasswordVerifyErrors, ThrowOnError> {
+        return (options.client ?? this.client).post<KioskPasswordVerifyResponses, KioskPasswordVerifyErrors, ThrowOnError>({
+            requestValidator: async (data) => await z.object({
+                body: zKioskPasswordVerifyBody,
+                path: z.never().optional(),
+                query: z.never().optional()
+            }).parseAsync(data),
+            responseTransformer: async (data) => await zKioskPasswordVerifyResponse.parseAsync(data),
+            url: '/auth/kiosk',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+    
+    /**
+     * 키오스크 비밀번호 변경
+     *
+     * 로그인된 유저의 키오스크 비밀번호를 변경합니다.
+     */
+    public changeKioskPassword<ThrowOnError extends boolean = false>(options: Options<ChangeKioskPasswordData, ThrowOnError>): RequestResult<ChangeKioskPasswordResponses, ChangeKioskPasswordErrors, ThrowOnError> {
+        return (options.client ?? this.client).put<ChangeKioskPasswordResponses, ChangeKioskPasswordErrors, ThrowOnError>({
+            requestValidator: async (data) => await z.object({
+                body: zChangeKioskPasswordBody,
+                path: z.never().optional(),
+                query: z.never().optional()
+            }).parseAsync(data),
+            responseTransformer: async (data) => await zChangeKioskPasswordResponse.parseAsync(data),
+            url: '/auth/kiosk',
             ...options,
             headers: {
                 'Content-Type': 'application/json',
@@ -662,7 +706,7 @@ export class MiraepassApi extends HeyApiClient {
     /**
      * 게시글 목록 조회
      *
-     * 전체 게시글 목록을 페이징하여 조회합니다.
+     * 게시글 목록을 페이징하여 조회합니다. 본문 유형을 지정하면 해당 게시글의 본문도 반환합니다.
      */
     public getPostsPostsGet<ThrowOnError extends boolean = false>(options?: Options<GetPostsPostsGetData, ThrowOnError>): RequestResult<GetPostsPostsGetResponses, GetPostsPostsGetErrors, ThrowOnError> {
         return (options?.client ?? this.client).get<GetPostsPostsGetResponses, GetPostsPostsGetErrors, ThrowOnError>({
@@ -794,6 +838,220 @@ export class MiraepassApi extends HeyApiClient {
                 'Content-Type': 'application/json',
                 ...options.headers
             }
+        });
+    }
+    
+    /**
+     * 스티커 지급
+     *
+     * 학생 또는 교사에게 스티커를 1~3개 지급합니다. 한 명이 이번 주(월요일 00:00 KST 이후)에 받을 수 있는 스티커는 3개까지이며, 보유 수와 순위는 집계 기간 동안 누적됩니다.
+     */
+    public grantSticker<ThrowOnError extends boolean = false>(options: Options<GrantStickerData, ThrowOnError>): RequestResult<GrantStickerResponses, GrantStickerErrors, ThrowOnError> {
+        return (options.client ?? this.client).post<GrantStickerResponses, GrantStickerErrors, ThrowOnError>({
+            requestValidator: async (data) => await z.object({
+                body: zGrantStickerBody,
+                path: z.never().optional(),
+                query: z.never().optional()
+            }).parseAsync(data),
+            responseTransformer: async (data) => await zGrantStickerResponse.parseAsync(data),
+            url: '/sticker',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+    
+    /**
+     * 스티커 일괄 지급
+     *
+     * 여러 학생 또는 교사에게 스티커를 한 번에 지급합니다. (최대 100명) 유저마다 따로 처리하며, 이번 주 남은 한도가 요청 수보다 적은 유저에게는 남은 한도만큼만 지급합니다. (실제 지급 수는 `granted`) 남은 한도가 없거나 찾을 수 없는 유저는 건너뛰고 `failed`에 이유를 담아 돌려줍니다.
+     */
+    public grantStickers<ThrowOnError extends boolean = false>(options: Options<GrantStickersData, ThrowOnError>): RequestResult<GrantStickersResponses, GrantStickersErrors, ThrowOnError> {
+        return (options.client ?? this.client).post<GrantStickersResponses, GrantStickersErrors, ThrowOnError>({
+            requestValidator: async (data) => await z.object({
+                body: zGrantStickersBody,
+                path: z.never().optional(),
+                query: z.never().optional()
+            }).parseAsync(data),
+            responseTransformer: async (data) => await zGrantStickersResponse.parseAsync(data),
+            url: '/sticker/bulk',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+    
+    /**
+     * 스티커 회수
+     *
+     * 유저의 스티커를 회수합니다. 현재 집계 기간 내 보유 수 이하로만 회수할 수 있습니다.
+     */
+    public revokeSticker<ThrowOnError extends boolean = false>(options: Options<RevokeStickerData, ThrowOnError>): RequestResult<RevokeStickerResponses, RevokeStickerErrors, ThrowOnError> {
+        return (options.client ?? this.client).post<RevokeStickerResponses, RevokeStickerErrors, ThrowOnError>({
+            requestValidator: async (data) => await z.object({
+                body: zRevokeStickerBody,
+                path: z.never().optional(),
+                query: z.never().optional()
+            }).parseAsync(data),
+            responseTransformer: async (data) => await zRevokeStickerResponse.parseAsync(data),
+            url: '/sticker/revoke',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+    
+    /**
+     * 학급에 스티커 전달 (교사)
+     *
+     * 교사가 보유한 스티커를 원하는 학급에 전달합니다. 전달한 만큼 교사 보유 수가 줄고 학급 합계에 더해집니다.
+     */
+    public giveStickerToClass<ThrowOnError extends boolean = false>(options: Options<GiveStickerToClassData, ThrowOnError>): RequestResult<GiveStickerToClassResponses, GiveStickerToClassErrors, ThrowOnError> {
+        return (options.client ?? this.client).post<GiveStickerToClassResponses, GiveStickerToClassErrors, ThrowOnError>({
+            requestValidator: async (data) => await z.object({
+                body: zGiveStickerToClassBody,
+                path: z.never().optional(),
+                query: z.never().optional()
+            }).parseAsync(data),
+            responseTransformer: async (data) => await zGiveStickerToClassResponse.parseAsync(data),
+            url: '/sticker/class',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+    
+    /**
+     * 스티커 수동 초기화
+     *
+     * 모든 유저의 현재 스티커 보유 수를 0으로 만듭니다. 기록은 삭제되지 않으며 새 집계 기간이 시작됩니다.
+     */
+    public resetStickers<ThrowOnError extends boolean = false>(options?: Options<ResetStickersData, ThrowOnError>): RequestResult<ResetStickersResponses, ResetStickersErrors, ThrowOnError> {
+        return (options?.client ?? this.client).post<ResetStickersResponses, ResetStickersErrors, ThrowOnError>({
+            requestValidator: async (data) => await z.object({
+                body: z.never().optional(),
+                path: z.never().optional(),
+                query: z.never().optional()
+            }).parseAsync(data),
+            responseTransformer: async (data) => await zResetStickersResponse.parseAsync(data),
+            url: '/sticker/reset',
+            ...options
+        });
+    }
+    
+    /**
+     * 내 스티커 보유 수 조회
+     *
+     * 현재 집계 기간 내 내 스티커 보유 수를 조회합니다. 학생 또는 교사가 아닌 경우 0을 반환합니다.
+     */
+    public getMyStickerBalance<ThrowOnError extends boolean = false>(options?: Options<GetMyStickerBalanceData, ThrowOnError>): RequestResult<GetMyStickerBalanceResponses, GetMyStickerBalanceErrors, ThrowOnError> {
+        return (options?.client ?? this.client).get<GetMyStickerBalanceResponses, GetMyStickerBalanceErrors, ThrowOnError>({
+            requestValidator: async (data) => await z.object({
+                body: z.never().optional(),
+                path: z.never().optional(),
+                query: z.never().optional()
+            }).parseAsync(data),
+            responseTransformer: async (data) => await zGetMyStickerBalanceResponse.parseAsync(data),
+            url: '/sticker/me',
+            ...options
+        });
+    }
+    
+    /**
+     * 특정 유저 스티커 보유 수 조회
+     *
+     * 지급 · 관리 권한이 있는 유저가 특정 유저의 현재 스티커 보유 수를 조회합니다.
+     */
+    public getUserStickerBalance<ThrowOnError extends boolean = false>(options: Options<GetUserStickerBalanceData, ThrowOnError>): RequestResult<GetUserStickerBalanceResponses, GetUserStickerBalanceErrors, ThrowOnError> {
+        return (options.client ?? this.client).get<GetUserStickerBalanceResponses, GetUserStickerBalanceErrors, ThrowOnError>({
+            requestValidator: async (data) => await z.object({
+                body: z.never().optional(),
+                path: zGetUserStickerBalancePath,
+                query: z.never().optional()
+            }).parseAsync(data),
+            responseTransformer: async (data) => await zGetUserStickerBalanceResponse.parseAsync(data),
+            url: '/sticker/users/{user_id}',
+            ...options
+        });
+    }
+    
+    /**
+     * 스티커 개인 랭킹 조회
+     *
+     * 현재 집계 기간 내 스티커 보유 수 기준 학생 랭킹을 조회합니다. `week_count`는 이번 주에 받은 수로, 화면에서 주간 한도 하트를 채우는 데 사용합니다. `q`로 이름(초성 포함) 또는 학번을 검색할 수 있으며, 검색 결과의 순위는 전체 기준 순위입니다.
+     */
+    public getStickerRanking<ThrowOnError extends boolean = false>(options?: Options<GetStickerRankingData, ThrowOnError>): RequestResult<GetStickerRankingResponses, GetStickerRankingErrors, ThrowOnError> {
+        return (options?.client ?? this.client).get<GetStickerRankingResponses, GetStickerRankingErrors, ThrowOnError>({
+            requestValidator: async (data) => await z.object({
+                body: z.never().optional(),
+                path: z.never().optional(),
+                query: zGetStickerRankingQuery.optional()
+            }).parseAsync(data),
+            responseTransformer: async (data) => await zGetStickerRankingResponse.parseAsync(data),
+            url: '/sticker/ranking',
+            ...options
+        });
+    }
+    
+    /**
+     * 스티커 학급 랭킹 조회
+     *
+     * 학급별(학년, 반) 스티커 합계를 조회합니다. 결과는 1학년 1반부터 학년, 반 순으로 정렬되며 `rank`는 합계 기준 순위입니다.
+     */
+    public getStickerClassRanking<ThrowOnError extends boolean = false>(options?: Options<GetStickerClassRankingData, ThrowOnError>): RequestResult<GetStickerClassRankingResponses, GetStickerClassRankingErrors, ThrowOnError> {
+        return (options?.client ?? this.client).get<GetStickerClassRankingResponses, GetStickerClassRankingErrors, ThrowOnError>({
+            requestValidator: async (data) => await z.object({
+                body: z.never().optional(),
+                path: z.never().optional(),
+                query: z.never().optional()
+            }).parseAsync(data),
+            responseTransformer: async (data) => await zGetStickerClassRankingResponse.parseAsync(data),
+            url: '/sticker/ranking/class',
+            ...options
+        });
+    }
+    
+    /**
+     * 스티커 기록 조회 (관리자)
+     *
+     * 현재 집계 기간 내 스티커 지급 · 회수 · 학급 전달 기록을 최신순으로 조회합니다. `user_id`로 특정 유저의 기록만 조회할 수 있습니다.
+     */
+    public getStickerHistory<ThrowOnError extends boolean = false>(options?: Options<GetStickerHistoryData, ThrowOnError>): RequestResult<GetStickerHistoryResponses, GetStickerHistoryErrors, ThrowOnError> {
+        return (options?.client ?? this.client).get<GetStickerHistoryResponses, GetStickerHistoryErrors, ThrowOnError>({
+            requestValidator: async (data) => await z.object({
+                body: z.never().optional(),
+                path: z.never().optional(),
+                query: zGetStickerHistoryQuery.optional()
+            }).parseAsync(data),
+            responseTransformer: async (data) => await zGetStickerHistoryResponse.parseAsync(data),
+            url: '/sticker/history',
+            ...options
+        });
+    }
+    
+    /**
+     * 스티커 기록 취소 (관리자)
+     *
+     * 스티커 기록 하나를 삭제해 해당 변동을 없던 것으로 만듭니다. 삭제 후 대상 유저의 현재 기간 보유 수가 0 미만이 되는 경우 거부됩니다.
+     */
+    public deleteStickerHistory<ThrowOnError extends boolean = false>(options: Options<DeleteStickerHistoryData, ThrowOnError>): RequestResult<DeleteStickerHistoryResponses, DeleteStickerHistoryErrors, ThrowOnError> {
+        return (options.client ?? this.client).delete<DeleteStickerHistoryResponses, DeleteStickerHistoryErrors, ThrowOnError>({
+            requestValidator: async (data) => await z.object({
+                body: z.never().optional(),
+                path: zDeleteStickerHistoryPath,
+                query: z.never().optional()
+            }).parseAsync(data),
+            responseTransformer: async (data) => await zDeleteStickerHistoryResponse.parseAsync(data),
+            url: '/sticker/history/{history_id}',
+            ...options
         });
     }
     

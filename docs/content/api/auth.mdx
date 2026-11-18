@@ -13,8 +13,10 @@ import { Callout, Steps } from 'nextra/components'
 | `GET` | `/auth/password/exists/{user_id}` | [비밀번호 존재 여부 확인](#비밀번호-존재-여부-확인) | ✕ |
 | `POST` | `/auth/password` | [첫 비밀번호 설정](#첫-비밀번호-설정) | ✕ |
 | `POST` | `/auth/login` | [로그인](#로그인) | ✕ |
+| `POST` | `/auth/kiosk` | [키오스크 비밀번호 검사](#키오스크-비밀번호-검사) | ○ |
 | `GET` | `/auth` | [내 정보 확인](#내-정보-확인) | ○ |
 | `PUT` | `/auth/password` | [비밀번호 변경](#비밀번호-변경) | ○ |
+| `PUT` | `/auth/kiosk` | [키오스크 비밀번호 변경](#키오스크-비밀번호-변경) | ○ |
 | `POST` | `/auth/logout` | [로그아웃](#로그아웃) | ✕ |
 
 ## 로그인 흐름
@@ -157,6 +159,36 @@ if (req.error) {
     구분해서 알려주면 다른 사람이 어떤 학번이 가입되어 있는지 알아낼 수 있기 때문입니다.
 </Callout>
 
+## 키오스크 비밀번호 검사
+
+`POST /auth/kiosk` · SDK `kioskPasswordVerify`
+
+특정 유저의 키오스크 비밀번호가 일치한지 반환 합니다. **service 타입의 사용자만 이용할 수 있습니다.**
+
+| 위치 | 이름 | 타입 | 필수 | 설명 |
+| --- | --- | --- | --- | --- |
+| 본문 | `id` | 숫자 | ○ | 유저 ID (학번) |
+| 본문 | `password` | 문자 | ○ | 키오스크 비밀번호 |
+
+**응답** `200` — 해당 비밀번호가 설정한 키오스크 비밀번호와 일치하면 `data`가 `true`, 일치하지 않으면 `false`를 응답합니다.
+
+```json
+{ "success": true, "data": false }
+```
+
+| 오류 | 이유 |
+| --- | --- |
+| `401` | 로그인이 필요합니다. |
+| `403` | 권한이 없습니다. Service 계정만 이용 가능합니다. |
+| `404` | 검사하려는 유저를 찾지 못했습니다. |
+| `400` | 검사하려는 유저의 키오스크 비밀번호가 설정되지 않았습니다. |
+
+```ts
+const req = await $API.kioskPasswordVerify({
+    body: { id: 1101, password: "비밀번호" },
+})
+```
+
 ## 내 정보 확인
 
 `GET /auth` · SDK `getCurrentUserAuthGet`
@@ -198,6 +230,32 @@ if (req.response?.status === 401) {
 
 ```ts
 await $API.changePasswordAuthPasswordPut({
+    body: { old_password: "기존비밀번호", new_password: "새비밀번호" },
+})
+```
+
+## 키오스크 비밀번호 변경
+
+`PUT /auth/kiosk` · SDK `changeKioskPassword`
+
+로그인한 유저의 키오스크 비밀번호를 바꿉니다.<br />
+비밀번호희 형식은 6자리의 정수(0~9)으로 이루어져 있어야 합니다. (예: 002001 통과, 102 거절)
+
+| 위치 | 이름 | 타입 | 필수 | 설명 |
+| --- | --- | --- | --- | --- |
+| 본문 | `old_password` | 문자 | ○ | 지금 사용 중인 비밀번호 |
+| 본문 | `new_password` | 문자 | ○ | 새 비밀번호 |
+
+**응답** `204` — 본문이 없습니다.
+
+| 오류 | 이유 |
+| --- | --- |
+| `400` | 지금 사용 중인 비밀번호가 틀렸습니다. |
+| `401` | 로그인하지 않았습니다. |
+| `422` | 비밀번호의 형식이 맞지 않습니다. |
+
+```ts
+await $API.changeKioskPassword({
     body: { old_password: "기존비밀번호", new_password: "새비밀번호" },
 })
 ```

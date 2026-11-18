@@ -174,6 +174,26 @@ class Keys:
             """,
         )
 
+    class Sticker:
+        VERSION = RedisKey("sticker:ver", ttl=HOUR, description="스티커 랭킹/학급 랭킹 페이지 캐시 버전")
+        RANKING = RedisKey(
+            "sticker:ranking:{ver}:{period}:{week}:{limit}:{offset}",
+            ttl=5 * MINUTE,
+            description="""
+                스티커 개인 랭킹 페이지 (검색어가 있는 요청은 캐시하지 않음)
+                - ver: 버전
+                - period: 현재 집계 기간 시작 시각 (YYYYMMDDHHMMSS)
+                - week: 이번 주 한도 계산 시작 시각 (YYYYMMDDHHMMSS, 주가 바뀌면 week_count가 달라지므로 Key에 포함)
+                - limit: 한 페이지당 최대 데이터 개수
+                - offset: 현재 페이지 위치
+            """,
+        )
+        CLASS_RANKING = RedisKey(
+            "sticker:class_ranking:{ver}:{period}",
+            ttl=5 * MINUTE,
+            description="학급별 스티커 합계 랭킹 (period: 현재 집계 기간 시작 시각)",
+        )
+
     class Search:
         USERS = RedisKey(
             "search:users:{query}:{types}",
@@ -200,10 +220,20 @@ class Keys:
     class Karaoke:
         ITEM = RedisKey("karaoke:item:{karaoke_id}", ttl=5 * MINUTE, description="노래방(karaoke_id) 경매 데이터")
         VERSION = RedisKey(
-            "karaoke:ver:{date}", ttl=HOUR, description="date(YYYY-MM-DD) 날의 노래방 경매 목록 버전 **karaoke.date의 경우 all이 될 수 있으며, 일자 상관없는 예약 목록 데이터 입니다."
+            "karaoke:ver:{date}",
+            ttl=HOUR,
+            description="date(YYYY-MM-DD) 날의 노래방 경매 목록 버전 **karaoke.date의 경우 all이 될 수 있으며, 일자 상관없는 예약 목록 데이터 입니다.",
         )
-        PAGE = RedisKey("karaoke:page:{date}:{ver}:{limit}:{offset}", ttl=5 * MINUTE, description="date(YYYY-MM-DD) 날의 노래방 경매 목록 페이지 **karaoke.date의 경우 all이 될 수 있으며, 일자 상관없는 예약 목록 데이터 입니다.")
-        COUNT = RedisKey("karaoke:count:{date}", ttl=5 * MINUTE, description="date(YYYY-MM-DD) 날의 노래방 경매 개수 개수 **karaoke.date의 경우 all이 될 수 있으며, 일자 상관없는 예약 목록 데이터 입니다.")
+        PAGE = RedisKey(
+            "karaoke:page:{date}:{ver}:{limit}:{offset}",
+            ttl=5 * MINUTE,
+            description="date(YYYY-MM-DD) 날의 노래방 경매 목록 페이지 **karaoke.date의 경우 all이 될 수 있으며, 일자 상관없는 예약 목록 데이터 입니다.",
+        )
+        COUNT = RedisKey(
+            "karaoke:count:{date}",
+            ttl=5 * MINUTE,
+            description="date(YYYY-MM-DD) 날의 노래방 경매 개수 개수 **karaoke.date의 경우 all이 될 수 있으며, 일자 상관없는 예약 목록 데이터 입니다.",
+        )
         HIGHEST = RedisKey(
             "karaoke:highest:{karaoke_id}",
             ttl=None,

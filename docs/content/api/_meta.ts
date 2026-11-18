@@ -13,6 +13,7 @@ export default {
     quest: "퀘스트",
     posts: "게시글",
     stamp: "스탬프",
+    sticker: "스티커",
     karaoke: "노래방 경매",
     admin: "관리자",
 };

@@ -27,6 +27,11 @@ async def _clear_ranking(user_type: str | None, *, count: bool = False):
             await RedisCore.delete(Keys.Ranking.COUNT(type=t))
 
 
+async def _clear_sticker():
+    """스티커 개인/학급 랭킹 캐시를 지웁니다."""
+    await RedisCore.bump_version(Keys.Sticker.VERSION())
+
+
 # ---------- 유저 / 포인트 ----------
 
 
@@ -64,12 +69,16 @@ async def on_user_profile_changed(user_id: int, user_type: str):
     """이름, 권한 등 검색/랭킹 결과에 영향을 주는 유저 정보가 변경된 경우"""
     await RedisCore.delete(Keys.User.ITEM(user_id=user_id))
     await _clear_ranking(user_type, count=True)
+    if str(user_type) == "student":
+        await _clear_sticker()
     await RedisCore.delete_pattern(Keys.Search.USERS)
 
 
 async def on_user_created(user_type: str):
     """새로운 유저가 생성된 경우 호출"""
     await _clear_ranking(user_type, count=True)
+    if str(user_type) == "student":
+        await _clear_sticker()
     await RedisCore.delete_pattern(Keys.Search.USERS)
 
 
@@ -77,6 +86,14 @@ async def on_user_deleted(user_id: int, user_type: str):
     """유저가 삭제되는 경우 호출"""
     await on_point_changed(user_id, user_type)
     await on_user_created(user_type)
+
+
+# ---------- 스티커 ----------
+
+
+async def on_sticker_changed():
+    """스티커 지급 / 회수 / 수동 초기화와 같이 스티커 보유 수가 변동되는 경우 호출"""
+    await _clear_sticker()
 
 
 # ---------- 게시글 / 퀘스트 ----------

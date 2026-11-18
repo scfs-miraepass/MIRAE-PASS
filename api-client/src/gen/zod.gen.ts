@@ -207,6 +207,19 @@ export const zPostCreateRequest = z.object({
 });
 
 /**
+ * PostResponse
+ */
+export const zPostResponse = z.object({
+    id: z.int().nullish(),
+    title: z.string(),
+    views: z.int().optional().default(0),
+    created_at: z.iso.datetime({ offset: true }).optional(),
+    updated_at: z.iso.datetime({ offset: true }).optional(),
+    author_id: z.int(),
+    content_data: z.record(z.string(), z.unknown()).nullish()
+});
+
+/**
  * PostUpdateRequest
  */
 export const zPostUpdateRequest = z.object({
@@ -328,6 +341,14 @@ export const zResponseModelPointHistory = z.object({
 });
 
 /**
+ * ResponseModel[PostResponse]
+ */
+export const zResponseModelPostResponse = z.object({
+    success: z.boolean(),
+    data: zPostResponse
+});
+
+/**
  * ResponseModel[Posts]
  */
 export const zResponseModelPosts = z.object({
@@ -384,11 +405,11 @@ export const zResponseModelListPointHistory = z.object({
 });
 
 /**
- * ResponseModel[list[Posts]]
+ * ResponseModel[list[PostResponse]]
  */
-export const zResponseModelListPosts = z.object({
+export const zResponseModelListPostResponse = z.object({
     success: z.boolean(),
-    data: z.array(zPosts)
+    data: z.array(zPostResponse)
 });
 
 /**
@@ -456,6 +477,131 @@ export const zResponseModelListStampsList = z.object({
 });
 
 /**
+ * StickerBalance
+ */
+export const zStickerBalance = z.object({
+    user_id: z.int(),
+    count: z.int(),
+    max: z.int(),
+    period_start: z.iso.datetime({ offset: true }),
+    week_count: z.int(),
+    week_start: z.iso.datetime({ offset: true })
+});
+
+/**
+ * ResponseModel[StickerBalance]
+ */
+export const zResponseModelStickerBalance = z.object({
+    success: z.boolean(),
+    data: zStickerBalance
+});
+
+/**
+ * StickerBulkFailure
+ */
+export const zStickerBulkFailure = z.object({
+    user_id: z.int(),
+    reason: z.string()
+});
+
+/**
+ * StickerBulkGranted
+ */
+export const zStickerBulkGranted = z.object({
+    user_id: z.int(),
+    count: z.int(),
+    max: z.int(),
+    period_start: z.iso.datetime({ offset: true }),
+    week_count: z.int(),
+    week_start: z.iso.datetime({ offset: true }),
+    granted: z.int()
+});
+
+/**
+ * StickerBulkOperation
+ */
+export const zStickerBulkOperation = z.object({
+    user_ids: z.array(z.int()).min(1).max(100),
+    amount: z.int().gte(1).lte(3).optional().default(1),
+    memo: z.string().max(100).nullish()
+});
+
+/**
+ * StickerBulkResult
+ */
+export const zStickerBulkResult = z.object({
+    succeeded: z.array(zStickerBulkGranted),
+    failed: z.array(zStickerBulkFailure)
+});
+
+/**
+ * ResponseModel[StickerBulkResult]
+ */
+export const zResponseModelStickerBulkResult = z.object({
+    success: z.boolean(),
+    data: zStickerBulkResult
+});
+
+/**
+ * StickerClassOperation
+ */
+export const zStickerClassOperation = z.object({
+    grade: z.int().gte(1).lte(3),
+    number: z.int().gte(1),
+    amount: z.int().gte(1).lte(3).optional().default(1),
+    memo: z.string().max(100).nullish()
+});
+
+/**
+ * StickerClassRankingResponse
+ */
+export const zStickerClassRankingResponse = z.object({
+    grade: z.int(),
+    number: z.int(),
+    count: z.int(),
+    teacher_count: z.int(),
+    rank: z.int()
+});
+
+/**
+ * ResponseModel[list[StickerClassRankingResponse]]
+ */
+export const zResponseModelListStickerClassRankingResponse = z.object({
+    success: z.boolean(),
+    data: z.array(zStickerClassRankingResponse)
+});
+
+/**
+ * StickerOperation
+ */
+export const zStickerOperation = z.object({
+    user_id: z.int(),
+    amount: z.int().gte(1).lte(3).optional().default(1),
+    memo: z.string().max(100).nullish()
+});
+
+/**
+ * StickerRankingResponse
+ */
+export const zStickerRankingResponse = z.object({
+    id: z.int(),
+    name: z.string(),
+    grade: z.int().nullable(),
+    number: z.int().nullable(),
+    count: z.int(),
+    week_count: z.int(),
+    rank: z.int()
+});
+
+/**
+ * ResponseModel[list[StickerRankingResponse]]
+ */
+export const zResponseModelListStickerRankingResponse = z.object({
+    success: z.boolean(),
+    data: z.array(zStickerRankingResponse)
+});
+
+/**
  * UserPermission
  *
  * 유저 권한 IntFlag.
@@ -491,9 +637,16 @@ export const zUserPermission = z.union([
     z.literal(393216),
     z.literal(524288),
     z.literal(1048576),
-    z.literal(1458624),
-    z.literal(1493442),
-    z.literal(1713680)
+    z.literal(2097152),
+    z.literal(2228224),
+    z.literal(4194304),
+    z.literal(8388608),
+    z.literal(8519680),
+    z.literal(16777216),
+    z.literal(5652928),
+    z.literal(22464962),
+    z.literal(14296592),
+    z.literal(33554431)
 ]);
 
 /**
@@ -590,6 +743,53 @@ export const zResponseModelListUser = z.object({
 });
 
 /**
+ * UserSummary
+ *
+ * 다른 응답에 함께 담는 유저 요약 정보
+ */
+export const zUserSummary = z.object({
+    id: z.int(),
+    type: zUserType,
+    name: z.string(),
+    grade: z.int().nullable(),
+    number: z.int().nullable()
+});
+
+/**
+ * StickerHistoryItem
+ *
+ * 스티커 기록 조회 응답. 대상 · 처리 유저 정보를 함께 담는다.
+ */
+export const zStickerHistoryItem = z.object({
+    id: z.int(),
+    user_id: z.int(),
+    amount: z.int(),
+    actor_id: z.int().nullable(),
+    memo: z.string().nullable(),
+    class_grade: z.int().nullable(),
+    class_number: z.int().nullable(),
+    created_at: z.iso.datetime({ offset: true }),
+    user: zUserSummary.nullable(),
+    actor: zUserSummary.nullable()
+});
+
+/**
+ * StickerHistoryPage
+ */
+export const zStickerHistoryPage = z.object({
+    period_start: z.iso.datetime({ offset: true }),
+    items: z.array(zStickerHistoryItem)
+});
+
+/**
+ * ResponseModel[StickerHistoryPage]
+ */
+export const zResponseModelStickerHistoryPage = z.object({
+    success: z.boolean(),
+    data: zStickerHistoryPage
+});
+
+/**
  * ValidationError
  */
 export const zValidationError = z.object({
@@ -617,6 +817,20 @@ export const zLoginAuthLoginPostBody = zLoginForm;
  * 정상적으로 로그인이 되었음
  */
 export const zLoginAuthLoginPostResponse = zResponseModelUser;
+
+export const zKioskPasswordVerifyBody = zLoginForm;
+
+/**
+ * 검사 결과를 응답합니다.
+ */
+export const zKioskPasswordVerifyResponse = zResponseModelBool;
+
+export const zChangeKioskPasswordBody = zChangePasswordForm;
+
+/**
+ * 비밀번호 변경 성공
+ */
+export const zChangeKioskPasswordResponse = z.void();
 
 /**
  * 정상적으로 로그아웃이 되었음
@@ -874,13 +1088,14 @@ export const zCompleteQuestQuestQuestIdCompletePostResponse = zResponseModelInt;
 
 export const zGetPostsPostsGetQuery = z.object({
     page: z.int().gte(1).optional().default(1),
-    size: z.int().gte(1).lte(100).optional().default(20)
+    size: z.int().gte(1).lte(100).optional().default(20),
+    content_kind: z.string().nullish()
 });
 
 /**
  * 게시글 목록 조회 성공
  */
-export const zGetPostsPostsGetResponse = zResponseModelListPosts;
+export const zGetPostsPostsGetResponse = zResponseModelListPostResponse;
 
 export const zCreatePostPostsPostBody = zPostCreateRequest;
 
@@ -905,7 +1120,7 @@ export const zGetPostPostsPostIdGetPath = z.object({
 /**
  * 게시글 상세 조회 성공
  */
-export const zGetPostPostsPostIdGetResponse = zResponseModelPosts;
+export const zGetPostPostsPostIdGetResponse = zResponseModelPostResponse;
 
 export const zUpdatePostPostsPostIdPatchBody = zPostUpdateRequest;
 
@@ -929,6 +1144,89 @@ export const zCreateStampStampPostBody = zStampCreate;
  * 정상 처리
  */
 export const zCreateStampStampPostResponse = z.void();
+
+export const zGrantStickerBody = zStickerOperation;
+
+/**
+ * 스티커 지급 성공
+ */
+export const zGrantStickerResponse = zResponseModelStickerBalance;
+
+export const zGrantStickersBody = zStickerBulkOperation;
+
+/**
+ * 일괄 지급 처리 완료 (일부 또는 전부 실패해도 200이며 결과는 본문에 있음)
+ */
+export const zGrantStickersResponse = zResponseModelStickerBulkResult;
+
+export const zRevokeStickerBody = zStickerOperation;
+
+/**
+ * 스티커 회수 성공
+ */
+export const zRevokeStickerResponse = zResponseModelStickerBalance;
+
+export const zGiveStickerToClassBody = zStickerClassOperation;
+
+/**
+ * 학급 전달 성공
+ */
+export const zGiveStickerToClassResponse = zResponseModelStickerBalance;
+
+/**
+ * 스티커 초기화 성공
+ */
+export const zResetStickersResponse = z.void();
+
+/**
+ * 내 스티커 보유 수 조회 성공
+ */
+export const zGetMyStickerBalanceResponse = zResponseModelStickerBalance;
+
+export const zGetUserStickerBalancePath = z.object({
+    user_id: z.int()
+});
+
+/**
+ * 유저 스티커 보유 수 조회 성공
+ */
+export const zGetUserStickerBalanceResponse = zResponseModelStickerBalance;
+
+export const zGetStickerRankingQuery = z.object({
+    q: z.string().nullish(),
+    limit: z.int().gte(1).lte(100).optional().default(20),
+    offset: z.int().gte(0).optional().default(0)
+});
+
+/**
+ * 스티커 개인 랭킹 조회 성공
+ */
+export const zGetStickerRankingResponse = zResponseModelListStickerRankingResponse;
+
+/**
+ * 스티커 학급 랭킹 조회 성공
+ */
+export const zGetStickerClassRankingResponse = zResponseModelListStickerClassRankingResponse;
+
+export const zGetStickerHistoryQuery = z.object({
+    user_id: z.int().nullish(),
+    limit: z.int().gte(1).lte(100).optional().default(20),
+    offset: z.int().gte(0).optional().default(0)
+});
+
+/**
+ * 스티커 기록 조회 성공
+ */
+export const zGetStickerHistoryResponse = zResponseModelStickerHistoryPage;
+
+export const zDeleteStickerHistoryPath = z.object({
+    history_id: z.int()
+});
+
+/**
+ * 스티커 기록 취소 성공
+ */
+export const zDeleteStickerHistoryResponse = z.void();
 
 export const zGetKaraokeListQuery = z.object({
     limit: z.int().optional().default(20),
