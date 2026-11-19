@@ -4564,9 +4564,22 @@ export type GetMyKaraokePartyInvitesData = {
     url: '/karaoke/party/invites/me';
 };
 
+export type GetMyKaraokePartyInvitesErrors = {
+    /**
+     * 세션이 만료되었거나 유효하지 않음
+     */
+    401: ErrorResponse;
+    /**
+     * 권한 없음
+     */
+    403: ErrorResponse;
+};
+
+export type GetMyKaraokePartyInvitesError = GetMyKaraokePartyInvitesErrors[keyof GetMyKaraokePartyInvitesErrors];
+
 export type GetMyKaraokePartyInvitesResponses = {
     /**
-     * Successful Response
+     * 정상적으로 처리됨.
      */
     200: ResponseModelListKaraokeMembers;
 };
