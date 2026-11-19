@@ -188,7 +188,7 @@ async def create_user(request: AdminUserCreateRequest, auth_data: LoginDep):
 
     async with client.session as session:
         if request.user_type == UserType.student:
-            if not all([request.grade, request.number, request.student_no]):
+            if not (request.grade and request.number and request.student_no):
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Grade, class number, and student number are required for a student user.",
