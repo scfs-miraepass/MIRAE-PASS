@@ -7,7 +7,7 @@ from app.core import LoginDep, ServiceClient
 from app.core.service import Post
 from app.schemas import Posts, UserPermission
 from app.schemas.post import PostResponse
-from app.schemas.response import ErrorResponse, ResponseModel
+from app.schemas.response import ResponseModel, api_responses
 
 router = APIRouter(prefix="/posts", tags=["posts"])
 client = ServiceClient()
@@ -26,11 +26,13 @@ class PostUpdateRequest(BaseModel):
 @router.get(
     "",
     response_model=ResponseModel[list[PostResponse]],
-    responses={
-        200: {"description": "게시글 목록 조회 성공"},
-        401: {"model": ErrorResponse, "description": "인증되지 않은 사용자"},
-        403: {"model": ErrorResponse, "description": "권한이 없음"},
-    },
+    responses=api_responses(
+        {
+            200: "게시글 목록 조회 성공",
+            401: "인증되지 않은 사용자",
+            403: "권한이 없음",
+        }
+    ),
     status_code=status.HTTP_200_OK,
     summary="게시글 목록 조회",
     description="게시글 목록을 페이징하여 조회합니다. 본문 유형을 지정하면 해당 게시글의 본문도 반환합니다.",
@@ -62,12 +64,14 @@ async def get_posts(
 @router.get(
     "/{post_id}",
     response_model=ResponseModel[PostResponse],
-    responses={
-        200: {"description": "게시글 상세 조회 성공"},
-        401: {"model": ErrorResponse, "description": "인증되지 않은 사용자"},
-        404: {"model": ErrorResponse, "description": "게시글을 찾을 수 없음"},
-        403: {"model": ErrorResponse, "description": "권한이 없음"},
-    },
+    responses=api_responses(
+        {
+            200: "게시글 상세 조회 성공",
+            401: "인증되지 않은 사용자",
+            404: "게시글을 찾을 수 없음",
+            403: "권한이 없음",
+        }
+    ),
     status_code=status.HTTP_200_OK,
     summary="게시글 단일 조회",
     description="특정 ID의 게시글 상세 정보를 조회합니다.",
@@ -94,11 +98,13 @@ async def get_post(post_id: int, auth: LoginDep):
 @router.post(
     "",
     response_model=ResponseModel[Posts],
-    responses={
-        201: {"description": "게시글 작성 완료"},
-        401: {"model": ErrorResponse, "description": "인증되지 않은 사용자"},
-        403: {"model": ErrorResponse, "description": "권한이 없음"},
-    },
+    responses=api_responses(
+        {
+            201: "게시글 작성 완료",
+            401: "인증되지 않은 사용자",
+            403: "권한이 없음",
+        }
+    ),
     status_code=status.HTTP_201_CREATED,
     summary="게시글 작성",
     description="새로운 게시글을 작성합니다.",
@@ -119,12 +125,14 @@ async def create_post(request: PostCreateRequest, auth_data: LoginDep):
 @router.patch(
     "/{post_id}",
     response_model=ResponseModel[Posts],
-    responses={
-        200: {"description": "게시글 수정 완료"},
-        401: {"model": ErrorResponse, "description": "인증되지 않은 사용자"},
-        403: {"model": ErrorResponse, "description": "권한이 없음"},
-        404: {"model": ErrorResponse, "description": "게시글을 찾을 수 없음"},
-    },
+    responses=api_responses(
+        {
+            200: "게시글 수정 완료",
+            401: "인증되지 않은 사용자",
+            403: "권한이 없음",
+            404: "게시글을 찾을 수 없음",
+        }
+    ),
     status_code=status.HTTP_200_OK,
     summary="게시글 수정",
     description="기존 게시글을 수정합니다.",
@@ -150,12 +158,14 @@ async def update_post(post_id: int, request: PostUpdateRequest, auth_data: Login
 
 @router.delete(
     "/{post_id}",
-    responses={
-        204: {"description": "게시글 삭제 완료"},
-        401: {"model": ErrorResponse, "description": "인증되지 않은 사용자"},
-        403: {"model": ErrorResponse, "description": "권한이 없음"},
-        404: {"model": ErrorResponse, "description": "게시글을 찾을 수 없음"},
-    },
+    responses=api_responses(
+        {
+            204: "게시글 삭제 완료",
+            401: "인증되지 않은 사용자",
+            403: "권한이 없음",
+            404: "게시글을 찾을 수 없음",
+        }
+    ),
     status_code=status.HTTP_204_NO_CONTENT,
     summary="게시글 삭제",
     description="기존 게시글을 삭제합니다.",

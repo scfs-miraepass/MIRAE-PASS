@@ -9,7 +9,7 @@ from app.core import LoginDep, ServiceClient
 from app.core.error import ExpiredError, LimitExceeded
 from app.core.redis_keys import Keys
 from app.schemas import Quests, UserPermission
-from app.schemas.response import ErrorResponse, ResponseModel
+from app.schemas.response import ResponseModel, api_responses
 
 router = APIRouter(prefix="/quest", tags=["quest"])
 client = ServiceClient()
@@ -36,15 +36,14 @@ class QuestUpdate(BaseModel):
 @router.post(
     "/create",
     response_model=ResponseModel[Quests],
-    responses={
-        201: {"description": "퀘스트 생성 성공"},
-        401: {
-            "model": ErrorResponse,
-            "description": "세션이 만료되었거나 유효하지 않음",
-        },
-        403: {"model": ErrorResponse, "description": "권한이 없음"},
-        429: {"model": ErrorResponse, "description": "퀘스트 보상 한도 초과"},
-    },
+    responses=api_responses(
+        {
+            201: "퀘스트 생성 성공",
+            401: "세션이 만료되었거나 유효하지 않음",
+            403: "권한이 없음",
+            429: "퀘스트 보상 한도 초과",
+        }
+    ),
     status_code=status.HTTP_201_CREATED,
     summary="퀘스트 생성",
     description="퀘스트를 생성합니다. (교사 또는 관리자 전용)",
@@ -81,14 +80,13 @@ async def create_quest(
 @router.get(
     "",
     response_model=ResponseModel[list[Quests]],
-    responses={
-        200: {"description": "퀘스트 목록 조회 성공"},
-        401: {
-            "model": ErrorResponse,
-            "description": "세션이 만료되었거나 유효하지 않음",
-        },
-        403: {"model": ErrorResponse, "description": "권한이 없음"},
-    },
+    responses=api_responses(
+        {
+            200: "퀘스트 목록 조회 성공",
+            401: "세션이 만료되었거나 유효하지 않음",
+            403: "권한이 없음",
+        }
+    ),
     status_code=status.HTTP_200_OK,
     summary="퀘스트 목록 조회",
     description="모든 퀘스트 목록을 조회합니다.",
@@ -143,15 +141,14 @@ async def list_quests(
 @router.get(
     "/{quest_id}",
     response_model=ResponseModel[Quests],
-    responses={
-        200: {"description": "퀘스트 조회 성공"},
-        401: {
-            "model": ErrorResponse,
-            "description": "세션이 만료되었거나 유효하지 않음",
-        },
-        404: {"model": ErrorResponse, "description": "퀘스트를 찾을 수 없음"},
-        403: {"model": ErrorResponse, "description": "권한이 없음"},
-    },
+    responses=api_responses(
+        {
+            200: "퀘스트 조회 성공",
+            401: "세션이 만료되었거나 유효하지 않음",
+            404: "퀘스트를 찾을 수 없음",
+            403: "권한이 없음",
+        }
+    ),
     status_code=status.HTTP_200_OK,
     summary="퀘스트 조회",
     description="퀘스트 상세 정보를 조회합니다.",
@@ -174,16 +171,15 @@ async def get_quest(quest_id: int, auth_data: LoginDep):
 @router.put(
     "/{quest_id}",
     response_model=ResponseModel[Quests],
-    responses={
-        200: {"description": "퀘스트 수정 성공"},
-        401: {
-            "model": ErrorResponse,
-            "description": "세션이 만료되었거나 유효하지 않음",
-        },
-        403: {"model": ErrorResponse, "description": "권한이 없음"},
-        404: {"model": ErrorResponse, "description": "퀘스트를 찾을 수 없음"},
-        429: {"model": ErrorResponse, "description": "퀘스트 보상 한도 초과"},
-    },
+    responses=api_responses(
+        {
+            200: "퀘스트 수정 성공",
+            401: "세션이 만료되었거나 유효하지 않음",
+            403: "권한이 없음",
+            404: "퀘스트를 찾을 수 없음",
+            429: "퀘스트 보상 한도 초과",
+        }
+    ),
     status_code=status.HTTP_200_OK,
     summary="퀘스트 수정",
     description="퀘스트 정보를 수정합니다. (생성한 교사 또는 관리자 전용)",
@@ -212,15 +208,14 @@ async def update_quest(quest_id: int, operation: QuestUpdate, auth_data: LoginDe
 
 @router.delete(
     "/{quest_id}",
-    responses={
-        204: {"description": "퀘스트 삭제 성공"},
-        401: {
-            "model": ErrorResponse,
-            "description": "세션이 만료되었거나 유효하지 않음",
-        },
-        403: {"model": ErrorResponse, "description": "권한이 없음"},
-        404: {"model": ErrorResponse, "description": "퀘스트를 찾을 수 없음"},
-    },
+    responses=api_responses(
+        {
+            204: "퀘스트 삭제 성공",
+            401: "세션이 만료되었거나 유효하지 않음",
+            403: "권한이 없음",
+            404: "퀘스트를 찾을 수 없음",
+        }
+    ),
     status_code=status.HTTP_204_NO_CONTENT,
     summary="퀘스트 삭제",
     description="퀘스트를 삭제합니다. (생성한 교사 또는 관리자 전용)",
@@ -243,17 +238,16 @@ async def delete_quest(quest_id: int, auth_data: LoginDep):
 @router.post(
     "/{quest_id}/complete",
     response_model=ResponseModel[int],
-    responses={
-        200: {"description": "퀘스트 완료 처리 성공"},
-        401: {
-            "model": ErrorResponse,
-            "description": "세션이 만료되었거나 유효하지 않음",
-        },
-        403: {"model": ErrorResponse, "description": "권한이 없음"},
-        404: {"model": ErrorResponse, "description": "퀘스트를 찾을 수 없음"},
-        400: {"model": ErrorResponse, "description": "퀘스트 완료 불가"},
-        429: {"model": ErrorResponse, "description": "퀘스트 반복 한도 초과"},
-    },
+    responses=api_responses(
+        {
+            200: "퀘스트 완료 처리 성공",
+            401: "세션이 만료되었거나 유효하지 않음",
+            403: "권한이 없음",
+            404: "퀘스트를 찾을 수 없음",
+            400: "퀘스트 완료 불가",
+            429: "퀘스트 반복 한도 초과",
+        }
+    ),
     status_code=status.HTTP_200_OK,
     summary="퀘스트 완료",
     description="학생이 퀘스트를 완료합니다. 완료 시 보상이 지급됩니다.",
