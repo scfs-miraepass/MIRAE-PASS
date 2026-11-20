@@ -19,8 +19,16 @@ GitHub에 있는 미래패스 저장소를 내 컴퓨터로 복사([`git clone`]
 git clone https://github.com/scfs-miraepass/MIRAE-PASS.git
 cd MIRAE-PASS
 
+# CLIENT & ADMIN
 corepack enable
 yarn install
+
+# SERVER
+cd server
+
+uv sync
+uv run pre-commit install
+uv run pre-commit run
 ```
 
 ## 실행하기
