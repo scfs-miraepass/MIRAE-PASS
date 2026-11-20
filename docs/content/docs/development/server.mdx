@@ -110,7 +110,7 @@ from pydantic import BaseModel, Field
 
 from app.core import LoginDep, ServiceClient
 from app.schemas import Quests, UserPermission
-from app.schemas.response import ErrorResponse, ResponseModel
+from app.schemas.response import ResponseModel, api_responses
 
 router = APIRouter(prefix="/quest", tags=["quest"])
 client = ServiceClient()
@@ -139,12 +139,14 @@ router.include_router(quest.router)
 @router.get(
     "/{quest_id}",
     response_model=ResponseModel[Quests],
-    responses={
-        200: {"description": "퀘스트 조회 성공"},
-        401: {"model": ErrorResponse, "description": "세션이 만료되었거나 유효하지 않음"},
-        403: {"model": ErrorResponse, "description": "권한이 없음"},
-        404: {"model": ErrorResponse, "description": "퀘스트를 찾을 수 없음"},
-    },
+    responses=api_responses(
+        {
+            200: "퀘스트 조회 성공",
+            401: "세션이 만료되었거나 유효하지 않음",
+            403: "권한이 없음",
+            404: "퀘스트를 찾을 수 없음",
+        }
+    ),
     status_code=status.HTTP_200_OK,
     summary="퀘스트 조회",
     description="퀘스트 상세 정보를 조회합니다.",
@@ -153,7 +155,9 @@ async def get_quest(quest_id: int, auth_data: LoginDep):
     ...
 ```
 
-- 실패 응답에는 `"model": ErrorResponse`를 붙입니다.
+- 인자는 위 순서(`operation_id`가 있다면 맨 앞)대로 적습니다.
+- `responses`는 `{상태 코드: 설명}`을 `api_responses`로 감싸 적습니다. 400 이상의 실패 응답에는 `ErrorResponse` 모델이 자동으로 붙습니다.
+- `responses={...}`처럼 dict를 바로 넘기지 않습니다. FastAPI의 `responses` 타입이 `dict[int | str, dict[str, Any]] | None`이라, 리터럴을 바로 넘기면 IDE(PyCharm)에서 타입 경고가 납니다.
 - 요청 Body 모델의 모든 필드에는 `Field(description=...)`과 `gt`, `ge`, `le` 같은 검증 조건을 적습니다.
 - 쿼리 파라미터는 `Query(...)`로 범위를 제한합니다.
 

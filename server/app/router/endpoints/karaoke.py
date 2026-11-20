@@ -17,7 +17,7 @@ from app.core.cache_events import on_karaoke_list_changed
 from app.core.redis_keys import Keys
 from app.schemas.karaokes import Karaoke as SchemasKaraoke
 from app.schemas.core import SchemaCore
-from app.schemas.response import ResponseModel, ErrorResponse
+from app.schemas.response import ResponseModel, api_responses
 from app.core.service.karaoke import KaraokeParty, KaraokeMember, KaraokeBid
 from app.core.error import Conflict, PointInsufficient, LimitExceeded
 from fastapi import WebSocket, WebSocketDisconnect
@@ -113,13 +113,12 @@ async def _build_party_detail(party: KaraokeParty, *, cache: bool = False) -> Ka
     "",
     operation_id="get_karaoke_list",
     response_model=ResponseModel[list[KaraokeResponse]],
-    responses={
-        200: {"description": "정상적으로 처리됨."},
-        403: {
-            "model": ErrorResponse,
-            "description": "권한 없음",
-        },
-    },
+    responses=api_responses(
+        {
+            200: "정상적으로 처리됨.",
+            403: "권한 없음",
+        }
+    ),
     status_code=status.HTTP_200_OK,
     summary="예약 목록 조회",
     description="현재 예약할 수 있는 목록을 조회합니다",
@@ -197,21 +196,14 @@ async def get_list_karaoke(
     "",
     operation_id="create_karaoke",
     response_model=ResponseModel[Karaokes],
-    responses={
-        201: {"description": "정상적으로 생성이 완료됨"},
-        400: {
-            "model": ErrorResponse,
-            "description": "잘못된 요청 데이터",
-        },
-        403: {
-            "model": ErrorResponse,
-            "description": "권한 없음",
-        },
-        409: {
-            "model": ErrorResponse,
-            "description": "중복된 경매 존재",
-        },
-    },
+    responses=api_responses(
+        {
+            201: "정상적으로 생성이 완료됨",
+            400: "잘못된 요청 데이터",
+            403: "권한 없음",
+            409: "중복된 경매 존재",
+        }
+    ),
     status_code=status.HTTP_201_CREATED,
     summary="노래방 경매 생성",
     description="특정 시간대의 노래방 경매를 생성합니다.",
@@ -264,17 +256,13 @@ async def create_karaoke(body: KaraokeCreate, auth_data: LoginDep):
     "/{karaoke_id}",
     operation_id="get_karaoke",
     response_model=ResponseModel[KaraokeResponse],
-    responses={
-        200: {"description": "정상적으로 처리됨."},
-        403: {
-            "model": ErrorResponse,
-            "description": "권한 없음",
-        },
-        404: {
-            "model": ErrorResponse,
-            "description": "예약을 찾을 수 없음",
-        },
-    },
+    responses=api_responses(
+        {
+            200: "정상적으로 처리됨.",
+            403: "권한 없음",
+            404: "예약을 찾을 수 없음",
+        }
+    ),
     status_code=status.HTTP_200_OK,
     summary="예약 조회",
     description="특정 예약을 조회합니다.",
@@ -306,17 +294,13 @@ async def get_karaoke(auth_data: LoginDep, karaoke_id: int):
 @router.delete(
     "/{karaoke_id}",
     operation_id="delete_karaoke",
-    responses={
-        204: {"description": "정상적으로 처리됨."},
-        403: {
-            "model": ErrorResponse,
-            "description": "권한 없음",
-        },
-        404: {
-            "model": ErrorResponse,
-            "description": "예약을 찾을 수 없음",
-        },
-    },
+    responses=api_responses(
+        {
+            204: "정상적으로 처리됨.",
+            403: "권한 없음",
+            404: "예약을 찾을 수 없음",
+        }
+    ),
     status_code=status.HTTP_204_NO_CONTENT,
     summary="예약 삭제",
     description="특정 예약을 삭제합니다.",
@@ -344,15 +328,14 @@ async def delete_karaoke(auth_data: LoginDep, karaoke_id: int):
     "/{karaoke_id}/party",
     operation_id="create_karaoke_party",
     response_model=ResponseModel[KaraokePartis],
-    responses={
-        201: {"description": "정상적으로 파티 생성 완료"},
-        400: {
-            "model": ErrorResponse,
-            "description": "파티 생성 조건 불만족 (이미 생성 등)",
-        },
-        403: {"model": ErrorResponse, "description": "권한 없음"},
-        404: {"model": ErrorResponse, "description": "예약을 찾을 수 없음"},
-    },
+    responses=api_responses(
+        {
+            201: "정상적으로 파티 생성 완료",
+            400: "파티 생성 조건 불만족 (이미 생성 등)",
+            403: "권한 없음",
+            404: "예약을 찾을 수 없음",
+        }
+    ),
     status_code=status.HTTP_201_CREATED,
     summary="예약 경매 파티 생성",
     description="진행중인 노래방 예약 경매에 파티를 생성합니다.",
@@ -384,14 +367,13 @@ async def create_karaoke_party(auth_data: LoginDep, karaoke_id: int):
     "/{karaoke_id}/party/me",
     operation_id="get_my_karaoke_party",
     response_model=ResponseModel[KaraokePartyDetail],
-    responses={
-        200: {"description": "정상적으로 처리됨."},
-        403: {"model": ErrorResponse, "description": "권한 없음"},
-        404: {
-            "model": ErrorResponse,
-            "description": "예약을 찾을 수 없거나, 속한 파티가 없음",
-        },
-    },
+    responses=api_responses(
+        {
+            200: "정상적으로 처리됨.",
+            403: "권한 없음",
+            404: "예약을 찾을 수 없거나, 속한 파티가 없음",
+        }
+    ),
     status_code=status.HTTP_200_OK,
     summary="내 파티 조회",
     description="특정 노래방 예약 경매에서 자신이 리더이거나 소속되어 있는 파티를 조회합니다.",
@@ -426,13 +408,15 @@ async def get_my_karaoke_party(auth_data: LoginDep, karaoke_id: int):
     "/{karaoke_id}/bid",
     operation_id="create_karaoke_bid",
     response_model=ResponseModel[KaraokeBids],
-    responses={
-        201: {"description": "정상적으로 입찰 완료"},
-        400: {"model": ErrorResponse, "description": "입찰 조건 불만족 (금액 부족 등)"},
-        402: {"model": ErrorResponse, "description": "포인트 부족"},
-        403: {"model": ErrorResponse, "description": "권한 없음"},
-        404: {"model": ErrorResponse, "description": "예약/파티를 찾을 수 없음"},
-    },
+    responses=api_responses(
+        {
+            201: "정상적으로 입찰 완료",
+            400: "입찰 조건 불만족 (금액 부족 등)",
+            402: "포인트 부족",
+            403: "권한 없음",
+            404: "예약/파티를 찾을 수 없음",
+        }
+    ),
     status_code=status.HTTP_201_CREATED,
     summary="예약 경매 입찰",
     description="진행중인 노래방 예약 경매에 입찰합니다.",
@@ -473,14 +457,13 @@ async def create_karaoke_bid(auth_data: LoginDep, karaoke_id: int, body: Karaoke
     "/{karaoke_id}/final-bid",
     operation_id="get_karaoke_final_bid",
     response_model=ResponseModel[KaraokeFinalBidResponse],
-    responses={
-        200: {"description": "정상적으로 처리됨."},
-        403: {"model": ErrorResponse, "description": "권한 없음"},
-        404: {
-            "model": ErrorResponse,
-            "description": "예약을 찾을 수 없거나, 입찰 기록이 없음",
-        },
-    },
+    responses=api_responses(
+        {
+            200: "정상적으로 처리됨.",
+            403: "권한 없음",
+            404: "예약을 찾을 수 없거나, 입찰 기록이 없음",
+        }
+    ),
     status_code=status.HTTP_200_OK,
     summary="최종 입찰(낙찰자) 조회",
     description=(
@@ -543,14 +526,13 @@ async def get_karaoke_final_bid(auth_data: LoginDep, karaoke_id: int):
     "/party/{party_id}",
     operation_id="get_karaoke_party",
     response_model=ResponseModel[KaraokePartyDetail],
-    responses={
-        200: {"description": "정상적으로 처리됨."},
-        403: {
-            "model": ErrorResponse,
-            "description": "권한 없음 (파티에 소속되거나 초대받지 않음)",
-        },
-        404: {"model": ErrorResponse, "description": "파티를 찾을 수 없음"},
-    },
+    responses=api_responses(
+        {
+            200: "정상적으로 처리됨.",
+            403: "권한 없음 (파티에 소속되거나 초대받지 않음)",
+            404: "파티를 찾을 수 없음",
+        }
+    ),
     status_code=status.HTTP_200_OK,
     summary="파티 조회",
     description=(
@@ -582,12 +564,14 @@ async def get_karaoke_party(auth_data: LoginDep, party_id: int):
 @router.delete(
     "/party/{party_id}",
     operation_id="disperse_karaoke_party",
-    responses={
-        204: {"description": "정상적으로 파티 해산 완료"},
-        400: {"model": ErrorResponse, "description": "이미 해산된 파티"},
-        403: {"model": ErrorResponse, "description": "권한 없음 (파티장이 아님)"},
-        404: {"model": ErrorResponse, "description": "파티를 찾을 수 없음"},
-    },
+    responses=api_responses(
+        {
+            204: "정상적으로 파티 해산 완료",
+            400: "이미 해산된 파티",
+            403: "권한 없음 (파티장이 아님)",
+            404: "파티를 찾을 수 없음",
+        }
+    ),
     status_code=status.HTTP_204_NO_CONTENT,
     summary="파티 해산",
     description="파티장이 자신이 리더인 파티를 자발적으로 해산합니다.",
@@ -620,18 +604,14 @@ async def disperse_karaoke_party(auth_data: LoginDep, party_id: int):
 @router.delete(
     "/party/{party_id}/leave",
     operation_id="leave_karaoke_party",
-    responses={
-        204: {"description": "정상적으로 파티 탈퇴 완료"},
-        400: {
-            "model": ErrorResponse,
-            "description": "파티장은 탈퇴할 수 없음 (해산 API 사용 필요)",
-        },
-        403: {"model": ErrorResponse, "description": "권한 없음"},
-        404: {
-            "model": ErrorResponse,
-            "description": "파티를 찾을 수 없거나, 소속된 멤버가 아님",
-        },
-    },
+    responses=api_responses(
+        {
+            204: "정상적으로 파티 탈퇴 완료",
+            400: "파티장은 탈퇴할 수 없음 (해산 API 사용 필요)",
+            403: "권한 없음",
+            404: "파티를 찾을 수 없거나, 소속된 멤버가 아님",
+        }
+    ),
     status_code=status.HTTP_204_NO_CONTENT,
     summary="파티 탈퇴",
     description="자신이 소속된 파티에서 스스로 탈퇴합니다. 파티장은 이 API를 사용할 수 없으며, 해산 API를 사용해야 합니다.",
@@ -669,15 +649,14 @@ async def leave_karaoke_party(auth_data: LoginDep, party_id: int):
     "/party/{party_id}/members/{user_id}",
     operation_id="kick_karaoke_party_member",
     response_model=ResponseModel[KaraokePartyDetail],
-    responses={
-        200: {"description": "정상적으로 멤버 강퇴 완료"},
-        400: {"model": ErrorResponse, "description": "파티장은 강퇴할 수 없음"},
-        403: {"model": ErrorResponse, "description": "권한 없음 (파티장이 아님)"},
-        404: {
-            "model": ErrorResponse,
-            "description": "파티, 유저 또는 파티 멤버를 찾을 수 없음",
-        },
-    },
+    responses=api_responses(
+        {
+            200: "정상적으로 멤버 강퇴 완료",
+            400: "파티장은 강퇴할 수 없음",
+            403: "권한 없음 (파티장이 아님)",
+            404: "파티, 유저 또는 파티 멤버를 찾을 수 없음",
+        }
+    ),
     status_code=status.HTTP_200_OK,
     summary="파티원 강퇴",
     description="파티장이 자신이 리더인 파티에서 특정 멤버를 강퇴합니다. 강퇴 시 새 파티가 생성되므로 응답으로 갱신된 파티 정보를 반환합니다.",
@@ -732,22 +711,15 @@ class KaraokeInviteCreate(BaseModel):
 @router.post(
     "/party/{party_id}/invite",
     operation_id="invite_karaoke_party_member",
-    responses={
-        204: {"description": "정상적으로 초대 완료"},
-        400: {
-            "model": ErrorResponse,
-            "description": "해산된 파티이거나, 파티장 자신을 초대함",
-        },
-        403: {"model": ErrorResponse, "description": "권한 없음 (파티장이 아님)"},
-        404: {
-            "model": ErrorResponse,
-            "description": "파티나 초대할 유저를 찾을 수 없음",
-        },
-        409: {
-            "model": ErrorResponse,
-            "description": "이미 이 경매의 파티에 소속되었거나 초대된 유저또는 최대 초대 초과",
-        },
-    },
+    responses=api_responses(
+        {
+            204: "정상적으로 초대 완료",
+            400: "해산된 파티이거나, 파티장 자신을 초대함",
+            403: "권한 없음 (파티장이 아님)",
+            404: "파티나 초대할 유저를 찾을 수 없음",
+            409: "이미 이 경매의 파티에 소속되었거나 초대된 유저또는 최대 초대 초과",
+        }
+    ),
     status_code=status.HTTP_204_NO_CONTENT,
     summary="파티원 초대",
     description=(
@@ -794,6 +766,13 @@ async def invite_karaoke_party_member(auth_data: LoginDep, party_id: int, body: 
     "/party/invites/me",
     operation_id="get_my_karaoke_party_invites",
     response_model=ResponseModel[list[KaraokeMembers]],
+    responses=api_responses(
+        {
+            200: "정상적으로 처리됨.",
+            401: "세션이 만료되었거나 유효하지 않음",
+            403: "권한 없음",
+        }
+    ),
     status_code=status.HTTP_200_OK,
     summary="파티원 초대장 목록 보기",
     description="자기 자신에게 온 파티원 초대장 목록을 조회합니다.",
@@ -819,10 +798,12 @@ async def get_my_party_invites(auth_data: LoginDep):
     "/party/{party_id}/action",
     operation_id="decide_karaoke_party_invite",
     response_model=ResponseModel[bool],
-    responses={
-        200: {"description": "정상적으로 수락/거절 완료"},
-        404: {"model": ErrorResponse, "description": "대기 중인 초대장을 찾을 수 없음"},
-    },
+    responses=api_responses(
+        {
+            200: "정상적으로 수락/거절 완료",
+            404: "대기 중인 초대장을 찾을 수 없음",
+        }
+    ),
     status_code=status.HTTP_200_OK,
     summary="파티원 초대장 수락 및 거절",
     description="받은 파티원 초대장을 수락하거나 거절합니다.",

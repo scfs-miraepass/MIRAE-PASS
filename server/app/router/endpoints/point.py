@@ -12,7 +12,7 @@ from app.core import LoginDep, ServiceClient
 from app.core.redis_keys import BoundKey, Keys
 from app.schemas.core import SchemaCore
 from app.schemas import PointHistory, PointHistoryType, UserPermission, Users, UserType
-from app.schemas.response import ErrorResponse, ResponseModel
+from app.schemas.response import ResponseModel, api_responses
 
 router = APIRouter(prefix="/point", tags=["users", "point"])
 client = ServiceClient()
@@ -98,18 +98,14 @@ async def _release_limits(reservations: list[LimitReservation]):
 
 @router.get(
     "/limit/{target_user_id}",
-    responses={
-        200: {"description": "정상적으로 처리됨"},
-        401: {
-            "model": ErrorResponse,
-            "description": "세션이 만료되었거나 유효하지 않음",
-        },
-        403: {
-            "model": ErrorResponse,
-            "description": "권한이 없음",
-        },
-    },
     response_model=ResponseModel[GetLimitResponse],
+    responses=api_responses(
+        {
+            200: "정상적으로 처리됨",
+            401: "세션이 만료되었거나 유효하지 않음",
+            403: "권한이 없음",
+        }
+    ),
     status_code=status.HTTP_200_OK,
     summary="포인트 지급 한도 조회",
     description="현재 로그인한 자기자신의과 지급하려는 대상의 포인트 지급 한도를 조회합니다.",
@@ -130,18 +126,14 @@ async def get_limit(auth_data: LoginDep, target_user_id: int):
 
 @router.get(
     "/limit",
-    responses={
-        200: {"description": "정상적으로 처리됨"},
-        401: {
-            "model": ErrorResponse,
-            "description": "세션이 만료되었거나 유효하지 않음",
-        },
-        403: {
-            "model": ErrorResponse,
-            "description": "권한이 없음",
-        },
-    },
     response_model=ResponseModel[int],
+    responses=api_responses(
+        {
+            200: "정상적으로 처리됨",
+            401: "세션이 만료되었거나 유효하지 않음",
+            403: "권한이 없음",
+        }
+    ),
     status_code=status.HTTP_200_OK,
     summary="포인트 지급 본인 한도 조회",
     description="현재 로그인한 자기자신의 포인트 지급 한도를 조회합니다.",
@@ -159,25 +151,15 @@ async def get_limit_session(
 
 @router.post(
     "/grant",
-    responses={
-        204: {"description": "정상적으로 지급이 되었음"},
-        401: {
-            "model": ErrorResponse,
-            "description": "세션이 만료되었거나 유효하지 않음",
-        },
-        403: {
-            "model": ErrorResponse,
-            "description": "권한이 없음",
-        },
-        404: {
-            "model": ErrorResponse,
-            "description": "지급할 학생을 찾을 수 없음",
-        },
-        429: {
-            "model": ErrorResponse,
-            "description": "주간 포인트 지급 한도를 초과할 경우 발생합니다. 관리자 계정의 경우 한도가 적용되지 않습니다.",
-        },
-    },
+    responses=api_responses(
+        {
+            204: "정상적으로 지급이 되었음",
+            401: "세션이 만료되었거나 유효하지 않음",
+            403: "권한이 없음",
+            404: "지급할 학생을 찾을 수 없음",
+            429: "주간 포인트 지급 한도를 초과할 경우 발생합니다. 관리자 계정의 경우 한도가 적용되지 않습니다.",
+        }
+    ),
     status_code=status.HTTP_204_NO_CONTENT,
     summary="포인트 지급",
     description="특정 유저에게 포인트를 지급합니다. (교사 또는 관리자 전용)",
@@ -261,25 +243,15 @@ async def grant_points(
 @router.post(
     "/deduct",
     response_model=ResponseModel[int],
-    responses={
-        204: {"description": "정상적으로 차감이 되었음"},
-        401: {
-            "model": ErrorResponse,
-            "description": "세션이 만료되었거나 유효하지 않음",
-        },
-        403: {
-            "model": ErrorResponse,
-            "description": "권한이 없음",
-        },
-        404: {
-            "model": ErrorResponse,
-            "description": "차감할 학생을 찾을 수 없음",
-        },
-        400: {
-            "model": ErrorResponse,
-            "description": "포인트 부족",
-        },
-    },
+    responses=api_responses(
+        {
+            204: "정상적으로 차감이 되었음",
+            401: "세션이 만료되었거나 유효하지 않음",
+            403: "권한이 없음",
+            404: "차감할 학생을 찾을 수 없음",
+            400: "포인트 부족",
+        }
+    ),
     status_code=status.HTTP_200_OK,
     summary="포인트 차감",
     description="특정 유저의 포인트를 차감합니다. (서비스 유저 또는 관리자 전용)",
@@ -321,17 +293,13 @@ async def deduct_points(
 @router.get(
     "/history",
     response_model=ResponseModel[list[PointHistory]],
-    responses={
-        200: {"description": "정상처리"},
-        401: {
-            "model": ErrorResponse,
-            "description": "세션이 만료되었거나 유효하지 않음",
-        },
-        403: {
-            "model": ErrorResponse,
-            "description": "권한 없음",
-        },
-    },
+    responses=api_responses(
+        {
+            200: "정상처리",
+            401: "세션이 만료되었거나 유효하지 않음",
+            403: "권한 없음",
+        }
+    ),
     status_code=status.HTTP_200_OK,
     summary="포인트 기록",
     description="현재 로그인한 자기자신의 포인트 기록을 조회합니다.",
@@ -397,21 +365,14 @@ async def get_history_list(
 @router.get(
     "/history/{target_id}",
     response_model=ResponseModel[PointHistory],
-    responses={
-        200: {"description": "정상처리"},
-        404: {
-            "model": ErrorResponse,
-            "description": "포인트 기록을 찾을 수 없음",
-        },
-        401: {
-            "model": ErrorResponse,
-            "description": "세션이 만료되었거나 유효하지 않음",
-        },
-        403: {
-            "model": ErrorResponse,
-            "description": "포인트 기록을 볼 권한이 없습니다.",
-        },
-    },
+    responses=api_responses(
+        {
+            200: "정상처리",
+            404: "포인트 기록을 찾을 수 없음",
+            401: "세션이 만료되었거나 유효하지 않음",
+            403: "포인트 기록을 볼 권한이 없습니다.",
+        }
+    ),
     status_code=status.HTTP_200_OK,
     summary="특정 포인트 기록",
     description="특정한 포인트 기록의 데이터를 가져옵니다. 자기자신의 기록만 가져올 수 있습니다",
@@ -543,17 +504,13 @@ def _get_weekly_ranking_period() -> tuple[datetime, datetime, str]:
 @router.get(
     "/ranking",
     response_model=ResponseModel[list[RankingResponse]],
-    responses={
-        200: {"description": "정상 처리"},
-        400: {
-            "model": ErrorResponse,
-            "description": "지원하지 않는 랭킹 대상",
-        },
-        403: {
-            "model": ErrorResponse,
-            "description": "권한이 없음",
-        },
-    },
+    responses=api_responses(
+        {
+            200: "정상 처리",
+            400: "지원하지 않는 랭킹 대상",
+            403: "권한이 없음",
+        }
+    ),
     status_code=status.HTTP_200_OK,
     summary="포인트 랭킹 조회",
     description="유저 타입과 기간을 기준으로 포인트 랭킹을 조회합니다.",
@@ -582,13 +539,12 @@ async def get_ranking(
 @router.get(
     "/ranking/student",
     response_model=ResponseModel[list[RankingResponse]],
-    responses={
-        200: {"description": "정상 처리"},
-        403: {
-            "model": ErrorResponse,
-            "description": "권한이 없음",
-        },
-    },
+    responses=api_responses(
+        {
+            200: "정상 처리",
+            403: "권한이 없음",
+        }
+    ),
     status_code=status.HTTP_200_OK,
     summary="학생 포인트 랭킹 조회",
     description="학생들의 누적 포인트를 기준으로 랭킹을 조회합니다. `/point/ranking?type=student`를 사용하세요.",
@@ -610,13 +566,12 @@ async def get_student_ranking(
 @router.get(
     "/ranking/teacher",
     response_model=ResponseModel[list[RankingResponse]],
-    responses={
-        200: {"description": "정상 처리"},
-        403: {
-            "model": ErrorResponse,
-            "description": "권한이 없음",
-        },
-    },
+    responses=api_responses(
+        {
+            200: "정상 처리",
+            403: "권한이 없음",
+        }
+    ),
     status_code=status.HTTP_200_OK,
     summary="교사 포인트 랭킹 조회",
     description="교사들의 누적 포인트를 기준으로 랭킹을 조회합니다. `/point/ranking?type=teacher`를 사용하세요.",
@@ -638,14 +593,13 @@ async def get_teacher_ranking(
 @router.get(
     "/{target_user_id}",
     response_model=ResponseModel[int],
-    responses={
-        200: {"description": "정상 처리"},
-        404: {"model": ErrorResponse, "description": "유저를 찾을 수 없음"},
-        403: {
-            "model": ErrorResponse,
-            "description": "권한이 없음",
-        },
-    },
+    responses=api_responses(
+        {
+            200: "정상 처리",
+            404: "유저를 찾을 수 없음",
+            403: "권한이 없음",
+        }
+    ),
     status_code=status.HTTP_200_OK,
     summary="포인트 조회",
     description="특정 유저의 현재 포인트를 조회합니다.",

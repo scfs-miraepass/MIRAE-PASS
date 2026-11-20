@@ -7,7 +7,7 @@ from app.core.redis_keys import Keys
 from app.core.sessions import create_session, delete_session, extend_session, get_session_user_id, track_session
 from app.core.security import verify_password
 from app.schemas import UserType
-from app.schemas.response import ErrorResponse, ResponseModel
+from app.schemas.response import ResponseModel, api_responses
 from app.schemas.users import User
 
 router = APIRouter(prefix="/auth", tags=["users", "auth"])
@@ -45,13 +45,12 @@ def _set_session_cookie(response: Response, session_id: str):
 @router.post(
     "/login",
     response_model=ResponseModel[User],
-    responses={
-        200: {"description": "정상적으로 로그인이 되었음"},
-        401: {
-            "model": ErrorResponse,
-            "description": "ID 또는 비밀번호가 일치하지 않습니다.",
-        },
-    },
+    responses=api_responses(
+        {
+            200: "정상적으로 로그인이 되었음",
+            401: "ID 또는 비밀번호가 일치하지 않습니다.",
+        }
+    ),
     status_code=status.HTTP_200_OK,
     summary="로그인",
     description="ID와 비밀번호를 통해 로그인을 진행합니다. 로그인을 성공한 경우 해당 유저의 정보를 응답합니다.",
@@ -79,16 +78,15 @@ async def login(
     "/kiosk",
     operation_id="kiosk_password_verify",
     response_model=ResponseModel[bool],
-    responses={
-        200: {"description": "검사 결과를 응답합니다."},
-        401: {
-            "model": ErrorResponse,
-            "description": "로그인이 필요합니다.",
-        },
-        403: {"model": ErrorResponse, "description": "권한이 없습니다."},
-        404: {"model": ErrorResponse, "description": "검사하려는 유저가 존재하지 않습니다."},
-        400: {"model": ErrorResponse, "description": "키오스크 비밀번호가 설정되지 않았습니다."},
-    },
+    responses=api_responses(
+        {
+            200: "검사 결과를 응답합니다.",
+            401: "로그인이 필요합니다.",
+            403: "권한이 없습니다.",
+            404: "검사하려는 유저가 존재하지 않습니다.",
+            400: "키오스크 비밀번호가 설정되지 않았습니다.",
+        }
+    ),
     status_code=status.HTTP_200_OK,
     summary="키오스크 비밀번호 검사",
     description="특정 유저의 키오스크 비밀번호가 일치한지 응답합니다. service 타입 또는 유저 본인만 요청할 수 있습니다.",
@@ -120,7 +118,11 @@ async def kiosk_password_verify(form: LoginForm, auth_data: LoginDep):
 
 @router.post(
     "/logout",
-    responses={204: {"description": "정상적으로 로그아웃이 되었음"}},
+    responses=api_responses(
+        {
+            204: "정상적으로 로그아웃이 되었음",
+        }
+    ),
     status_code=status.HTTP_204_NO_CONTENT,
     summary="로그아웃",
     description="현재 로그인된 세션을 종료합니다.",
@@ -142,13 +144,12 @@ async def logout(response: Response, request: Request):
 @router.get(
     "",
     response_model=ResponseModel[User],
-    responses={
-        200: {"description": "세션이 정상적으로 유효함"},
-        401: {
-            "model": ErrorResponse,
-            "description": "세션이 만료되었거나 유효하지 않음.",
-        },
-    },
+    responses=api_responses(
+        {
+            200: "세션이 정상적으로 유효함",
+            401: "세션이 만료되었거나 유효하지 않음.",
+        }
+    ),
     status_code=status.HTTP_200_OK,
     summary="인증",
     description="현재 로그인된 유저의 정보를 반환합니다.",
@@ -179,17 +180,13 @@ async def get_current_user(
 
 @router.post(
     "/password",
-    responses={
-        204: {"description": "비밀번호 변경 성공"},
-        404: {
-            "model": ErrorResponse,
-            "description": "유저을 찾을 수 없음",
-        },
-        400: {
-            "model": ErrorResponse,
-            "description": "이미 비밀번호가 설정되어있음.",
-        },
-    },
+    responses=api_responses(
+        {
+            204: "비밀번호 변경 성공",
+            404: "유저을 찾을 수 없음",
+            400: "이미 비밀번호가 설정되어있음.",
+        }
+    ),
     status_code=status.HTTP_204_NO_CONTENT,
     summary="비밀번호 초기 변경",
     description="첫 로그인시 비밀번호 변경을 합니다.",
@@ -213,21 +210,14 @@ async def change_password_new(form: ChangePasswordNewForm):
 
 @router.put(
     "/password",
-    responses={
-        204: {"description": "비밀번호 변경 성공"},
-        400: {
-            "model": ErrorResponse,
-            "description": "기존 비밀번호가 일치하지 않음",
-        },
-        401: {
-            "model": ErrorResponse,
-            "description": "세션이 만료되었거나 유효하지 않음.",
-        },
-        404: {
-            "model": ErrorResponse,
-            "description": "초기화 되지 않은 유저.",
-        },
-    },
+    responses=api_responses(
+        {
+            204: "비밀번호 변경 성공",
+            400: "기존 비밀번호가 일치하지 않음",
+            401: "세션이 만료되었거나 유효하지 않음.",
+            404: "초기화 되지 않은 유저.",
+        }
+    ),
     status_code=status.HTTP_204_NO_CONTENT,
     summary="비밀번호 변경",
     description="로그인된 유저의 비밀번호를 변경합니다.",
@@ -258,18 +248,14 @@ async def change_password(form: ChangePasswordForm, auth_data: LoginDep):
 @router.put(
     "/kiosk",
     operation_id="change_kiosk_password",
-    responses={
-        204: {"description": "비밀번호 변경 성공"},
-        400: {
-            "model": ErrorResponse,
-            "description": "기존 비밀번호가 일치하지 않음",
-        },
-        401: {
-            "model": ErrorResponse,
-            "description": "세션이 만료되었거나 유효하지 않음.",
-        },
-        422: {"model": ErrorResponse, "description": "비밀번호의 형식이 잘못 되었음."},
-    },
+    responses=api_responses(
+        {
+            204: "비밀번호 변경 성공",
+            400: "기존 비밀번호가 일치하지 않음",
+            401: "세션이 만료되었거나 유효하지 않음.",
+            422: "비밀번호의 형식이 잘못 되었음.",
+        }
+    ),
     status_code=status.HTTP_204_NO_CONTENT,
     summary="키오스크 비밀번호 변경",
     description="로그인된 유저의 키오스크 비밀번호를 변경합니다.",
@@ -299,17 +285,13 @@ async def change_kiosk_password(form: ChangePasswordForm, auth_data: LoginDep):
 @router.get(
     "/password/exists/{user_id}",
     response_model=ResponseModel[bool],
-    responses={
-        200: {"description": "정상 조회"},
-        404: {
-            "model": ErrorResponse,
-            "description": "유저를 찾을 수 없음",
-        },
-        400: {
-            "model": ErrorResponse,
-            "description": "해당 유저의 타입이 지정된 타입과 일치하지 않음",
-        },
-    },
+    responses=api_responses(
+        {
+            200: "정상 조회",
+            404: "유저를 찾을 수 없음",
+            400: "해당 유저의 타입이 지정된 타입과 일치하지 않음",
+        }
+    ),
     status_code=status.HTTP_200_OK,
     summary="비밀번호 존재 여부 확인",
     description="특정 ID의 유저가 비밀번호를 가지고 있는지(None이 아닌지) 여부를 확인합니다.",

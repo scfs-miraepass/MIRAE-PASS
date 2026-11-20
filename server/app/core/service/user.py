@@ -47,6 +47,10 @@ USER_CACHE_EXCLUDE = frozenset({"password", "kiosk_password"})
 
 
 class User(ServiceCore[Users], _Type):
+    if TYPE_CHECKING:
+        # DB에서 불러온 유저만 감싸므로 id는 항상 존재합니다. (모델의 `int | None`은 INSERT 전 상태를 위한 타입)
+        id: int
+
     def __getattribute__(self, name):
         # 캐시에서 불러온 유저는 비밀번호 해시를 갖고 있지 않습니다.
         # 이 경우 password가 None(비밀번호 미설정)으로 잘못 읽히지 않도록 접근 자체를 막습니다.

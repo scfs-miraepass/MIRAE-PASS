@@ -7,7 +7,7 @@ from sqlmodel import func, select
 
 from app.core.dependency import LoginDep, ServiceClient
 from app.schemas import PointHistoryType, Stamps, StampType, UserPermission
-from app.schemas.response import ErrorResponse, ResponseModel
+from app.schemas.response import ResponseModel, api_responses
 from app.schemas.core import SchemaCore
 
 router = APIRouter(
@@ -41,15 +41,14 @@ class StampsList(BaseModel):
 
 @router.post(
     "",
-    responses={
-        204: {"description": "정상 처리"},
-        404: {"model": ErrorResponse, "description": "유저를 찾을 수 없음"},
-        403: {
-            "model": ErrorResponse,
-            "description": "권한이 없음",
-        },
-        409: {"model": ErrorResponse, "description": "이미 해당 스탬프를 발급 받음"},
-    },
+    responses=api_responses(
+        {
+            204: "정상 처리",
+            404: "유저를 찾을 수 없음",
+            403: "권한이 없음",
+            409: "이미 해당 스탬프를 발급 받음",
+        }
+    ),
     status_code=status.HTTP_204_NO_CONTENT,
     summary="스탬프 발급",
     description="유저에게 스탬프를 지급합니다.",
@@ -116,17 +115,13 @@ async def create_stamp(
 @router.get(
     "",
     response_model=ResponseModel[list[StampsList]],
-    responses={
-        200: {"description": "정상 처리"},
-        401: {
-            "model": ErrorResponse,
-            "description": "세션이 만료되었거나 유효하지 않음",
-        },
-        403: {
-            "model": ErrorResponse,
-            "description": "권한이 없음",
-        },
-    },
+    responses=api_responses(
+        {
+            200: "정상 처리",
+            401: "세션이 만료되었거나 유효하지 않음",
+            403: "권한이 없음",
+        }
+    ),
     status_code=status.HTTP_200_OK,
     summary="스탬프 목록",
     description="자기 자신의 스탬프 목록을 가져옵니다.",
