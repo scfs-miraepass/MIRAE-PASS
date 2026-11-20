@@ -1351,7 +1351,7 @@ export const zInviteKaraokePartyMemberPath = z.object({
 export const zInviteKaraokePartyMemberResponse = z.void();
 
 /**
- * Successful Response
+ * 정상적으로 처리됨.
  */
 export const zGetMyKaraokePartyInvitesResponse = zResponseModelListKaraokeMembers;
 

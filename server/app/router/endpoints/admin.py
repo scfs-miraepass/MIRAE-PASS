@@ -15,7 +15,7 @@ from app.schemas import (
     Users,
     UserType,
 )
-from app.schemas.response import ErrorResponse, ResponseModel
+from app.schemas.response import ResponseModel, api_responses
 
 
 class AdminPointRequest(BaseModel):
@@ -47,13 +47,12 @@ client = ServiceClient()
 @router.get(
     "/users",
     response_model=ResponseModel[list[User]],
-    responses={
-        200: {"description": "정상적으로 처리 됨"},
-        403: {
-            "model": ErrorResponse,
-            "description": "권한 거부",
-        },
-    },
+    responses=api_responses(
+        {
+            200: "정상적으로 처리 됨",
+            403: "권한 거부",
+        }
+    ),
     status_code=status.HTTP_200_OK,
     summary="전체 사용자 목록",
     description="전체 사용자 목록을 조회합니다. 유저 타입 및 권한으로 필터링할 수 있습니다.",
@@ -102,13 +101,12 @@ async def get_users(
 
 @router.post(
     "/point",
-    responses={
-        204: {"description": "정상 처리"},
-        403: {
-            "model": ErrorResponse,
-            "description": "권한 거부",
-        },
-    },
+    responses=api_responses(
+        {
+            204: "정상 처리",
+            403: "권한 거부",
+        }
+    ),
     status_code=status.HTTP_204_NO_CONTENT,
     summary="포인트 일괄 처리",
     description="일괄적으로 포인트를 지급하거나 차감합니다.",
@@ -168,21 +166,14 @@ async def update_users_point(request: AdminPointRequest, auth_data: LoginDep):
 @router.post(
     "/user",
     response_model=ResponseModel[User],
-    responses={
-        201: {"description": "사용자 생성 완료"},
-        400: {
-            "model": ErrorResponse,
-            "description": "Invalid request parameters",
-        },
-        403: {
-            "model": ErrorResponse,
-            "description": "Permission denied",
-        },
-        409: {
-            "model": ErrorResponse,
-            "description": "User already exists (e.g., duplicated student ID)",
-        },
-    },
+    responses=api_responses(
+        {
+            201: "사용자 생성 완료",
+            400: "Invalid request parameters",
+            403: "Permission denied",
+            409: "User already exists (e.g., duplicated student ID)",
+        }
+    ),
     status_code=status.HTTP_201_CREATED,
     summary="사용자 생성",
     description="새로운 사용자를 생성합니다. (단일 사용자 생성)",
@@ -197,7 +188,7 @@ async def create_user(request: AdminUserCreateRequest, auth_data: LoginDep):
 
     async with client.session as session:
         if request.user_type == UserType.student:
-            if not all([request.grade, request.number, request.student_no]):
+            if not (request.grade and request.number and request.student_no):
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Grade, class number, and student number are required for a student user.",
@@ -252,17 +243,13 @@ async def create_user(request: AdminUserCreateRequest, auth_data: LoginDep):
 
 @router.patch(
     "/users/{user_id}/password",
-    responses={
-        204: {"description": "정상 처리 (비밀번호 초기화됨)"},
-        403: {
-            "model": ErrorResponse,
-            "description": "Permission denied",
-        },
-        404: {
-            "model": ErrorResponse,
-            "description": "User not found",
-        },
-    },
+    responses=api_responses(
+        {
+            204: "정상 처리 (비밀번호 초기화됨)",
+            403: "Permission denied",
+            404: "User not found",
+        }
+    ),
     status_code=status.HTTP_204_NO_CONTENT,
     summary="사용자 비밀번호 초기화",
     description="특정 사용자의 비밀번호를 초기화(None으로 설정)합니다. 이후 사용자가 처음 로그인할 때 새로 설정하게 됩니다.",
@@ -291,21 +278,14 @@ async def reset_user_password(user_id: int, auth_data: LoginDep):
 @router.patch(
     "/users/{user_id}",
     response_model=ResponseModel[User],
-    responses={
-        200: {"description": "사용자 정보 수정 완료"},
-        400: {
-            "model": ErrorResponse,
-            "description": "Invalid request parameters",
-        },
-        403: {
-            "model": ErrorResponse,
-            "description": "Permission denied",
-        },
-        404: {
-            "model": ErrorResponse,
-            "description": "User not found",
-        },
-    },
+    responses=api_responses(
+        {
+            200: "사용자 정보 수정 완료",
+            400: "Invalid request parameters",
+            403: "Permission denied",
+            404: "User not found",
+        }
+    ),
     status_code=status.HTTP_200_OK,
     summary="사용자 정보 수정",
     description="특정 사용자의 정보를 수정합니다. (이름, 권한 등)",
@@ -350,17 +330,13 @@ async def update_user(user_id: int, request: AdminUserUpdateRequest, auth_data: 
 
 @router.delete(
     "/users/{user_id}",
-    responses={
-        204: {"description": "정상 처리"},
-        403: {
-            "model": ErrorResponse,
-            "description": "Permission denied",
-        },
-        404: {
-            "model": ErrorResponse,
-            "description": "User not found",
-        },
-    },
+    responses=api_responses(
+        {
+            204: "정상 처리",
+            403: "Permission denied",
+            404: "User not found",
+        }
+    ),
     status_code=status.HTTP_204_NO_CONTENT,
     summary="사용자 삭제",
     description="특정 사용자를 삭제합니다.",

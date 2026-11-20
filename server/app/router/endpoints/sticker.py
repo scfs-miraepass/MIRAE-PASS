@@ -14,7 +14,7 @@ from app.core.redis_keys import Keys
 from app.core.service.sticker import STICKER_MAX, STICKER_TARGET_TYPES, Sticker, StickerCount
 from app.schemas import StickerHistory, StickerHistoryItem, UserPermission, Users, UserSearch, UserSummary, UserType
 from app.schemas.core import SchemaCore
-from app.schemas.response import ErrorResponse, ResponseModel
+from app.schemas.response import ResponseModel, api_responses
 
 router = APIRouter(prefix="/sticker", tags=["sticker"])
 client = ServiceClient()
@@ -171,14 +171,16 @@ def _ranking_search_condition(ranked: Subquery, q: str) -> ColumnElement[bool] |
     "",
     operation_id="grant_sticker",
     response_model=ResponseModel[StickerBalance],
-    responses={
-        200: {"description": "스티커 지급 성공"},
-        400: {"model": ErrorResponse, "description": "학생 또는 교사가 아닌 유저에게 지급 시도"},
-        401: {"model": ErrorResponse, "description": "세션이 만료되었거나 유효하지 않음"},
-        403: {"model": ErrorResponse, "description": "권한이 없음"},
-        404: {"model": ErrorResponse, "description": "유저를 찾을 수 없음"},
-        409: {"model": ErrorResponse, "description": f"이번 주 한도({STICKER_MAX}개) 초과"},
-    },
+    responses=api_responses(
+        {
+            200: "스티커 지급 성공",
+            400: "학생 또는 교사가 아닌 유저에게 지급 시도",
+            401: "세션이 만료되었거나 유효하지 않음",
+            403: "권한이 없음",
+            404: "유저를 찾을 수 없음",
+            409: f"이번 주 한도({STICKER_MAX}개) 초과",
+        }
+    ),
     status_code=status.HTTP_200_OK,
     summary="스티커 지급",
     description=(
@@ -208,11 +210,13 @@ async def grant_sticker(data: StickerOperation, auth_data: LoginDep):
     "/bulk",
     operation_id="grant_stickers",
     response_model=ResponseModel[StickerBulkResult],
-    responses={
-        200: {"description": "일괄 지급 처리 완료 (일부 또는 전부 실패해도 200이며 결과는 본문에 있음)"},
-        401: {"model": ErrorResponse, "description": "세션이 만료되었거나 유효하지 않음"},
-        403: {"model": ErrorResponse, "description": "권한이 없음"},
-    },
+    responses=api_responses(
+        {
+            200: "일괄 지급 처리 완료 (일부 또는 전부 실패해도 200이며 결과는 본문에 있음)",
+            401: "세션이 만료되었거나 유효하지 않음",
+            403: "권한이 없음",
+        }
+    ),
     status_code=status.HTTP_200_OK,
     summary="스티커 일괄 지급",
     description=(
@@ -249,14 +253,16 @@ async def grant_stickers(data: StickerBulkOperation, auth_data: LoginDep):
     "/revoke",
     operation_id="revoke_sticker",
     response_model=ResponseModel[StickerBalance],
-    responses={
-        200: {"description": "스티커 회수 성공"},
-        400: {"model": ErrorResponse, "description": "학생 또는 교사가 아닌 유저"},
-        401: {"model": ErrorResponse, "description": "세션이 만료되었거나 유효하지 않음"},
-        403: {"model": ErrorResponse, "description": "권한이 없음"},
-        404: {"model": ErrorResponse, "description": "유저를 찾을 수 없음"},
-        409: {"model": ErrorResponse, "description": "보유 수보다 많이 회수 시도"},
-    },
+    responses=api_responses(
+        {
+            200: "스티커 회수 성공",
+            400: "학생 또는 교사가 아닌 유저",
+            401: "세션이 만료되었거나 유효하지 않음",
+            403: "권한이 없음",
+            404: "유저를 찾을 수 없음",
+            409: "보유 수보다 많이 회수 시도",
+        }
+    ),
     status_code=status.HTTP_200_OK,
     summary="스티커 회수",
     description="유저의 스티커를 회수합니다. 현재 집계 기간 내 보유 수 이하로만 회수할 수 있습니다.",
@@ -282,13 +288,15 @@ async def revoke_sticker(data: StickerOperation, auth_data: LoginDep):
     "/class",
     operation_id="give_sticker_to_class",
     response_model=ResponseModel[StickerBalance],
-    responses={
-        200: {"description": "학급 전달 성공"},
-        401: {"model": ErrorResponse, "description": "세션이 만료되었거나 유효하지 않음"},
-        403: {"model": ErrorResponse, "description": "권한이 없음"},
-        404: {"model": ErrorResponse, "description": "해당 학급(학생)이 없음"},
-        409: {"model": ErrorResponse, "description": "보유한 스티커가 부족함"},
-    },
+    responses=api_responses(
+        {
+            200: "학급 전달 성공",
+            401: "세션이 만료되었거나 유효하지 않음",
+            403: "권한이 없음",
+            404: "해당 학급(학생)이 없음",
+            409: "보유한 스티커가 부족함",
+        }
+    ),
     status_code=status.HTTP_200_OK,
     summary="학급에 스티커 전달 (교사)",
     description="교사가 보유한 스티커를 원하는 학급에 전달합니다. 전달한 만큼 교사 보유 수가 줄고 학급 합계에 더해집니다.",
@@ -311,11 +319,13 @@ async def give_sticker_to_class(data: StickerClassOperation, auth_data: LoginDep
 @router.post(
     "/reset",
     operation_id="reset_stickers",
-    responses={
-        204: {"description": "스티커 초기화 성공"},
-        401: {"model": ErrorResponse, "description": "세션이 만료되었거나 유효하지 않음"},
-        403: {"model": ErrorResponse, "description": "권한이 없음"},
-    },
+    responses=api_responses(
+        {
+            204: "스티커 초기화 성공",
+            401: "세션이 만료되었거나 유효하지 않음",
+            403: "권한이 없음",
+        }
+    ),
     status_code=status.HTTP_204_NO_CONTENT,
     summary="스티커 수동 초기화",
     description="모든 유저의 현재 스티커 보유 수를 0으로 만듭니다. 기록은 삭제되지 않으며 새 집계 기간이 시작됩니다.",
@@ -332,11 +342,13 @@ async def reset_stickers(auth_data: LoginDep):
     "/me",
     operation_id="get_my_sticker_balance",
     response_model=ResponseModel[StickerBalance],
-    responses={
-        200: {"description": "내 스티커 보유 수 조회 성공"},
-        401: {"model": ErrorResponse, "description": "세션이 만료되었거나 유효하지 않음"},
-        403: {"model": ErrorResponse, "description": "권한이 없음"},
-    },
+    responses=api_responses(
+        {
+            200: "내 스티커 보유 수 조회 성공",
+            401: "세션이 만료되었거나 유효하지 않음",
+            403: "권한이 없음",
+        }
+    ),
     status_code=status.HTTP_200_OK,
     summary="내 스티커 보유 수 조회",
     description="현재 집계 기간 내 내 스티커 보유 수를 조회합니다. 학생 또는 교사가 아닌 경우 0을 반환합니다.",
@@ -361,12 +373,14 @@ async def get_my_sticker_balance(auth_data: LoginDep):
     "/users/{user_id}",
     operation_id="get_user_sticker_balance",
     response_model=ResponseModel[StickerBalance],
-    responses={
-        200: {"description": "유저 스티커 보유 수 조회 성공"},
-        401: {"model": ErrorResponse, "description": "세션이 만료되었거나 유효하지 않음"},
-        403: {"model": ErrorResponse, "description": "권한이 없음"},
-        404: {"model": ErrorResponse, "description": "유저를 찾을 수 없음"},
-    },
+    responses=api_responses(
+        {
+            200: "유저 스티커 보유 수 조회 성공",
+            401: "세션이 만료되었거나 유효하지 않음",
+            403: "권한이 없음",
+            404: "유저를 찾을 수 없음",
+        }
+    ),
     status_code=status.HTTP_200_OK,
     summary="특정 유저 스티커 보유 수 조회",
     description="지급 · 관리 권한이 있는 유저가 특정 유저의 현재 스티커 보유 수를 조회합니다.",
@@ -387,11 +401,13 @@ async def get_user_sticker_balance(user_id: int, auth_data: LoginDep):
     "/ranking",
     operation_id="get_sticker_ranking",
     response_model=ResponseModel[list[StickerRankingResponse]],
-    responses={
-        200: {"description": "스티커 개인 랭킹 조회 성공"},
-        401: {"model": ErrorResponse, "description": "세션이 만료되었거나 유효하지 않음"},
-        403: {"model": ErrorResponse, "description": "권한이 없음"},
-    },
+    responses=api_responses(
+        {
+            200: "스티커 개인 랭킹 조회 성공",
+            401: "세션이 만료되었거나 유효하지 않음",
+            403: "권한이 없음",
+        }
+    ),
     status_code=status.HTTP_200_OK,
     summary="스티커 개인 랭킹 조회",
     description=(
@@ -503,11 +519,13 @@ async def get_sticker_ranking(
     "/ranking/class",
     operation_id="get_sticker_class_ranking",
     response_model=ResponseModel[list[StickerClassRankingResponse]],
-    responses={
-        200: {"description": "스티커 학급 랭킹 조회 성공"},
-        401: {"model": ErrorResponse, "description": "세션이 만료되었거나 유효하지 않음"},
-        403: {"model": ErrorResponse, "description": "권한이 없음"},
-    },
+    responses=api_responses(
+        {
+            200: "스티커 학급 랭킹 조회 성공",
+            401: "세션이 만료되었거나 유효하지 않음",
+            403: "권한이 없음",
+        }
+    ),
     status_code=status.HTTP_200_OK,
     summary="스티커 학급 랭킹 조회",
     description=(
@@ -590,11 +608,13 @@ async def get_sticker_class_ranking(auth_data: LoginDep, response: Response):
     "/history",
     operation_id="get_sticker_history",
     response_model=ResponseModel[StickerHistoryPage],
-    responses={
-        200: {"description": "스티커 기록 조회 성공"},
-        401: {"model": ErrorResponse, "description": "세션이 만료되었거나 유효하지 않음"},
-        403: {"model": ErrorResponse, "description": "권한이 없음"},
-    },
+    responses=api_responses(
+        {
+            200: "스티커 기록 조회 성공",
+            401: "세션이 만료되었거나 유효하지 않음",
+            403: "권한이 없음",
+        }
+    ),
     status_code=status.HTTP_200_OK,
     summary="스티커 기록 조회 (관리자)",
     description=(
@@ -653,13 +673,15 @@ async def get_sticker_history(
 @router.delete(
     "/history/{history_id}",
     operation_id="delete_sticker_history",
-    responses={
-        204: {"description": "스티커 기록 취소 성공"},
-        401: {"model": ErrorResponse, "description": "세션이 만료되었거나 유효하지 않음"},
-        403: {"model": ErrorResponse, "description": "권한이 없음"},
-        404: {"model": ErrorResponse, "description": "기록을 찾을 수 없음"},
-        409: {"model": ErrorResponse, "description": "취소 시 대상 유저의 보유 수가 0 미만이 됨"},
-    },
+    responses=api_responses(
+        {
+            204: "스티커 기록 취소 성공",
+            401: "세션이 만료되었거나 유효하지 않음",
+            403: "권한이 없음",
+            404: "기록을 찾을 수 없음",
+            409: "취소 시 대상 유저의 보유 수가 0 미만이 됨",
+        }
+    ),
     status_code=status.HTTP_204_NO_CONTENT,
     summary="스티커 기록 취소 (관리자)",
     description=(

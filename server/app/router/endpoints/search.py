@@ -7,7 +7,7 @@ from app.core import LoginDep, ServiceClient
 from app.core.redis_keys import Keys
 from app.core.service.user import USER_CACHE_EXCLUDE
 from app.schemas import User, UserPermission, Users, UserSearch, UserType
-from app.schemas.response import ErrorResponse, ResponseModel
+from app.schemas.response import ResponseModel, api_responses
 
 router = APIRouter(prefix="/search", tags=["search"])
 client = ServiceClient()
@@ -38,17 +38,13 @@ async def _load_users(user_ids: list[int]) -> list[User]:
 @router.get(
     "",
     response_model=ResponseModel[list[User]],
-    responses={
-        200: {"description": "정상 처리"},
-        401: {
-            "model": ErrorResponse,
-            "description": "세션이 만료되었거나 유효하지 않음",
-        },
-        403: {
-            "model": ErrorResponse,
-            "description": "권한이 없음",
-        },
-    },
+    responses=api_responses(
+        {
+            200: "정상 처리",
+            401: "세션이 만료되었거나 유효하지 않음",
+            403: "권한이 없음",
+        }
+    ),
     status_code=status.HTTP_200_OK,
     summary="유저 검색",
     description="유저를 이름 또는 ID(학번)으로 검색합니다.",
@@ -128,13 +124,12 @@ async def search(auth_data: LoginDep, q: str, t: list[UserType] | None = Query(N
 @router.get(
     "/teacher/{user_name}",
     response_model=ResponseModel[User],
-    responses={
-        200: {"description": "정상 처리"},
-        404: {
-            "model": ErrorResponse,
-            "description": "유저를 찾을 수 없음",
-        },
-    },
+    responses=api_responses(
+        {
+            200: "정상 처리",
+            404: "유저를 찾을 수 없음",
+        }
+    ),
     status_code=status.HTTP_200_OK,
     summary="교사 데이터",
     description="교사의 정확한 이름을 가지고 교사의 데이터를 가져옵니다.",
