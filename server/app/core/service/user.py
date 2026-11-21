@@ -25,7 +25,9 @@ from ..cache_events import (
     on_user_profile_changed,
 )
 from ..core import ServiceCore
-from ..error import Forbidden
+from ..database import DatabaseCore
+from ..error import Conflict, Forbidden, NotFound
+from ..loggers import LoggerCore
 from ..redis_keys import Keys
 from ..security import get_password_hash
 from ..sessions import revoke_user_sessions
@@ -115,8 +117,7 @@ class User(ServiceCore[Users], _Type):
             ValueError: 설정하려는 비밀번호가 6자의 숫자가 아닌 경우 발생합니다.
         """
 
-        if _new is not None and (len(_new) != 6 or not _new.isdecimal()):
-            raise ValueError("키오스크 비밀번호는 6자의 숫자만 가능합니다.")
+        self._validate_kiosk_password(_new)
 
         if isinstance(_new, str):
             self.logs.service.info(f"{self.name}({self.id})님의 키오스크 결재용 비밀번호가 변경되었습니다.")
@@ -127,6 +128,52 @@ class User(ServiceCore[Users], _Type):
             user.kiosk_password = get_password_hash(str(_new)) if isinstance(_new, str) else None
         self._payload = user
         await on_user_cache_changed(self.id)
+
+    @staticmethod
+    def _validate_kiosk_password(_new: str | None):
+        """
+        키오스크 비밀번호의 형식(6자의 숫자)을 검사합니다. None은 '미설정'을 뜻하므로 통과합니다.
+
+        Raises:
+            ValueError: 비밀번호가 6자의 숫자가 아닌 경우 발생합니다.
+        """
+        if _new is not None and (len(_new) != 6 or not _new.isdecimal()):
+            raise ValueError("키오스크 비밀번호는 6자의 숫자만 가능합니다.")
+
+    @classmethod
+    async def init_kiosk_password(cls, user_id: int, _new: str):
+        """
+        키오스크 결재용 비밀번호가 없는 사용자의 비밀번호를 처음 한 번 설정합니다.
+        이미 설정된 비밀번호는 덮어쓰지 않습니다.
+
+        Args:
+            user_id: 대상 사용자 ID
+            _new: 새로운 비밀번호
+
+        Raises:
+            ValueError: 설정하려는 비밀번호가 6자의 숫자가 아닌 경우 발생합니다.
+            ServiceError.NotFound: 대상 사용자를 찾을 수 없는 경우 발생합니다.
+            ServiceError.Forbidden: 대상 사용자가 계정 비밀번호를 설정하지 않은(미가입) 경우 발생합니다.
+            ServiceError.Conflict: 이미 키오스크 결재용 비밀번호가 설정되어 있는 경우 발생합니다.
+        """
+        cls._validate_kiosk_password(_new)
+
+        async with DatabaseCore.session() as session:
+            # 동시에 들어온 요청이 둘 다 '미설정'으로 읽고 서로 덮어쓰지 않도록 대상 유저 행을 잠급니다.
+            target = await cls.get_by_id(user_id, save_cache=False, lock=True)
+            if target is None:
+                raise NotFound("유저를 찾을 수 없습니다.")
+            if target.password is None:
+                raise Forbidden("미래패스 비밀번호를 먼저 설정해야 합니다.")
+            if target.kiosk_password is not None:
+                raise Conflict("이미 키오스크 비밀번호가 설정되어 있습니다.")
+
+            user = await session.merge(target._payload)
+            user.kiosk_password = get_password_hash(_new)
+
+        # 캐시는 커밋이 끝난 뒤에 지웁니다.
+        await on_user_cache_changed(user_id)
+        LoggerCore.service.info(f"{user.name}({user_id})님의 키오스크 결재용 비밀번호가 처음 설정되었습니다.")
 
     async def create_history(
         self,
