@@ -282,6 +282,66 @@ async def change_kiosk_password(form: ChangePasswordForm, auth_data: LoginDep):
         )
 
 
+@router.post(
+    "/kiosk/init",
+    operation_id="init_kiosk_password",
+    responses=api_responses(
+        {
+            204: "키오스크 비밀번호 설정 성공",
+            400: "대상 유저가 계정 비밀번호를 설정하지 않았음 (미가입)",
+            401: "세션이 만료되었거나 유효하지 않음.",
+            403: "권한이 없음. service 타입만 요청할 수 있음.",
+            404: "대상 유저를 찾을 수 없음",
+            409: "이미 키오스크 비밀번호가 설정되어 있음",
+            422: "비밀번호의 형식이 잘못 되었음.",
+        }
+    ),
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="키오스크 비밀번호 최초 설정",
+    description=(
+        "키오스크 비밀번호가 없는 유저의 키오스크 비밀번호를 처음 한 번 설정합니다. "
+        "이미 설정된 비밀번호는 바꿀 수 없으며, service 타입만 요청할 수 있습니다."
+    ),
+)
+async def init_kiosk_password(form: LoginForm, auth_data: LoginDep):
+    """
+    키오스크에서 키오스크 비밀번호가 없는 유저의 비밀번호를 처음 설정합니다.
+    본인 확인 없이 설정하므로, 이미 설정된 비밀번호는 이 API로 덮어쓸 수 없습니다.
+    """
+    session_user, _ = auth_data
+    if session_user.type != UserType.service:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Permission denied.",
+        )
+
+    async with client.session:
+        # 동시에 들어온 요청이 둘 다 '미설정'으로 읽고 서로 덮어쓰지 않도록 대상 유저 행을 잠급니다.
+        user = await client.get_user(form.id, save_cache=False, lock=True)
+        if user is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="유저를 찾을 수 없습니다.")
+
+        if user.password is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="미래패스 비밀번호를 먼저 설정해야 합니다.",
+            )
+
+        if user.kiosk_password is not None:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="이미 키오스크 비밀번호가 설정되어 있습니다.",
+            )
+
+        try:
+            await user.update_kiosk_password(form.password)
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                detail="키오스크 비밀번호는 6자의 숫자만 가능합니다.",
+            )
+
+
 @router.get(
     "/password/exists/{user_id}",
     response_model=ResponseModel[bool],
