@@ -856,6 +856,13 @@ export const zChangePasswordAuthPasswordPutBody = zChangePasswordForm;
  */
 export const zChangePasswordAuthPasswordPutResponse = z.void();
 
+export const zInitKioskPasswordBody = zLoginForm;
+
+/**
+ * 키오스크 비밀번호 설정 성공
+ */
+export const zInitKioskPasswordResponse = z.void();
+
 export const zCheckPasswordExistsAuthPasswordExistsUserIdGetPath = z.object({
     user_id: z.int()
 });
