@@ -2285,6 +2285,51 @@ export type ChangePasswordAuthPasswordPutResponses = {
 
 export type ChangePasswordAuthPasswordPutResponse = ChangePasswordAuthPasswordPutResponses[keyof ChangePasswordAuthPasswordPutResponses];
 
+export type InitKioskPasswordData = {
+    body: LoginForm;
+    path?: never;
+    query?: never;
+    url: '/auth/kiosk/init';
+};
+
+export type InitKioskPasswordErrors = {
+    /**
+     * 대상 유저가 계정 비밀번호를 설정하지 않았음 (미가입)
+     */
+    400: ErrorResponse;
+    /**
+     * 세션이 만료되었거나 유효하지 않음.
+     */
+    401: ErrorResponse;
+    /**
+     * 권한이 없음. service 타입만 요청할 수 있음.
+     */
+    403: ErrorResponse;
+    /**
+     * 대상 유저를 찾을 수 없음
+     */
+    404: ErrorResponse;
+    /**
+     * 이미 키오스크 비밀번호가 설정되어 있음
+     */
+    409: ErrorResponse;
+    /**
+     * 비밀번호의 형식이 잘못 되었음.
+     */
+    422: ErrorResponse;
+};
+
+export type InitKioskPasswordError = InitKioskPasswordErrors[keyof InitKioskPasswordErrors];
+
+export type InitKioskPasswordResponses = {
+    /**
+     * 키오스크 비밀번호 설정 성공
+     */
+    204: void;
+};
+
+export type InitKioskPasswordResponse = InitKioskPasswordResponses[keyof InitKioskPasswordResponses];
+
 export type CheckPasswordExistsAuthPasswordExistsUserIdGetData = {
     body?: never;
     path: {
