@@ -1,3 +1,10 @@
+# [1.16.0-dev.1](https://github.com/scfs-miraepass/MIRAE-PASS/compare/v1.15.0...v1.16.0-dev.1) (2026-11-21)
+
+
+### Features
+
+* **server:** 키오스크 비밀번호 최초 설정 API 추가 ([#27](https://github.com/scfs-miraepass/MIRAE-PASS/issues/27)) ([e25bc1b](https://github.com/scfs-miraepass/MIRAE-PASS/commit/e25bc1b59b8507c813b55824030d40ca61a58e9e))
+
 # [1.15.0](https://github.com/scfs-miraepass/MIRAE-PASS/compare/v1.14.1...v1.15.0) (2026-11-18)
 
 
