@@ -3,9 +3,7 @@ from pydantic import BaseModel
 
 from app.core import LoginDep, ServiceClient, settings
 from app.core.cache_events import on_user_cache_changed
-from app.core.error import Conflict, Forbidden, NotFound
 from app.core.redis_keys import Keys
-from app.core.service import User as ServiceUser
 from app.core.sessions import create_session, delete_session, extend_session, get_session_user_id, track_session
 from app.core.security import verify_password
 from app.schemas import UserType
@@ -317,25 +315,33 @@ async def init_kiosk_password(form: LoginForm, auth_data: LoginDep):
             detail="Permission denied.",
         )
 
-    try:
-        await ServiceUser.init_kiosk_password(form.id, form.password)
-    except ValueError:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-            detail="키오스크 비밀번호는 6자의 숫자만 가능합니다.",
-        )
-    except NotFound:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="유저를 찾을 수 없습니다.")
-    except Forbidden:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="미래패스 비밀번호를 먼저 설정해야 합니다.",
-        )
-    except Conflict:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="이미 키오스크 비밀번호가 설정되어 있습니다.",
-        )
+    async with client.session:
+        user = await client.get_user(form.id, save_cache=False, lock=True)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found",
+            )
+
+        if user.password is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="미래패스 비밀번호를 먼저 설정해야 합니다.",
+            )
+        if user.kiosk_password is not None:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="이미 키오스크 비밀번호가 설정되어 있습니다.",
+            )
+
+        try:
+            await user.update_kiosk_password(form.password)
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                detail="키오스크 비밀번호는 6자의 숫자만 가능합니다.",
+            )
+        client.logs.service.info(f"{user.name}({user.id})님의 키오스크 결재용 비밀번호가 처음 설정되었습니다.")
 
 
 @router.get(
