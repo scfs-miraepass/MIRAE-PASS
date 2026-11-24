@@ -1,3 +1,10 @@
+# [1.17.0-dev.2](https://github.com/scfs-miraepass/MIRAE-PASS/compare/v1.17.0-dev.1...v1.17.0-dev.2) (2026-11-24)
+
+
+### Bug Fixes
+
+* **admin:** 사용자 수정 화면에 스티커 권한 체크박스 추가 ([#31](https://github.com/scfs-miraepass/MIRAE-PASS/issues/31)) ([eddbd7f](https://github.com/scfs-miraepass/MIRAE-PASS/commit/eddbd7fec89171e2c9cbc679e8d3ce7a0ddc4395))
+
 # [1.17.0-dev.1](https://github.com/scfs-miraepass/MIRAE-PASS/compare/v1.16.0...v1.17.0-dev.1) (2026-11-24)
 
 
