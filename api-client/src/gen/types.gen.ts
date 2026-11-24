@@ -811,6 +811,10 @@ export type PostUpdateRequest = {
     content_data?: {
         [key: string]: unknown;
     } | null;
+    /**
+     * 설문. 보내지 않으면 그대로 두고, 객체를 보내면 만들거나 수정하며, null을 보내면 삭제합니다.
+     */
+    poll?: PollOperation | null;
 };
 
 /**
@@ -3691,6 +3695,10 @@ export type UpdatePostPostsPostIdPatchErrors = {
      * 게시글을 찾을 수 없음
      */
     404: ErrorResponse;
+    /**
+     * 응답이 있어 바꿀 수 없는 설문 내용이 포함됨
+     */
+    409: ErrorResponse;
     /**
      * Validation Error
      */

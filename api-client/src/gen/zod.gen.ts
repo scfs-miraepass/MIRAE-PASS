@@ -266,7 +266,8 @@ export const zPostResponse = z.object({
  */
 export const zPostUpdateRequest = z.object({
     title: z.string().nullish(),
-    content_data: z.record(z.string(), z.unknown()).nullish()
+    content_data: z.record(z.string(), z.unknown()).nullish(),
+    poll: zPollOperation.nullish()
 });
 
 /**

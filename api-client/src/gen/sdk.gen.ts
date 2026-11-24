@@ -804,7 +804,7 @@ export class MiraepassApi extends HeyApiClient {
     /**
      * 게시글 수정
      *
-     * 기존 게시글을 수정합니다.
+     * 기존 게시글을 수정합니다. poll을 보내면 설문도 같은 트랜잭션에서 만들거나 수정하고, null을 보내면 삭제합니다.
      */
     public updatePostPostsPostIdPatch<ThrowOnError extends boolean = false>(options: Options<UpdatePostPostsPostIdPatchData, ThrowOnError>): RequestResult<UpdatePostPostsPostIdPatchResponses, UpdatePostPostsPostIdPatchErrors, ThrowOnError> {
         return (options.client ?? this.client).patch<UpdatePostPostsPostIdPatchResponses, UpdatePostPostsPostIdPatchErrors, ThrowOnError>({

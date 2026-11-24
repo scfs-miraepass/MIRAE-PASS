@@ -1127,6 +1127,17 @@ export const PostUpdateRequestSchema = {
             ],
             title: 'Content Data',
             description: '수정할 게시글의 본문 데이터'
+        },
+        poll: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/PollOperation'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: '설문. 보내지 않으면 그대로 두고, 객체를 보내면 만들거나 수정하며, null을 보내면 삭제합니다.'
         }
     },
     type: 'object',
