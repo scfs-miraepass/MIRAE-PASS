@@ -6,6 +6,7 @@ import { NOTICE_CONTENT_KIND, noticeDateLabel, toManagedNotices, type ManagedNot
 
 import FormModal from "~/components/notices/noticeFormModal.vue";
 import DeleteModal from "~/components/notices/noticeDeleteModal.vue";
+import PollResultModal from "~/components/notices/noticePollResultModal.vue";
 
 definePageMeta({ permissions: NOTICE_MANAGEMENT_PERMISSIONS });
 
@@ -18,7 +19,7 @@ const canManage = computed(() => hasPermission(session.value?.permissions, UserP
 const canEdit = (notice: ManagedNotice) => canManage.value || notice.authorId === session.value?.id;
 
 const page = ref(1);
-const action = ref<{ type: "create" } | { type: "edit" | "delete"; notice: ManagedNotice } | undefined>();
+const action = ref<{ type: "create" } | { type: "edit" | "delete" | "pollResult"; notice: ManagedNotice } | undefined>();
 
 const { data, pending, error, refresh } = useAsyncData(
     "notices.management",
@@ -53,6 +54,9 @@ const columns: TableColumn<ManagedNotice>[] = [
 ];
 
 const actionItems = (notice: ManagedNotice) => [
+    ...(notice.hasPoll
+        ? [{ label: "설문 결과", icon: "i-lucide-chart-bar", onSelect: () => (action.value = { type: "pollResult", notice }) }]
+        : []),
     { label: "수정", icon: "i-lucide-pencil", onSelect: () => (action.value = { type: "edit", notice }) },
     { label: "삭제", icon: "i-lucide-trash-2", color: "error" as const, onSelect: () => (action.value = { type: "delete", notice }) },
 ];
@@ -79,8 +83,10 @@ async function onDeleted() {
         :notice="action.notice"
         @close="action = undefined"
         @success="() => { action = undefined; refresh(); }"
+        @refresh="refresh()"
     />
     <DeleteModal v-if="action?.type === 'delete'" :notice="action.notice" @close="action = undefined" @success="onDeleted" />
+    <PollResultModal v-if="action?.type === 'pollResult'" :notice="action.notice" @close="action = undefined" />
 
     <UDashboardPanel id="notices" :ui="{ root: 'overflow-y-auto', body: 'min-h-fit' }">
         <template #header>
@@ -112,7 +118,12 @@ async function onDeleted() {
                 class="w-full rounded-lg border border-default"
             >
                 <template #title-cell="{ row }">
-                    <p class="truncate font-medium text-highlighted">{{ row.original.title }}</p>
+                    <div class="flex min-w-0 items-center gap-2">
+                        <p class="truncate font-medium text-highlighted">{{ row.original.title }}</p>
+                        <UBadge v-if="row.original.hasPoll" color="primary" variant="subtle" size="sm" icon="i-lucide-list-checks" class="shrink-0">
+                            설문
+                        </UBadge>
+                    </div>
                     <p class="mt-0.5 truncate text-muted">{{ row.original.text }}</p>
                 </template>
                 <template #createdAt-cell="{ row }">{{ noticeDateLabel(row.original.createdAt) }}</template>
