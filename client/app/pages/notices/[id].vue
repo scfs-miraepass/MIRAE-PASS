@@ -80,4 +80,6 @@ function goBack() {
         <hr class="my-5 border-default" />
         <p class="text-p1 font-normal leading-relaxed whitespace-pre-wrap break-words">{{ notice.text }}</p>
     </article>
+
+    <NoticePoll v-if="notice?.hasPoll && !loading && !error" :post-id="notice.id" />
 </template>
