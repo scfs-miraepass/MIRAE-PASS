@@ -210,28 +210,12 @@ class Post(ServiceCore[Posts], _Type):
             voter_count=voter_count,
         )
 
-    async def set_poll(self, poll: PollOperation):
-        """
-        게시글에 설문을 만들거나 수정합니다.
-
-        응답이 있는 설문은 이미 고른 선택지의 의미가 바뀌지 않도록 선택지를 바꿀 수 없고,
-        질문·복수 선택 여부·마감 시각만 바꿀 수 있습니다.
-
-        Args:
-            poll: 설문 내용
-
-        Raises:
-            Conflict: 응답이 있는 설문의 선택지를 바꾸려는 경우 발생합니다.
-        """
-        async with self.session as session:
-            created = await self._save_poll(session, poll)
-
-        await on_post_changed(self.id)
-        self.logs.service_post.info(f"설문 {'생성' if created else '수정'} - 게시글 ID {self.id}")
-
     async def _save_poll(self, session: AsyncSession, poll: PollOperation) -> bool:
         """
         열린 세션에서 설문을 만들거나 수정합니다. 캐시 무효화와 로그는 호출한 쪽에서 커밋 후 처리합니다.
+
+        응답이 있는 설문은 이미 고른 선택지의 의미가 바뀌지 않도록 선택지를 바꿀 수 없고,
+        질문·복수 선택 여부·마감 시각만 바꿀 수 있습니다.
 
         Returns:
             새로 만들었으면 True, 기존 설문을 수정했으면 False
@@ -293,20 +277,6 @@ class Post(ServiceCore[Posts], _Type):
             current.allow_multiple = poll.allow_multiple
             await session.flush()
         return created
-
-    async def delete_poll(self):
-        """
-        게시글의 설문과 응답을 삭제합니다.
-
-        Raises:
-            NotFound: 설문이 없는 경우 발생합니다.
-        """
-        async with self.session as session:
-            if not await self._remove_poll(session):
-                raise NotFound("설문이 없습니다.")
-
-        await on_post_changed(self.id)
-        self.logs.service_post.info(f"설문 삭제 - 게시글 ID {self.id}")
 
     async def _remove_poll(self, session: AsyncSession) -> bool:
         """열린 세션에서 설문과 응답을 삭제합니다. 삭제했으면 True, 설문이 없었으면 False를 돌려줍니다."""

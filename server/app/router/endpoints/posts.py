@@ -257,61 +257,6 @@ async def get_poll(post_id: int, auth: LoginDep):
 
 
 @router.put(
-    "/{post_id}/poll",
-    response_model=ResponseModel[PollResponse],
-    responses=api_responses(
-        {
-            200: "설문 저장 완료",
-            401: "인증되지 않은 사용자",
-            403: "권한이 없음",
-            404: "게시글을 찾을 수 없음",
-            409: "응답이 있어 바꿀 수 없는 내용이 포함됨",
-        }
-    ),
-    status_code=status.HTTP_200_OK,
-    summary="설문 저장",
-    description="게시글에 설문을 만들거나 수정합니다. 응답이 있는 설문은 선택지를 바꿀 수 없습니다.",
-)
-async def set_poll(post_id: int, request: PollOperation, auth: LoginDep):
-    user, _ = auth
-    post = await _get_post_or_404(post_id)
-    if not _can_manage_post(user, post):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Permission denied.")
-
-    try:
-        await post.set_poll(request)
-    except Conflict as e:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
-    return ResponseModel[PollResponse](success=True, data=await post.get_poll(user_id=user.id, show_result=True))
-
-
-@router.delete(
-    "/{post_id}/poll",
-    responses=api_responses(
-        {
-            204: "설문 삭제 완료",
-            401: "인증되지 않은 사용자",
-            403: "권한이 없음",
-            404: "게시글 또는 설문을 찾을 수 없음",
-        }
-    ),
-    status_code=status.HTTP_204_NO_CONTENT,
-    summary="설문 삭제",
-    description="게시글의 설문과 모든 응답을 삭제합니다.",
-)
-async def delete_poll(post_id: int, auth: LoginDep):
-    user, _ = auth
-    post = await _get_post_or_404(post_id)
-    if not _can_manage_post(user, post):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Permission denied.")
-
-    try:
-        await post.delete_poll()
-    except NotFound:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="설문이 없습니다.")
-
-
-@router.put(
     "/{post_id}/poll/vote",
     response_model=ResponseModel[PollResponse],
     responses=api_responses(
