@@ -1191,15 +1191,6 @@ export const zUpdatePostPostsPostIdPatchPath = z.object({
  */
 export const zUpdatePostPostsPostIdPatchResponse = zResponseModelPosts;
 
-export const zDeletePollPostsPostIdPollDeletePath = z.object({
-    post_id: z.int()
-});
-
-/**
- * 설문 삭제 완료
- */
-export const zDeletePollPostsPostIdPollDeleteResponse = z.void();
-
 export const zGetPollPostsPostIdPollGetPath = z.object({
     post_id: z.int()
 });
@@ -1208,17 +1199,6 @@ export const zGetPollPostsPostIdPollGetPath = z.object({
  * 설문 조회 성공
  */
 export const zGetPollPostsPostIdPollGetResponse = zResponseModelPollResponse;
-
-export const zSetPollPostsPostIdPollPutBody = zPollOperation;
-
-export const zSetPollPostsPostIdPollPutPath = z.object({
-    post_id: z.int()
-});
-
-/**
- * 설문 저장 완료
- */
-export const zSetPollPostsPostIdPollPutResponse = zResponseModelPollResponse;
 
 export const zCancelPollVotePostsPostIdPollVoteDeletePath = z.object({
     post_id: z.int()

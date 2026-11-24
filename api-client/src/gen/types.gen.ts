@@ -3716,48 +3716,6 @@ export type UpdatePostPostsPostIdPatchResponses = {
 
 export type UpdatePostPostsPostIdPatchResponse = UpdatePostPostsPostIdPatchResponses[keyof UpdatePostPostsPostIdPatchResponses];
 
-export type DeletePollPostsPostIdPollDeleteData = {
-    body?: never;
-    path: {
-        /**
-         * Post Id
-         */
-        post_id: number;
-    };
-    query?: never;
-    url: '/posts/{post_id}/poll';
-};
-
-export type DeletePollPostsPostIdPollDeleteErrors = {
-    /**
-     * 인증되지 않은 사용자
-     */
-    401: ErrorResponse;
-    /**
-     * 권한이 없음
-     */
-    403: ErrorResponse;
-    /**
-     * 게시글 또는 설문을 찾을 수 없음
-     */
-    404: ErrorResponse;
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type DeletePollPostsPostIdPollDeleteError = DeletePollPostsPostIdPollDeleteErrors[keyof DeletePollPostsPostIdPollDeleteErrors];
-
-export type DeletePollPostsPostIdPollDeleteResponses = {
-    /**
-     * 설문 삭제 완료
-     */
-    204: void;
-};
-
-export type DeletePollPostsPostIdPollDeleteResponse = DeletePollPostsPostIdPollDeleteResponses[keyof DeletePollPostsPostIdPollDeleteResponses];
-
 export type GetPollPostsPostIdPollGetData = {
     body?: never;
     path: {
@@ -3799,52 +3757,6 @@ export type GetPollPostsPostIdPollGetResponses = {
 };
 
 export type GetPollPostsPostIdPollGetResponse = GetPollPostsPostIdPollGetResponses[keyof GetPollPostsPostIdPollGetResponses];
-
-export type SetPollPostsPostIdPollPutData = {
-    body: PollOperation;
-    path: {
-        /**
-         * Post Id
-         */
-        post_id: number;
-    };
-    query?: never;
-    url: '/posts/{post_id}/poll';
-};
-
-export type SetPollPostsPostIdPollPutErrors = {
-    /**
-     * 인증되지 않은 사용자
-     */
-    401: ErrorResponse;
-    /**
-     * 권한이 없음
-     */
-    403: ErrorResponse;
-    /**
-     * 게시글을 찾을 수 없음
-     */
-    404: ErrorResponse;
-    /**
-     * 응답이 있어 바꿀 수 없는 내용이 포함됨
-     */
-    409: ErrorResponse;
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type SetPollPostsPostIdPollPutError = SetPollPostsPostIdPollPutErrors[keyof SetPollPostsPostIdPollPutErrors];
-
-export type SetPollPostsPostIdPollPutResponses = {
-    /**
-     * 설문 저장 완료
-     */
-    200: ResponseModelPollResponse;
-};
-
-export type SetPollPostsPostIdPollPutResponse = SetPollPostsPostIdPollPutResponses[keyof SetPollPostsPostIdPollPutResponses];
 
 export type CancelPollVotePostsPostIdPollVoteDeleteData = {
     body?: never;
