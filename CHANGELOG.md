@@ -1,3 +1,10 @@
+# [1.17.0-dev.1](https://github.com/scfs-miraepass/MIRAE-PASS/compare/v1.16.0...v1.17.0-dev.1) (2026-11-24)
+
+
+### Features
+
+* 공지사항 화면 디자인 개선 및 전체 목록 화면 추가 ([#29](https://github.com/scfs-miraepass/MIRAE-PASS/issues/29)) ([160cf4b](https://github.com/scfs-miraepass/MIRAE-PASS/commit/160cf4b81107248886f1bfaf5a041e925ccc19b5))
+
 # [1.16.0](https://github.com/scfs-miraepass/MIRAE-PASS/compare/v1.15.0...v1.16.0) (2026-11-21)
 
 
