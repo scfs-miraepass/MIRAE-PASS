@@ -19,7 +19,7 @@ class StickerHistoryBase(SQLModel):
         index=True,
         description="스티커를 받은 학생의 고유 ID",
     )
-    amount: int = Field(description="변동 수량 (지급 양수, 회수 · 학급 전달 음수)")
+    amount: int = Field(description="변동 수량 (지급 양수, 회수 · 학급 전달 · 학급 지급 음수)")
     actor_id: int | None = Field(
         default=None,
         foreign_key="users.id",
@@ -27,8 +27,12 @@ class StickerHistoryBase(SQLModel):
         description="지급/회수를 처리한 유저의 고유 ID",
     )
     memo: str | None = Field(default=None, sa_column=Column(String(100)), description="메모")
-    class_grade: int | None = Field(default=None, description="교사가 학급에 전달한 경우 대상 학년")
-    class_number: int | None = Field(default=None, description="교사가 학급에 전달한 경우 대상 반")
+    class_grade: int | None = Field(
+        default=None, description="교사가 학급에 전달했거나 서비스 계정이 학급에 지급한 경우 대상 학년"
+    )
+    class_number: int | None = Field(
+        default=None, description="교사가 학급에 전달했거나 서비스 계정이 학급에 지급한 경우 대상 반"
+    )
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(SchemaCore.timezone),
         sa_column=Column(DateTime(timezone=True), server_default=func.now(), index=True),

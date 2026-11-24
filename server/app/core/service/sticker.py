@@ -52,6 +52,20 @@ class StickerBulkItem:
     """지급 실패 사유, 성공 시 None"""
 
 
+@dataclass
+class StickerClassGrant:
+    grade: int
+    """대상 학년"""
+    number: int
+    """대상 반"""
+    granted: int
+    """이번 요청으로 지급한 수"""
+    given_count: int
+    """현재 집계 기간에 서비스 계정이 이 학급에 지급한 누적 수 (이번 지급 포함)"""
+    period_start: datetime
+    """집계 기간 시작 시각"""
+
+
 class Sticker(ServiceCore[StickerHistory], _Type):
     """
     스티커 기록 서비스
@@ -368,17 +382,7 @@ class Sticker(ServiceCore[StickerHistory], _Type):
             if held < amount:
                 raise Conflict(f"보유한 스티커가 부족합니다. (현재 {held}개)")
 
-            class_size_query = (
-                select(func.count())
-                .select_from(Users)
-                .where(
-                    col(Users.type) == UserType.student,
-                    col(Users.grade) == grade,
-                    col(Users.number) == number,
-                )
-            )
-            if not (await session.execute(class_size_query)).scalar():
-                raise NotFound("해당 학급을 찾을 수 없습니다.")
+            await cls._ensure_class_exists(session, grade, number)
 
             history = StickerHistory(
                 user_id=teacher.id,
@@ -406,6 +410,115 @@ class Sticker(ServiceCore[StickerHistory], _Type):
             week_start=week_start,
         )
 
+    @staticmethod
+    async def _ensure_class_exists(session, grade: int, number: int) -> None:
+        """
+        해당 학급에 학생이 한 명 이상 있는지 확인합니다.
+
+        Args:
+            session: 사용 중인 DB 세션
+            grade: 학년
+            number: 반
+
+        Raises:
+            ServiceError.NotFound: 해당 학급에 학생이 없는 경우 발생합니다.
+        """
+        class_size_query = (
+            select(func.count())
+            .select_from(Users)
+            .where(
+                col(Users.type) == UserType.student,
+                col(Users.grade) == grade,
+                col(Users.number) == number,
+            )
+        )
+        if not (await session.execute(class_size_query)).scalar():
+            raise NotFound("해당 학급을 찾을 수 없습니다.")
+
+    @classmethod
+    async def get_class_given_count(cls, grade: int, number: int, period_start: datetime) -> int:
+        """
+        서비스 계정이 집계 기간 동안 학급에 직접 지급한 스티커 수를 계산합니다.
+        학급 지급 기록은 서비스 계정 기준 음수로 저장되므로 부호를 뒤집어 더합니다.
+
+        Args:
+            grade: 학년
+            number: 반
+            period_start: 집계 기간 시작 시각
+
+        Returns:
+            int
+        """
+        query = (
+            select(func.coalesce(func.sum(-col(StickerHistory.amount)), 0))
+            .select_from(StickerHistory)
+            .join(Users, col(Users.id) == StickerHistory.user_id)
+            .where(
+                col(Users.type) == UserType.service,
+                col(StickerHistory.class_grade) == grade,
+                col(StickerHistory.class_number) == number,
+                col(StickerHistory.created_at) >= period_start,
+            )
+        )
+        async with DatabaseCore.session() as session:
+            result = await session.execute(query)
+        return int(result.scalar() or 0)
+
+    @classmethod
+    async def grant_to_class(
+        cls, actor: User, grade: int, number: int, amount: int, *, memo: str | None = None
+    ) -> StickerClassGrant:
+        """
+        서비스 계정이 학급에 스티커를 직접 지급합니다.
+        학생 개인의 보유 수는 바뀌지 않고 학급 순위 합계에만 더해집니다.
+        기록은 교사의 학급 전달과 같은 형태(서비스 계정 기준 음수, `class_grade`, `class_number` 포함)로 남기며,
+        서비스 계정은 보유 수를 쓰지 않으므로 보유 수 확인과 주간 한도 검사를 하지 않습니다.
+
+        Args:
+            actor: 지급하는 서비스 계정
+            grade: 대상 학년
+            number: 대상 반
+            amount: 지급할 스티커 수
+            memo: 메모
+
+        Raises:
+            ValueError: 지급하는 유저가 서비스 계정이 아닌 경우 발생합니다.
+            ServiceError.NotFound: 해당 학급에 학생이 없는 경우 발생합니다.
+
+        Returns:
+            StickerClassGrant: 지급 결과와 이 학급에 지급한 누적 수
+        """
+        if actor.type != UserType.service:
+            raise ValueError("학급 스티커 지급은 서비스 계정만 할 수 있습니다.")
+
+        async with DatabaseCore.session() as session:
+            period_start = await cls.get_period_start()
+            await cls._ensure_class_exists(session, grade, number)
+
+            history = StickerHistory(
+                user_id=actor.id,
+                amount=-amount,
+                actor_id=actor.id,
+                memo=memo,
+                class_grade=grade,
+                class_number=number,
+            )
+            session.add(history)
+            await session.flush()
+
+        await on_sticker_changed()
+
+        LoggerCore.service_sticker.info(
+            f"스티커 학급 지급 - {actor.name}({actor.id}) -> {grade}학년 {number}반 {amount}개 (기록 ID {history.id})"
+        )
+        return StickerClassGrant(
+            grade=grade,
+            number=number,
+            granted=amount,
+            given_count=await cls.get_class_given_count(grade, number, period_start),
+            period_start=period_start,
+        )
+
     @classmethod
     async def reset(cls, actor: User):
         """
@@ -428,7 +541,7 @@ class Sticker(ServiceCore[StickerHistory], _Type):
             actor: 취소하는 유저
 
         Raises:
-            ServiceError.Conflict: 현재 집계 기간의 기록이고, 취소하면 대상 유저의 보유 수가 0 미만이 되는 경우 발생합니다.
+            ServiceError.Conflict: 현재 집계 기간의 지급(양수) 기록이고, 취소하면 대상 유저의 보유 수가 0 미만이 되는 경우 발생합니다.
         """
         async with self.session as session:
             # 보유 수 계산과 기록 삭제 사이에 다른 요청이 끼어들지 않도록 대상 유저 행을 잠급니다.
@@ -436,7 +549,9 @@ class Sticker(ServiceCore[StickerHistory], _Type):
 
             period_start = await self.get_period_start()
             # 이전 집계 기간의 기록은 현재 보유 수에 영향을 주지 않으므로 확인하지 않습니다.
-            if SchemaCore.sync_timezone(self.created_at) >= period_start:
+            # 음수 기록(회수 · 학급 전달 · 학급 지급)을 지우면 보유 수가 늘어나므로 지급 기록만 확인합니다.
+            # (서비스 계정의 학급 지급 기록만 있는 경우 보유 수가 음수라 모든 취소가 막히는 것을 막습니다)
+            if self.amount > 0 and SchemaCore.sync_timezone(self.created_at) >= period_start:
                 held = await self.get_count(self.user_id, period_start)
                 if held - self.amount < 0:
                     raise Conflict(f"이 기록을 취소하면 보유 수가 0 미만이 됩니다. (현재 {held}개)")
