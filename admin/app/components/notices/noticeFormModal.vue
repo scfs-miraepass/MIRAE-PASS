@@ -17,8 +17,7 @@ import PollFields from "~/components/notices/noticePollFields.vue";
 const { notice } = defineProps<{
     notice?: ManagedNotice;
 }>();
-// refresh: 공지는 저장했지만 설문 저장에 실패해 모달을 열어 둔 채 목록만 갱신할 때
-const emit = defineEmits(["close", "success", "refresh"]);
+const emit = defineEmits(["close", "success"]);
 const toast = useToast();
 
 const open = ref<boolean>(true);
@@ -54,18 +53,12 @@ watch(open, (value) => {
     if (!value) setTimeout(() => emit("close"), 200);
 });
 
-// 설문 저장(또는 삭제). 실패하면 오류 메시지를 돌려준다.
-async function savePoll(postId: number): Promise<string | null> {
-    if (pollLoadFailed.value) return null;
-    if (pollEnabled.value) {
-        const req = await $API.setPollPostsPostIdPollPut({ path: { post_id: postId }, body: toPollOperation(pollForm.value) });
-        return req.error ? noticeErrorMessage(req.error, "설문을 저장하지 못했습니다.") : null;
-    }
-    if (hadPoll) {
-        const req = await $API.deletePollPostsPostIdPollDelete({ path: { post_id: postId } });
-        return req.error ? noticeErrorMessage(req.error, "설문을 삭제하지 못했습니다.") : null;
-    }
-    return null;
+// PATCH /posts에 보낼 설문 값. 필드를 빼면 설문을 그대로 두고, null이면 삭제한다.
+// 기존 설문을 불러오지 못한 경우에는 덮어쓰거나 지우지 않도록 필드를 뺀다.
+function pollPatch() {
+    if (pollLoadFailed.value) return {};
+    if (pollEnabled.value) return { poll: toPollOperation(pollForm.value) };
+    return hadPoll ? { poll: null } : {};
 }
 
 async function onSubmit() {
@@ -94,23 +87,15 @@ async function onSubmit() {
         return;
     }
 
-    const req = await $API.updatePostPostsPostIdPatch({ path: { post_id: notice.id }, body });
+    // 공지와 설문을 한 번에 수정한다. (서버가 같은 트랜잭션에서 처리하므로 설문이 실패하면 공지 수정도 취소됨)
+    const req = await $API.updatePostPostsPostIdPatch({ path: { post_id: notice.id }, body: { ...body, ...pollPatch() } });
     if (req.error) {
         toast.add({
             title: "공지를 수정하지 못했습니다.",
-            description: "지속적으로 발생하는 경우 관리자에게 문의 바랍니다.",
+            description: noticeErrorMessage(req.error, "지속적으로 발생하는 경우 관리자에게 문의 바랍니다."),
             color: "error",
         });
         loading.value = false;
-        return;
-    }
-
-    const pollFailure = await savePoll(notice.id);
-    if (pollFailure) {
-        // 공지 내용은 이미 저장되었으므로 목록은 갱신하고, 모달은 열어 둔 채 설문만 다시 시도할 수 있게 한다.
-        toast.add({ title: "공지는 저장했지만 설문을 저장하지 못했습니다.", description: pollFailure, color: "error" });
-        loading.value = false;
-        emit("refresh");
         return;
     }
 

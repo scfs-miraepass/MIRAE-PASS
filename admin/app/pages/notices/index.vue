@@ -83,7 +83,6 @@ async function onDeleted() {
         :notice="action.notice"
         @close="action = undefined"
         @success="() => { action = undefined; refresh(); }"
-        @refresh="refresh()"
     />
     <DeleteModal v-if="action?.type === 'delete'" :notice="action.notice" @close="action = undefined" @success="onDeleted" />
     <PollResultModal v-if="action?.type === 'pollResult'" :notice="action.notice" @close="action = undefined" />
