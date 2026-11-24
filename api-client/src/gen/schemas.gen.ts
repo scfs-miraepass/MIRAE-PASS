@@ -1480,6 +1480,25 @@ export const ResponseModel_StickerBulkResult_Schema = {
     title: 'ResponseModel[StickerBulkResult]'
 } as const;
 
+export const ResponseModel_StickerClassGrantResult_Schema = {
+    properties: {
+        success: {
+            type: 'boolean',
+            title: 'Success'
+        },
+        data: {
+            $ref: '#/components/schemas/StickerClassGrantResult',
+            description: '응답 데이터'
+        }
+    },
+    type: 'object',
+    required: [
+        'success',
+        'data'
+    ],
+    title: 'ResponseModel[StickerClassGrantResult]'
+} as const;
+
 export const ResponseModel_StickerHistoryPage_Schema = {
     properties: {
         success: {
@@ -2053,6 +2072,46 @@ export const StickerBulkResultSchema = {
     title: 'StickerBulkResult'
 } as const;
 
+export const StickerClassGrantResultSchema = {
+    properties: {
+        grade: {
+            type: 'integer',
+            title: 'Grade',
+            description: '대상 학년'
+        },
+        number: {
+            type: 'integer',
+            title: 'Number',
+            description: '대상 반'
+        },
+        granted: {
+            type: 'integer',
+            title: 'Granted',
+            description: '이번 요청으로 지급한 스티커 수'
+        },
+        given_count: {
+            type: 'integer',
+            title: 'Given Count',
+            description: '현재 집계 기간에 서비스 계정이 이 학급에 지급한 누적 수 (이번 지급 포함)'
+        },
+        period_start: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Period Start',
+            description: '현재 집계 기간 시작 시각'
+        }
+    },
+    type: 'object',
+    required: [
+        'grade',
+        'number',
+        'granted',
+        'given_count',
+        'period_start'
+    ],
+    title: 'StickerClassGrantResult'
+} as const;
+
 export const StickerClassOperationSchema = {
     properties: {
         grade: {
@@ -2113,12 +2172,18 @@ export const StickerClassRankingResponseSchema = {
         count: {
             type: 'integer',
             title: 'Count',
-            description: '학급 스티커 합계 (학생 보유 + 교사 전달)'
+            description: '학급 스티커 합계 (학생 보유 + 교사 전달 + 서비스 계정 지급)'
         },
         teacher_count: {
             type: 'integer',
             title: 'Teacher Count',
             description: '교사가 이 학급에 전달한 스티커 수'
+        },
+        given_count: {
+            type: 'integer',
+            title: 'Given Count',
+            description: '서비스 계정이 이 학급에 직접 지급한 스티커 수',
+            default: 0
         },
         rank: {
             type: 'integer',
@@ -2132,6 +2197,7 @@ export const StickerClassRankingResponseSchema = {
         'number',
         'count',
         'teacher_count',
+        'given_count',
         'rank'
     ],
     title: 'StickerClassRankingResponse'
@@ -2152,7 +2218,7 @@ export const StickerHistoryItemSchema = {
         amount: {
             type: 'integer',
             title: 'Amount',
-            description: '변동 수량 (지급 양수, 회수 · 학급 전달 음수)'
+            description: '변동 수량 (지급 양수, 회수 · 학급 전달 · 학급 지급 음수)'
         },
         actor_id: {
             anyOf: [
@@ -2188,7 +2254,7 @@ export const StickerHistoryItemSchema = {
                 }
             ],
             title: 'Class Grade',
-            description: '교사가 학급에 전달한 경우 대상 학년'
+            description: '교사가 학급에 전달했거나 서비스 계정이 학급에 지급한 경우 대상 학년'
         },
         class_number: {
             anyOf: [
@@ -2200,7 +2266,7 @@ export const StickerHistoryItemSchema = {
                 }
             ],
             title: 'Class Number',
-            description: '교사가 학급에 전달한 경우 대상 반'
+            description: '교사가 학급에 전달했거나 서비스 계정이 학급에 지급한 경우 대상 반'
         },
         created_at: {
             type: 'string',

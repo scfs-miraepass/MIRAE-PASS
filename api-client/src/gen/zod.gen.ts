@@ -543,6 +543,25 @@ export const zResponseModelStickerBulkResult = z.object({
 });
 
 /**
+ * StickerClassGrantResult
+ */
+export const zStickerClassGrantResult = z.object({
+    grade: z.int(),
+    number: z.int(),
+    granted: z.int(),
+    given_count: z.int(),
+    period_start: z.iso.datetime({ offset: true })
+});
+
+/**
+ * ResponseModel[StickerClassGrantResult]
+ */
+export const zResponseModelStickerClassGrantResult = z.object({
+    success: z.boolean(),
+    data: zStickerClassGrantResult
+});
+
+/**
  * StickerClassOperation
  */
 export const zStickerClassOperation = z.object({
@@ -560,6 +579,7 @@ export const zStickerClassRankingResponse = z.object({
     number: z.int(),
     count: z.int(),
     teacher_count: z.int(),
+    given_count: z.int().default(0),
     rank: z.int()
 });
 
@@ -1179,6 +1199,13 @@ export const zGiveStickerToClassBody = zStickerClassOperation;
  * 학급 전달 성공
  */
 export const zGiveStickerToClassResponse = zResponseModelStickerBalance;
+
+export const zGrantStickerToClassBody = zStickerClassOperation;
+
+/**
+ * 학급 지급 성공
+ */
+export const zGrantStickerToClassResponse = zResponseModelStickerClassGrantResult;
 
 /**
  * 스티커 초기화 성공
