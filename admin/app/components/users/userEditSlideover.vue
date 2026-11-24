@@ -57,6 +57,10 @@ const permissionList = [
     { label: '노래방 참여', value: UserPermission.JOIN_KARAOKE, description: '노래방 예약에 참여(입찰)할 수 있는 권한' },
     { label: '노래방 관리', value: UserPermission.MANAGE_KARAOKE, description: '노래방 예약을 생성, 삭제, 최종 낙찰 처리 등 전반적으로 관리할 수 있는 권한' },
     { label: '노래방 보기', value: UserPermission.VIEW_KARAOKE, description: '노래방 예약 목록을 열람할 수 있는 권한' },
+    { label: '스티커 지급', value: UserPermission._GIVE_STICKER, description: '학생·교사에게 스티커를 지급할 수 있는 권한 (서비스 계정용)' },
+    { label: '스티커 보기', value: UserPermission.VIEW_STICKER, description: '자신의 스티커 보유 수와 스티커 랭킹(개인·학급)을 열람할 수 있는 권한' },
+    { label: '스티커 관리', value: UserPermission._MANAGE_STICKER, description: '스티커 지급·회수, 기록 조회·취소, 수동 초기화 등 전반적으로 관리할 수 있는 권한' },
+    { label: '학급에 스티커 전달', value: UserPermission.GIVE_CLASS_STICKER, description: '받은 스티커를 원하는 학급에 전달할 수 있는 권한 (교사용)' },
 ]
 
 const presetPermissions = [
