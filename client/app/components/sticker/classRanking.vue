@@ -69,13 +69,16 @@ const grouped = computed(() => {
                             :class="row.count > 0 ? 'light:text-black/50 dark:text-white/50' : 'light:text-black/30 dark:text-white/30'"
                         >
                             <UIcon name="i-ph-heart" class="inline-block align-[-2px]" /> {{ row.count }}개
-                            <span v-if="row.teacher_count > 0" class="ml-1.5 light:text-black/40 dark:text-white/40">
+                            <span v-if="row.teacher_count > 0" class="ml-1.5 whitespace-nowrap light:text-black/40 dark:text-white/40">
                                 선생님 +{{ row.teacher_count }}
+                            </span>
+                            <span v-if="row.given_count > 0" class="ml-1.5 whitespace-nowrap light:text-black/40 dark:text-white/40">
+                                학급 지급 +{{ row.given_count }}
                             </span>
                         </p>
                     </div>
                 </div>
-                <UBadge color="neutral" variant="subtle" class="mr-3">전체 {{ row.rank }}위</UBadge>
+                <UBadge color="neutral" variant="subtle" class="mr-3 shrink-0 whitespace-nowrap">전체 {{ row.rank }}위</UBadge>
             </div>
         </div>
     </div>
