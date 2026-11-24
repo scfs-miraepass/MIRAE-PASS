@@ -23,6 +23,10 @@ class PostCreateRequest(BaseModel):
 class PostUpdateRequest(BaseModel):
     title: str | None = Field(None, description="수정할 게시글 제목")
     content_data: dict | None = Field(None, description="수정할 게시글의 본문 데이터")
+    poll: PollOperation | None = Field(
+        None,
+        description="설문. 보내지 않으면 그대로 두고, 객체를 보내면 만들거나 수정하며, null을 보내면 삭제합니다.",
+    )
 
 
 @router.get(
@@ -133,11 +137,12 @@ async def create_post(request: PostCreateRequest, auth_data: LoginDep):
             401: "인증되지 않은 사용자",
             403: "권한이 없음",
             404: "게시글을 찾을 수 없음",
+            409: "응답이 있어 바꿀 수 없는 설문 내용이 포함됨",
         }
     ),
     status_code=status.HTTP_200_OK,
     summary="게시글 수정",
-    description="기존 게시글을 수정합니다.",
+    description="기존 게시글을 수정합니다. poll을 보내면 설문도 같은 트랜잭션에서 만들거나 수정하고, null을 보내면 삭제합니다.",
 )
 async def update_post(post_id: int, request: PostUpdateRequest, auth_data: LoginDep):
     user, _ = auth_data
@@ -154,7 +159,16 @@ async def update_post(post_id: int, request: PostUpdateRequest, auth_data: Login
             detail="Permission denied.",
         )
 
-    await post.edit(title=request.title, content=request.content_data)
+    try:
+        await post.edit(
+            title=request.title,
+            content=request.content_data,
+            # 필드를 보냈는지(null 포함)로 '그대로 두기'와 '삭제'를 구분합니다.
+            update_poll="poll" in request.model_fields_set,
+            poll=request.poll,
+        )
+    except Conflict as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
     return ResponseModel[Posts](success=True, data=post)
 
 

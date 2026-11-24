@@ -224,63 +224,75 @@ class Post(ServiceCore[Posts], _Type):
             Conflict: 응답이 있는 설문의 선택지를 바꾸려는 경우 발생합니다.
         """
         async with self.session as session:
-            # 같은 설문에 대한 응답 저장과 동시에 실행되지 않도록 설문 행을 잠급니다.
-            current = (
-                await session.execute(select(PostPolls).where(col(PostPolls.post_id) == self.id).with_for_update())
-            ).scalar_one_or_none()
-
-            if current is None:
-                await self.add_poll(session, self.id, poll)
-                created = True
-            else:
-                created = False
-                options = (
-                    (
-                        await session.execute(
-                            select(PostPollOptions)
-                            .where(col(PostPollOptions.post_id) == self.id)
-                            .order_by(col(PostPollOptions.order), col(PostPollOptions.id))
-                        )
-                    )
-                    .scalars()
-                    .all()
-                )
-
-                if [option.text for option in options] != poll.options:
-                    has_votes = (
-                        await session.execute(
-                            select(func.count()).select_from(PostPollVotes).where(col(PostPollVotes.post_id) == self.id)
-                        )
-                    ).scalar_one() > 0
-                    if has_votes:
-                        raise Conflict("응답이 있는 설문은 선택지를 바꿀 수 없습니다.")
-
-                    await session.execute(delete(PostPollOptions).where(col(PostPollOptions.post_id) == self.id))
-                    session.add_all(
-                        PostPollOptions(post_id=self.id, text=text, order=order)
-                        for order, text in enumerate(poll.options)
-                    )
-
-                current.question = poll.question
-                current.closes_at = self._to_db_time(poll.closes_at)
-                if current.allow_multiple and not poll.allow_multiple:
-                    # 복수 선택을 끄면 이미 여러 개를 고른 응답이 규칙과 맞지 않게 되므로 막습니다.
-                    multi_voters = (
-                        await session.execute(
-                            select(PostPollVotes.user_id)
-                            .where(col(PostPollVotes.post_id) == self.id)
-                            .group_by(col(PostPollVotes.user_id))
-                            .having(func.count() > 1)
-                            .limit(1)
-                        )
-                    ).first()
-                    if multi_voters is not None:
-                        raise Conflict("여러 개를 고른 응답이 있어 복수 선택을 끌 수 없습니다.")
-                current.allow_multiple = poll.allow_multiple
-                await session.flush()
+            created = await self._save_poll(session, poll)
 
         await on_post_changed(self.id)
         self.logs.service_post.info(f"설문 {'생성' if created else '수정'} - 게시글 ID {self.id}")
+
+    async def _save_poll(self, session: AsyncSession, poll: PollOperation) -> bool:
+        """
+        열린 세션에서 설문을 만들거나 수정합니다. 캐시 무효화와 로그는 호출한 쪽에서 커밋 후 처리합니다.
+
+        Returns:
+            새로 만들었으면 True, 기존 설문을 수정했으면 False
+
+        Raises:
+            Conflict: 응답이 있는 설문의 선택지를 바꾸려는 경우 발생합니다.
+        """
+        # 같은 설문에 대한 응답 저장과 동시에 실행되지 않도록 설문 행을 잠급니다.
+        current = (
+            await session.execute(select(PostPolls).where(col(PostPolls.post_id) == self.id).with_for_update())
+        ).scalar_one_or_none()
+
+        if current is None:
+            await self.add_poll(session, self.id, poll)
+            created = True
+        else:
+            created = False
+            options = (
+                (
+                    await session.execute(
+                        select(PostPollOptions)
+                        .where(col(PostPollOptions.post_id) == self.id)
+                        .order_by(col(PostPollOptions.order), col(PostPollOptions.id))
+                    )
+                )
+                .scalars()
+                .all()
+            )
+
+            if [option.text for option in options] != poll.options:
+                has_votes = (
+                    await session.execute(
+                        select(func.count()).select_from(PostPollVotes).where(col(PostPollVotes.post_id) == self.id)
+                    )
+                ).scalar_one() > 0
+                if has_votes:
+                    raise Conflict("응답이 있는 설문은 선택지를 바꿀 수 없습니다.")
+
+                await session.execute(delete(PostPollOptions).where(col(PostPollOptions.post_id) == self.id))
+                session.add_all(
+                    PostPollOptions(post_id=self.id, text=text, order=order) for order, text in enumerate(poll.options)
+                )
+
+            current.question = poll.question
+            current.closes_at = self._to_db_time(poll.closes_at)
+            if current.allow_multiple and not poll.allow_multiple:
+                # 복수 선택을 끄면 이미 여러 개를 고른 응답이 규칙과 맞지 않게 되므로 막습니다.
+                multi_voters = (
+                    await session.execute(
+                        select(PostPollVotes.user_id)
+                        .where(col(PostPollVotes.post_id) == self.id)
+                        .group_by(col(PostPollVotes.user_id))
+                        .having(func.count() > 1)
+                        .limit(1)
+                    )
+                ).first()
+                if multi_voters is not None:
+                    raise Conflict("여러 개를 고른 응답이 있어 복수 선택을 끌 수 없습니다.")
+            current.allow_multiple = poll.allow_multiple
+            await session.flush()
+        return created
 
     async def delete_poll(self):
         """
@@ -290,12 +302,16 @@ class Post(ServiceCore[Posts], _Type):
             NotFound: 설문이 없는 경우 발생합니다.
         """
         async with self.session as session:
-            result = await session.execute(delete(PostPolls).where(col(PostPolls.post_id) == self.id))
-            if result.rowcount == 0:
+            if not await self._remove_poll(session):
                 raise NotFound("설문이 없습니다.")
 
         await on_post_changed(self.id)
         self.logs.service_post.info(f"설문 삭제 - 게시글 ID {self.id}")
+
+    async def _remove_poll(self, session: AsyncSession) -> bool:
+        """열린 세션에서 설문과 응답을 삭제합니다. 삭제했으면 True, 설문이 없었으면 False를 돌려줍니다."""
+        result = await session.execute(delete(PostPolls).where(col(PostPolls.post_id) == self.id))
+        return result.rowcount > 0
 
     async def vote(self, *, user_id: int, option_ids: list[int]):
         """
@@ -388,14 +404,28 @@ class Post(ServiceCore[Posts], _Type):
             f"게시글 삭제 - ID {self.id}({self.title[:10] + '...' if len(self.title) > 10 else self.title})"
         )
 
-    async def edit(self, *, title: str | None = None, content: dict | None = None):
+    async def edit(
+        self,
+        *,
+        title: str | None = None,
+        content: dict | None = None,
+        update_poll: bool = False,
+        poll: PollOperation | None = None,
+    ):
         """
-        게시글을 수정합니다.
+        게시글을 수정합니다. 설문도 함께 바꾸는 경우 게시글과 같은 트랜잭션에서 처리해,
+        설문 저장이 실패하면 게시글 수정도 함께 취소됩니다.
 
         Args:
             title: 게시글의 제목
             content: 게시글의 본문 데이터
+            update_poll: 설문을 바꿀지 여부. False면 설문은 그대로 둡니다.
+            poll: update_poll이 True일 때 저장할 설문. None이면 설문을 삭제합니다. (설문이 없어도 오류 없음)
+
+        Raises:
+            Conflict: 응답이 있는 설문의 선택지를 바꾸려는 경우 발생합니다.
         """
+        poll_log = ""
         async with self.session as session:
             post = await session.merge(self._payload)
             if title is not None:
@@ -409,7 +439,13 @@ class Post(ServiceCore[Posts], _Type):
                     post.content = PostContent(data=content)
             await session.flush()
 
+            if update_poll:
+                if poll is not None:
+                    poll_log = ", 설문 생성" if await self._save_poll(session, poll) else ", 설문 수정"
+                elif await self._remove_poll(session):
+                    poll_log = ", 설문 삭제"
+
         await on_post_changed(self.id)
         self._payload = post
 
-        self.logs.service_post.info(f"게시글 수정 - ID {self.id}")
+        self.logs.service_post.info(f"게시글 수정 - ID {self.id}{poll_log}")
