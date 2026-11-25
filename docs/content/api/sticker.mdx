@@ -16,6 +16,7 @@ import { Callout } from 'nextra/components'
 | `GET` | `/sticker/users/{user_id}` | [유저 스티커 보유 수](#유저-스티커-보유-수) | `GIVE_STICKER` 또는 `MANAGE_STICKER` |
 | `GET` | `/sticker/ranking` | [개인 순위](#개인-순위) | `VIEW_STICKER` |
 | `GET` | `/sticker/ranking/class` | [학급 순위](#학급-순위) | `VIEW_STICKER` |
+| `GET` | `/sticker/classes` | [학급 목록](#학급-목록) | `GIVE_CLASS_STICKER`, `GIVE_STICKER`, `MANAGE_STICKER` 중 하나 |
 | `GET` | `/sticker/history` | [스티커 기록](#스티커-기록) | `MANAGE_STICKER` |
 | `DELETE` | `/sticker/history/{history_id}` | [스티커 기록 취소](#스티커-기록-취소) | `MANAGE_STICKER` |
 
@@ -310,6 +311,38 @@ if (req.error) {
 | `teacher_count` | 그중 교사가 [전달](#학급에-스티커-전달)한 수입니다. |
 | `given_count` | 그중 서비스 계정이 [직접 지급](#학급에-스티커-지급)한 수입니다. |
 | `rank` | 합계 기준 순위입니다. |
+
+## 학급 목록
+
+`GET /sticker/classes` · SDK `getStickerClasses`
+
+[학급 전달](#학급에-스티커-전달) · [학급 지급](#학급에-스티커-지급) 화면에서 고를 수 있는 학급(학년, 반) 목록을 가져옵니다.
+학생이 한 명 이상 있는 학급만 포함되며, 1학년 1반부터 학년, 반 순서입니다. 이 목록에 있는 학급은 전달 · 지급할 때 `404`가 나지 않습니다.
+
+```json
+{
+    "success": true,
+    "data": [
+        { "grade": 1, "number": 1 },
+        { "grade": 1, "number": 2 }
+    ]
+}
+```
+
+| 오류 | 이유 |
+| --- | --- |
+| `403` | 권한이 없습니다. |
+
+<Callout type="info">
+    학급 목록은 1시간 동안 캐시됩니다. 학생의 학년 · 반이 바뀐 직후에는 최대 1시간 동안 이전 목록이 보일 수 있습니다.
+</Callout>
+
+```ts
+const req = await $API.getStickerClasses()
+if (!req.error) {
+    const classes = req.data.data // [{ grade: 1, number: 1 }, ...]
+}
+```
 
 ## 스티커 기록
 
