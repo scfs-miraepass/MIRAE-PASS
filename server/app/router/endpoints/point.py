@@ -217,7 +217,7 @@ async def grant_points(
                 reason=reason,
                 memo=operation.memo,
                 type=operation.change_type,
-                no_total=user.type == UserType.service # 서비스 사용자가 지급하는 포인트는 누적 포인트에 반영하지 않음
+                no_total=user.type == UserType.service,  # 서비스 사용자가 지급하는 포인트는 누적 포인트에 반영하지 않음
             )
 
             # 교사가 포인트를 지급하는 경우, 교사에게도 지급
