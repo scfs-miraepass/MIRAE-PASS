@@ -1272,6 +1272,22 @@ export type ResponseModelListStampsList = {
 };
 
 /**
+ * ResponseModel[list[StickerClassItem]]
+ */
+export type ResponseModelListStickerClassItem = {
+    /**
+     * Success
+     */
+    success: boolean;
+    /**
+     * Data
+     *
+     * 응답 데이터
+     */
+    data: Array<StickerClassItem>;
+};
+
+/**
  * ResponseModel[list[StickerClassRankingResponse]]
  */
 export type ResponseModelListStickerClassRankingResponse = {
@@ -1566,6 +1582,24 @@ export type StickerClassGrantResult = {
      * 현재 집계 기간 시작 시각
      */
     period_start: Date;
+};
+
+/**
+ * StickerClassItem
+ */
+export type StickerClassItem = {
+    /**
+     * Grade
+     *
+     * 학년
+     */
+    grade: number;
+    /**
+     * Number
+     *
+     * 반
+     */
+    number: number;
 };
 
 /**
@@ -4069,6 +4103,35 @@ export type GetStickerClassRankingResponses = {
 };
 
 export type GetStickerClassRankingResponse = GetStickerClassRankingResponses[keyof GetStickerClassRankingResponses];
+
+export type GetStickerClassesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/sticker/classes';
+};
+
+export type GetStickerClassesErrors = {
+    /**
+     * 세션이 만료되었거나 유효하지 않음
+     */
+    401: ErrorResponse;
+    /**
+     * 권한이 없음
+     */
+    403: ErrorResponse;
+};
+
+export type GetStickerClassesError = GetStickerClassesErrors[keyof GetStickerClassesErrors];
+
+export type GetStickerClassesResponses = {
+    /**
+     * 학급 목록 조회 성공
+     */
+    200: ResponseModelListStickerClassItem;
+};
+
+export type GetStickerClassesResponse = GetStickerClassesResponses[keyof GetStickerClassesResponses];
 
 export type GetStickerHistoryData = {
     body?: never;

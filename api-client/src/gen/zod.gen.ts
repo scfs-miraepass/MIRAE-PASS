@@ -562,6 +562,22 @@ export const zResponseModelStickerClassGrantResult = z.object({
 });
 
 /**
+ * StickerClassItem
+ */
+export const zStickerClassItem = z.object({
+    grade: z.int(),
+    number: z.int()
+});
+
+/**
+ * ResponseModel[list[StickerClassItem]]
+ */
+export const zResponseModelListStickerClassItem = z.object({
+    success: z.boolean(),
+    data: z.array(zStickerClassItem)
+});
+
+/**
  * StickerClassOperation
  */
 export const zStickerClassOperation = z.object({
@@ -1241,6 +1257,11 @@ export const zGetStickerRankingResponse = zResponseModelListStickerRankingRespon
  * 스티커 학급 랭킹 조회 성공
  */
 export const zGetStickerClassRankingResponse = zResponseModelListStickerClassRankingResponse;
+
+/**
+ * 학급 목록 조회 성공
+ */
+export const zGetStickerClassesResponse = zResponseModelListStickerClassItem;
 
 export const zGetStickerHistoryQuery = z.object({
     user_id: z.int().nullish(),

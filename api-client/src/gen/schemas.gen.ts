@@ -1738,6 +1738,29 @@ export const ResponseModel_list_StampsList__Schema = {
     title: 'ResponseModel[list[StampsList]]'
 } as const;
 
+export const ResponseModel_list_StickerClassItem__Schema = {
+    properties: {
+        success: {
+            type: 'boolean',
+            title: 'Success'
+        },
+        data: {
+            items: {
+                $ref: '#/components/schemas/StickerClassItem'
+            },
+            type: 'array',
+            title: 'Data',
+            description: '응답 데이터'
+        }
+    },
+    type: 'object',
+    required: [
+        'success',
+        'data'
+    ],
+    title: 'ResponseModel[list[StickerClassItem]]'
+} as const;
+
 export const ResponseModel_list_StickerClassRankingResponse__Schema = {
     properties: {
         success: {
@@ -2110,6 +2133,27 @@ export const StickerClassGrantResultSchema = {
         'period_start'
     ],
     title: 'StickerClassGrantResult'
+} as const;
+
+export const StickerClassItemSchema = {
+    properties: {
+        grade: {
+            type: 'integer',
+            title: 'Grade',
+            description: '학년'
+        },
+        number: {
+            type: 'integer',
+            title: 'Number',
+            description: '반'
+        }
+    },
+    type: 'object',
+    required: [
+        'grade',
+        'number'
+    ],
+    title: 'StickerClassItem'
 } as const;
 
 export const StickerClassOperationSchema = {
