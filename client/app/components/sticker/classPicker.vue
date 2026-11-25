@@ -1,8 +1,28 @@
 <script setup lang="ts">
+import type { StickerClassItem } from "@miraepass/api-client";
+
 // 학년 · 반 선택 그리드. 교사의 학급 전달과 서비스 계정의 학급 지급 화면에서 함께 사용합니다.
-const GRADES = [1, 2, 3];
-// 1, 2학년은 6반(바이오 2 · 소프트 2 · 전기과 2), 3학년은 5반(바이오 2 · 소프트 2 · 전기과 1)
-const CLASS_COUNT: Record<number, number> = { 1: 6, 2: 6, 3: 5 };
+// 학급 목록은 서버에서 학생이 있는 학급(학년, 반)만 받아옵니다.
+const { data: classList, pending } = await useAsyncData(
+    "sticker.classes",
+    async (_nuxtApp, { signal }): Promise<StickerClassItem[]> => {
+        const req = await $API.getStickerClasses({ signal });
+        if (req.error) return [];
+        return req.data.data;
+    },
+    { default: () => [] },
+);
+
+// 학년별 반 목록 (서버 정렬: 학년, 반 오름차순)
+const classesByGrade = computed(() => {
+    const map = new Map<number, number[]>();
+    for (const item of classList.value) {
+        if (!map.has(item.grade)) map.set(item.grade, []);
+        map.get(item.grade)!.push(item.number);
+    }
+    return map;
+});
+const grades = computed(() => [...classesByGrade.value.keys()]);
 
 const grade = defineModel<number | undefined>("grade");
 const number = defineModel<number | undefined>("number");
@@ -10,9 +30,7 @@ defineProps<{
     disabled?: boolean;
 }>();
 
-const classes = computed(() =>
-    grade.value != null ? Array.from({ length: CLASS_COUNT[grade.value] ?? 0 }, (_, i) => i + 1) : [],
-);
+const classes = computed(() => (grade.value != null ? (classesByGrade.value.get(grade.value) ?? []) : []));
 const classSelected = computed(() => grade.value != null && number.value != null);
 
 const triggerVibration = (pattern: number | number[]) => {
@@ -23,8 +41,8 @@ const triggerVibration = (pattern: number | number[]) => {
 
 const selectGrade = (g: number) => {
     grade.value = g;
-    // 학년을 바꿔 반 수가 줄어든 경우 선택된 반 해제
-    if (number.value != null && number.value > (CLASS_COUNT[g] ?? 0)) number.value = undefined;
+    // 바꾼 학년에 없는 반이 선택되어 있으면 선택 해제
+    if (number.value != null && !(classesByGrade.value.get(g) ?? []).includes(number.value)) number.value = undefined;
     triggerVibration(10);
 };
 
@@ -38,9 +56,15 @@ const selectNumber = (c: number) => {
     <div>
         <!-- 학년 -->
         <p class="text-ui-p1 font-semibold mt-6 mb-2">학년</p>
-        <div class="grid grid-cols-3 gap-2">
+        <p
+            v-if="!pending && grades.length === 0"
+            class="text-ui-p2 h-12 flex items-center light:text-black/40 dark:text-white/40"
+        >
+            학급 정보를 불러오지 못했어요
+        </p>
+        <div class="grid grid-cols-3 gap-2" v-else>
             <UButton
-                v-for="g in GRADES"
+                v-for="g in grades"
                 :key="g"
                 :variant="grade === g ? 'solid' : 'outline'"
                 :disabled="disabled"
