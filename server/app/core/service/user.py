@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 from app.schemas import (
     PointHistory,
     PointHistoryType,
+    PollOperation,
     PostContent,
     Posts,
     Quests,
@@ -558,13 +559,14 @@ class User(ServiceCore[Users], _Type):
         await on_sticker_changed()
         self.logs.service_sticker.info(f"스티커 수동 초기화 - 처리 {self.name}({self.id})")
 
-    async def create_post(self, *, title: str, content: dict) -> Post:
+    async def create_post(self, *, title: str, content: dict, poll: PollOperation | None = None) -> Post:
         """
         게시글을 생성합니다.
 
         Args:
             title: 게시글의 제목
             content: 게시글의 본문 데이터
+            poll: 함께 만들 설문 (없으면 설문 없이 생성)
 
         Returns:
             Post
@@ -575,6 +577,10 @@ class User(ServiceCore[Users], _Type):
 
             session.add(obj)
             await session.flush()
+
+            # 설문이 빠진 공지가 남지 않도록 게시글과 같은 트랜잭션에서 만듭니다.
+            if poll is not None:
+                await Post.add_poll(session, obj.id, poll)
 
         await on_post_changed(count=True)
 

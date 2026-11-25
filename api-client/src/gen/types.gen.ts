@@ -594,6 +594,126 @@ export type PointOperation = {
 };
 
 /**
+ * PollOperation
+ */
+export type PollOperation = {
+    /**
+     * Question
+     *
+     * 설문 질문
+     */
+    question: string;
+    /**
+     * Options
+     *
+     * 선택지 내용 목록 (2~10개, 각 1~100자, 중복 불가)
+     */
+    options: Array<string>;
+    /**
+     * Allow Multiple
+     *
+     * 복수 선택 허용 여부
+     */
+    allow_multiple?: boolean;
+    /**
+     * Closes At
+     *
+     * 설문 마감 시각 (없으면 마감 없음)
+     */
+    closes_at?: Date | null;
+};
+
+/**
+ * PollOptionResponse
+ */
+export type PollOptionResponse = {
+    /**
+     * Id
+     *
+     * 선택지 고유 ID
+     */
+    id: number;
+    /**
+     * Text
+     *
+     * 선택지 내용
+     */
+    text: string;
+    /**
+     * Votes
+     *
+     * 선택한 인원 수 (작성자·관리 권한자에게만 제공)
+     */
+    votes?: number | null;
+};
+
+/**
+ * PollResponse
+ */
+export type PollResponse = {
+    /**
+     * Post Id
+     *
+     * 설문이 연결된 게시글 고유 ID
+     */
+    post_id: number;
+    /**
+     * Question
+     *
+     * 설문 질문
+     */
+    question: string;
+    /**
+     * Allow Multiple
+     *
+     * 복수 선택 허용 여부
+     */
+    allow_multiple: boolean;
+    /**
+     * Closes At
+     *
+     * 설문 마감 시각 (없으면 마감 없음)
+     */
+    closes_at?: Date | null;
+    /**
+     * Closed
+     *
+     * 마감 여부
+     */
+    closed: boolean;
+    /**
+     * Options
+     *
+     * 선택지 목록 (표시 순서)
+     */
+    options: Array<PollOptionResponse>;
+    /**
+     * My Option Ids
+     *
+     * 요청한 유저가 선택한 선택지 ID 목록
+     */
+    my_option_ids: Array<number>;
+    /**
+     * Voter Count
+     *
+     * 응답자 수 (작성자·관리 권한자에게만 제공)
+     */
+    voter_count?: number | null;
+};
+
+/**
+ * PollVote
+ */
+export type PollVote = {
+    /**
+     * Option Ids
+     *
+     * 선택한 선택지 ID 목록
+     */
+    option_ids: Array<number>;
+};
+
+/**
  * PostCreateRequest
  */
 export type PostCreateRequest = {
@@ -611,6 +731,10 @@ export type PostCreateRequest = {
     content_data: {
         [key: string]: unknown;
     };
+    /**
+     * 게시글과 함께 만들 설문 (없으면 설문 없이 작성)
+     */
+    poll?: PollOperation | null;
 };
 
 /**
@@ -661,6 +785,12 @@ export type PostResponse = {
     content_data?: {
         [key: string]: unknown;
     } | null;
+    /**
+     * Has Poll
+     *
+     * 설문이 연결되어 있는지 여부
+     */
+    has_poll?: boolean;
 };
 
 /**
@@ -681,6 +811,10 @@ export type PostUpdateRequest = {
     content_data?: {
         [key: string]: unknown;
     } | null;
+    /**
+     * 설문. 보내지 않으면 그대로 두고, 객체를 보내면 만들거나 수정하며, null을 보내면 삭제합니다.
+     */
+    poll?: PollOperation | null;
 };
 
 /**
@@ -1013,6 +1147,20 @@ export type ResponseModelPointHistory = {
      * 응답 데이터
      */
     data: PointHistory;
+};
+
+/**
+ * ResponseModel[PollResponse]
+ */
+export type ResponseModelPollResponse = {
+    /**
+     * Success
+     */
+    success: boolean;
+    /**
+     * 응답 데이터
+     */
+    data: PollResponse;
 };
 
 /**
@@ -3638,6 +3786,10 @@ export type UpdatePostPostsPostIdPatchErrors = {
      */
     404: ErrorResponse;
     /**
+     * 응답이 있어 바꿀 수 없는 설문 내용이 포함됨
+     */
+    409: ErrorResponse;
+    /**
      * Validation Error
      */
     422: HttpValidationError;
@@ -3653,6 +3805,140 @@ export type UpdatePostPostsPostIdPatchResponses = {
 };
 
 export type UpdatePostPostsPostIdPatchResponse = UpdatePostPostsPostIdPatchResponses[keyof UpdatePostPostsPostIdPatchResponses];
+
+export type GetPollPostsPostIdPollGetData = {
+    body?: never;
+    path: {
+        /**
+         * Post Id
+         */
+        post_id: number;
+    };
+    query?: never;
+    url: '/posts/{post_id}/poll';
+};
+
+export type GetPollPostsPostIdPollGetErrors = {
+    /**
+     * 인증되지 않은 사용자
+     */
+    401: ErrorResponse;
+    /**
+     * 권한이 없음
+     */
+    403: ErrorResponse;
+    /**
+     * 게시글 또는 설문을 찾을 수 없음
+     */
+    404: ErrorResponse;
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetPollPostsPostIdPollGetError = GetPollPostsPostIdPollGetErrors[keyof GetPollPostsPostIdPollGetErrors];
+
+export type GetPollPostsPostIdPollGetResponses = {
+    /**
+     * 설문 조회 성공
+     */
+    200: ResponseModelPollResponse;
+};
+
+export type GetPollPostsPostIdPollGetResponse = GetPollPostsPostIdPollGetResponses[keyof GetPollPostsPostIdPollGetResponses];
+
+export type CancelPollVotePostsPostIdPollVoteDeleteData = {
+    body?: never;
+    path: {
+        /**
+         * Post Id
+         */
+        post_id: number;
+    };
+    query?: never;
+    url: '/posts/{post_id}/poll/vote';
+};
+
+export type CancelPollVotePostsPostIdPollVoteDeleteErrors = {
+    /**
+     * 마감된 설문
+     */
+    400: ErrorResponse;
+    /**
+     * 인증되지 않은 사용자
+     */
+    401: ErrorResponse;
+    /**
+     * 권한이 없음
+     */
+    403: ErrorResponse;
+    /**
+     * 게시글 또는 설문을 찾을 수 없음
+     */
+    404: ErrorResponse;
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type CancelPollVotePostsPostIdPollVoteDeleteError = CancelPollVotePostsPostIdPollVoteDeleteErrors[keyof CancelPollVotePostsPostIdPollVoteDeleteErrors];
+
+export type CancelPollVotePostsPostIdPollVoteDeleteResponses = {
+    /**
+     * 설문 응답 취소 완료
+     */
+    204: void;
+};
+
+export type CancelPollVotePostsPostIdPollVoteDeleteResponse = CancelPollVotePostsPostIdPollVoteDeleteResponses[keyof CancelPollVotePostsPostIdPollVoteDeleteResponses];
+
+export type VotePollPostsPostIdPollVotePutData = {
+    body: PollVote;
+    path: {
+        /**
+         * Post Id
+         */
+        post_id: number;
+    };
+    query?: never;
+    url: '/posts/{post_id}/poll/vote';
+};
+
+export type VotePollPostsPostIdPollVotePutErrors = {
+    /**
+     * 마감되었거나 잘못된 선택
+     */
+    400: ErrorResponse;
+    /**
+     * 인증되지 않은 사용자
+     */
+    401: ErrorResponse;
+    /**
+     * 권한이 없음
+     */
+    403: ErrorResponse;
+    /**
+     * 게시글 또는 설문을 찾을 수 없음
+     */
+    404: ErrorResponse;
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type VotePollPostsPostIdPollVotePutError = VotePollPostsPostIdPollVotePutErrors[keyof VotePollPostsPostIdPollVotePutErrors];
+
+export type VotePollPostsPostIdPollVotePutResponses = {
+    /**
+     * 설문 응답 완료
+     */
+    200: ResponseModelPollResponse;
+};
+
+export type VotePollPostsPostIdPollVotePutResponse = VotePollPostsPostIdPollVotePutResponses[keyof VotePollPostsPostIdPollVotePutResponses];
 
 export type GetUserStampsStampGetData = {
     body?: never;

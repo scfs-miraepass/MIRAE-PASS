@@ -820,6 +820,184 @@ export const PointOperationSchema = {
     title: 'PointOperation'
 } as const;
 
+export const PollOperationSchema = {
+    properties: {
+        question: {
+            type: 'string',
+            maxLength: 200,
+            minLength: 1,
+            title: 'Question',
+            description: '설문 질문'
+        },
+        options: {
+            items: {
+                type: 'string',
+                maxLength: 100,
+                minLength: 1
+            },
+            type: 'array',
+            maxItems: 10,
+            minItems: 2,
+            title: 'Options',
+            description: '선택지 내용 목록 (2~10개, 각 1~100자, 중복 불가)'
+        },
+        allow_multiple: {
+            type: 'boolean',
+            title: 'Allow Multiple',
+            description: '복수 선택 허용 여부',
+            default: false
+        },
+        closes_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Closes At',
+            description: '설문 마감 시각 (없으면 마감 없음)'
+        }
+    },
+    type: 'object',
+    required: [
+        'question',
+        'options'
+    ],
+    title: 'PollOperation'
+} as const;
+
+export const PollOptionResponseSchema = {
+    properties: {
+        id: {
+            type: 'integer',
+            title: 'Id',
+            description: '선택지 고유 ID'
+        },
+        text: {
+            type: 'string',
+            title: 'Text',
+            description: '선택지 내용'
+        },
+        votes: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Votes',
+            description: '선택한 인원 수 (작성자·관리 권한자에게만 제공)'
+        }
+    },
+    type: 'object',
+    required: [
+        'id',
+        'text'
+    ],
+    title: 'PollOptionResponse'
+} as const;
+
+export const PollResponseSchema = {
+    properties: {
+        post_id: {
+            type: 'integer',
+            title: 'Post Id',
+            description: '설문이 연결된 게시글 고유 ID'
+        },
+        question: {
+            type: 'string',
+            title: 'Question',
+            description: '설문 질문'
+        },
+        allow_multiple: {
+            type: 'boolean',
+            title: 'Allow Multiple',
+            description: '복수 선택 허용 여부'
+        },
+        closes_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Closes At',
+            description: '설문 마감 시각 (없으면 마감 없음)'
+        },
+        closed: {
+            type: 'boolean',
+            title: 'Closed',
+            description: '마감 여부'
+        },
+        options: {
+            items: {
+                $ref: '#/components/schemas/PollOptionResponse'
+            },
+            type: 'array',
+            title: 'Options',
+            description: '선택지 목록 (표시 순서)'
+        },
+        my_option_ids: {
+            items: {
+                type: 'integer'
+            },
+            type: 'array',
+            title: 'My Option Ids',
+            description: '요청한 유저가 선택한 선택지 ID 목록'
+        },
+        voter_count: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Voter Count',
+            description: '응답자 수 (작성자·관리 권한자에게만 제공)'
+        }
+    },
+    type: 'object',
+    required: [
+        'post_id',
+        'question',
+        'allow_multiple',
+        'closed',
+        'options',
+        'my_option_ids'
+    ],
+    title: 'PollResponse'
+} as const;
+
+export const PollVoteSchema = {
+    properties: {
+        option_ids: {
+            items: {
+                type: 'integer'
+            },
+            type: 'array',
+            maxItems: 10,
+            minItems: 1,
+            title: 'Option Ids',
+            description: '선택한 선택지 ID 목록'
+        }
+    },
+    type: 'object',
+    required: [
+        'option_ids'
+    ],
+    title: 'PollVote'
+} as const;
+
 export const PostCreateRequestSchema = {
     properties: {
         title: {
@@ -832,6 +1010,17 @@ export const PostCreateRequestSchema = {
             type: 'object',
             title: 'Content Data',
             description: '게시글의 본문 데이터'
+        },
+        poll: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/PollOperation'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: '게시글과 함께 만들 설문 (없으면 설문 없이 작성)'
         }
     },
     type: 'object',
@@ -896,6 +1085,12 @@ export const PostResponseSchema = {
             ],
             title: 'Content Data',
             description: '게시글의 본문 JSON 데이터'
+        },
+        has_poll: {
+            type: 'boolean',
+            title: 'Has Poll',
+            description: '설문이 연결되어 있는지 여부',
+            default: false
         }
     },
     type: 'object',
@@ -932,6 +1127,17 @@ export const PostUpdateRequestSchema = {
             ],
             title: 'Content Data',
             description: '수정할 게시글의 본문 데이터'
+        },
+        poll: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/PollOperation'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: '설문. 보내지 않으면 그대로 두고, 객체를 보내면 만들거나 수정하며, null을 보내면 삭제합니다.'
         }
     },
     type: 'object',
@@ -1383,6 +1589,25 @@ export const ResponseModel_PointHistory_Schema = {
         'data'
     ],
     title: 'ResponseModel[PointHistory]'
+} as const;
+
+export const ResponseModel_PollResponse_Schema = {
+    properties: {
+        success: {
+            type: 'boolean',
+            title: 'Success'
+        },
+        data: {
+            $ref: '#/components/schemas/PollResponse',
+            description: '응답 데이터'
+        }
+    },
+    type: 'object',
+    required: [
+        'success',
+        'data'
+    ],
+    title: 'ResponseModel[PollResponse]'
 } as const;
 
 export const ResponseModel_PostResponse_Schema = {
