@@ -13,6 +13,8 @@ const actionList = computed<{
         permissions: PermissionCondition;
         // true면 여러 명을 골라 한 번에 넘깁니다. (system.user-select.users 사용)
         multiple?: boolean;
+        // 검색 대신 다른 방식으로 대상을 고르는 화면으로 가는 보조 버튼 (예: 학급 단위 스티커 지급)
+        secondary?: { label: string; icon: string; to: string };
     }
 }>(() => {
     return {
@@ -28,6 +30,10 @@ const actionList = computed<{
             searchTarget: ["student", "teacher"],
             permissions: [ UserPermission.GIVE_STICKER ],
             multiple: true,
+            // 학급 지급은 서버가 서비스 계정만 허용하므로 서비스 계정에게만 보여줍니다.
+            secondary: session.value?.type == "service"
+                ? { label: "학급 단위로 주기", icon: "i-ph-chalkboard-teacher", to: "/service/stickerClass" }
+                : undefined,
         },
         "grant-point": {
             title: "포인트 지급",
@@ -174,6 +180,20 @@ const onSubmitSelected = () => {
             @input="onSearchInput"
             v-model="search"
         />
+        <!-- 보조 버튼: 검색 대신 학급 단위로 대상을 고르는 화면으로 이동 -->
+        <UButton
+            v-if="action.secondary"
+            variant="soft"
+            color="neutral"
+            size="xl"
+            :icon="action.secondary.icon"
+            trailing-icon="i-ph-caret-right"
+            class="w-full mt-3 rounded-2xl justify-between"
+            :ui="{ trailingIcon: 'ml-auto' }"
+            @click="navigateTo(action.secondary.to)"
+        >
+            {{ action.secondary.label }}
+        </UButton>
         <!-- 다중 선택 모드: 고른 사용자 칩 (탭하면 해제) -->
         <div
             v-if="action.multiple && selectedUsers.length > 0"

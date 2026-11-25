@@ -820,6 +820,184 @@ export const PointOperationSchema = {
     title: 'PointOperation'
 } as const;
 
+export const PollOperationSchema = {
+    properties: {
+        question: {
+            type: 'string',
+            maxLength: 200,
+            minLength: 1,
+            title: 'Question',
+            description: '설문 질문'
+        },
+        options: {
+            items: {
+                type: 'string',
+                maxLength: 100,
+                minLength: 1
+            },
+            type: 'array',
+            maxItems: 10,
+            minItems: 2,
+            title: 'Options',
+            description: '선택지 내용 목록 (2~10개, 각 1~100자, 중복 불가)'
+        },
+        allow_multiple: {
+            type: 'boolean',
+            title: 'Allow Multiple',
+            description: '복수 선택 허용 여부',
+            default: false
+        },
+        closes_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Closes At',
+            description: '설문 마감 시각 (없으면 마감 없음)'
+        }
+    },
+    type: 'object',
+    required: [
+        'question',
+        'options'
+    ],
+    title: 'PollOperation'
+} as const;
+
+export const PollOptionResponseSchema = {
+    properties: {
+        id: {
+            type: 'integer',
+            title: 'Id',
+            description: '선택지 고유 ID'
+        },
+        text: {
+            type: 'string',
+            title: 'Text',
+            description: '선택지 내용'
+        },
+        votes: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Votes',
+            description: '선택한 인원 수 (작성자·관리 권한자에게만 제공)'
+        }
+    },
+    type: 'object',
+    required: [
+        'id',
+        'text'
+    ],
+    title: 'PollOptionResponse'
+} as const;
+
+export const PollResponseSchema = {
+    properties: {
+        post_id: {
+            type: 'integer',
+            title: 'Post Id',
+            description: '설문이 연결된 게시글 고유 ID'
+        },
+        question: {
+            type: 'string',
+            title: 'Question',
+            description: '설문 질문'
+        },
+        allow_multiple: {
+            type: 'boolean',
+            title: 'Allow Multiple',
+            description: '복수 선택 허용 여부'
+        },
+        closes_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Closes At',
+            description: '설문 마감 시각 (없으면 마감 없음)'
+        },
+        closed: {
+            type: 'boolean',
+            title: 'Closed',
+            description: '마감 여부'
+        },
+        options: {
+            items: {
+                $ref: '#/components/schemas/PollOptionResponse'
+            },
+            type: 'array',
+            title: 'Options',
+            description: '선택지 목록 (표시 순서)'
+        },
+        my_option_ids: {
+            items: {
+                type: 'integer'
+            },
+            type: 'array',
+            title: 'My Option Ids',
+            description: '요청한 유저가 선택한 선택지 ID 목록'
+        },
+        voter_count: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Voter Count',
+            description: '응답자 수 (작성자·관리 권한자에게만 제공)'
+        }
+    },
+    type: 'object',
+    required: [
+        'post_id',
+        'question',
+        'allow_multiple',
+        'closed',
+        'options',
+        'my_option_ids'
+    ],
+    title: 'PollResponse'
+} as const;
+
+export const PollVoteSchema = {
+    properties: {
+        option_ids: {
+            items: {
+                type: 'integer'
+            },
+            type: 'array',
+            maxItems: 10,
+            minItems: 1,
+            title: 'Option Ids',
+            description: '선택한 선택지 ID 목록'
+        }
+    },
+    type: 'object',
+    required: [
+        'option_ids'
+    ],
+    title: 'PollVote'
+} as const;
+
 export const PostCreateRequestSchema = {
     properties: {
         title: {
@@ -832,6 +1010,17 @@ export const PostCreateRequestSchema = {
             type: 'object',
             title: 'Content Data',
             description: '게시글의 본문 데이터'
+        },
+        poll: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/PollOperation'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: '게시글과 함께 만들 설문 (없으면 설문 없이 작성)'
         }
     },
     type: 'object',
@@ -896,6 +1085,12 @@ export const PostResponseSchema = {
             ],
             title: 'Content Data',
             description: '게시글의 본문 JSON 데이터'
+        },
+        has_poll: {
+            type: 'boolean',
+            title: 'Has Poll',
+            description: '설문이 연결되어 있는지 여부',
+            default: false
         }
     },
     type: 'object',
@@ -932,6 +1127,17 @@ export const PostUpdateRequestSchema = {
             ],
             title: 'Content Data',
             description: '수정할 게시글의 본문 데이터'
+        },
+        poll: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/PollOperation'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: '설문. 보내지 않으면 그대로 두고, 객체를 보내면 만들거나 수정하며, null을 보내면 삭제합니다.'
         }
     },
     type: 'object',
@@ -1385,6 +1591,25 @@ export const ResponseModel_PointHistory_Schema = {
     title: 'ResponseModel[PointHistory]'
 } as const;
 
+export const ResponseModel_PollResponse_Schema = {
+    properties: {
+        success: {
+            type: 'boolean',
+            title: 'Success'
+        },
+        data: {
+            $ref: '#/components/schemas/PollResponse',
+            description: '응답 데이터'
+        }
+    },
+    type: 'object',
+    required: [
+        'success',
+        'data'
+    ],
+    title: 'ResponseModel[PollResponse]'
+} as const;
+
 export const ResponseModel_PostResponse_Schema = {
     properties: {
         success: {
@@ -1478,6 +1703,25 @@ export const ResponseModel_StickerBulkResult_Schema = {
         'data'
     ],
     title: 'ResponseModel[StickerBulkResult]'
+} as const;
+
+export const ResponseModel_StickerClassGrantResult_Schema = {
+    properties: {
+        success: {
+            type: 'boolean',
+            title: 'Success'
+        },
+        data: {
+            $ref: '#/components/schemas/StickerClassGrantResult',
+            description: '응답 데이터'
+        }
+    },
+    type: 'object',
+    required: [
+        'success',
+        'data'
+    ],
+    title: 'ResponseModel[StickerClassGrantResult]'
 } as const;
 
 export const ResponseModel_StickerHistoryPage_Schema = {
@@ -1717,6 +1961,29 @@ export const ResponseModel_list_StampsList__Schema = {
         'data'
     ],
     title: 'ResponseModel[list[StampsList]]'
+} as const;
+
+export const ResponseModel_list_StickerClassItem__Schema = {
+    properties: {
+        success: {
+            type: 'boolean',
+            title: 'Success'
+        },
+        data: {
+            items: {
+                $ref: '#/components/schemas/StickerClassItem'
+            },
+            type: 'array',
+            title: 'Data',
+            description: '응답 데이터'
+        }
+    },
+    type: 'object',
+    required: [
+        'success',
+        'data'
+    ],
+    title: 'ResponseModel[list[StickerClassItem]]'
 } as const;
 
 export const ResponseModel_list_StickerClassRankingResponse__Schema = {
@@ -2053,6 +2320,67 @@ export const StickerBulkResultSchema = {
     title: 'StickerBulkResult'
 } as const;
 
+export const StickerClassGrantResultSchema = {
+    properties: {
+        grade: {
+            type: 'integer',
+            title: 'Grade',
+            description: '대상 학년'
+        },
+        number: {
+            type: 'integer',
+            title: 'Number',
+            description: '대상 반'
+        },
+        granted: {
+            type: 'integer',
+            title: 'Granted',
+            description: '이번 요청으로 지급한 스티커 수'
+        },
+        given_count: {
+            type: 'integer',
+            title: 'Given Count',
+            description: '현재 집계 기간에 서비스 계정이 이 학급에 지급한 누적 수 (이번 지급 포함)'
+        },
+        period_start: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Period Start',
+            description: '현재 집계 기간 시작 시각'
+        }
+    },
+    type: 'object',
+    required: [
+        'grade',
+        'number',
+        'granted',
+        'given_count',
+        'period_start'
+    ],
+    title: 'StickerClassGrantResult'
+} as const;
+
+export const StickerClassItemSchema = {
+    properties: {
+        grade: {
+            type: 'integer',
+            title: 'Grade',
+            description: '학년'
+        },
+        number: {
+            type: 'integer',
+            title: 'Number',
+            description: '반'
+        }
+    },
+    type: 'object',
+    required: [
+        'grade',
+        'number'
+    ],
+    title: 'StickerClassItem'
+} as const;
+
 export const StickerClassOperationSchema = {
     properties: {
         grade: {
@@ -2113,12 +2441,18 @@ export const StickerClassRankingResponseSchema = {
         count: {
             type: 'integer',
             title: 'Count',
-            description: '학급 스티커 합계 (학생 보유 + 교사 전달)'
+            description: '학급 스티커 합계 (학생 보유 + 교사 전달 + 서비스 계정 지급)'
         },
         teacher_count: {
             type: 'integer',
             title: 'Teacher Count',
             description: '교사가 이 학급에 전달한 스티커 수'
+        },
+        given_count: {
+            type: 'integer',
+            title: 'Given Count',
+            description: '서비스 계정이 이 학급에 직접 지급한 스티커 수',
+            default: 0
         },
         rank: {
             type: 'integer',
@@ -2132,6 +2466,7 @@ export const StickerClassRankingResponseSchema = {
         'number',
         'count',
         'teacher_count',
+        'given_count',
         'rank'
     ],
     title: 'StickerClassRankingResponse'
@@ -2152,7 +2487,7 @@ export const StickerHistoryItemSchema = {
         amount: {
             type: 'integer',
             title: 'Amount',
-            description: '변동 수량 (지급 양수, 회수 · 학급 전달 음수)'
+            description: '변동 수량 (지급 양수, 회수 · 학급 전달 · 학급 지급 음수)'
         },
         actor_id: {
             anyOf: [
@@ -2188,7 +2523,7 @@ export const StickerHistoryItemSchema = {
                 }
             ],
             title: 'Class Grade',
-            description: '교사가 학급에 전달한 경우 대상 학년'
+            description: '교사가 학급에 전달했거나 서비스 계정이 학급에 지급한 경우 대상 학년'
         },
         class_number: {
             anyOf: [
@@ -2200,7 +2535,7 @@ export const StickerHistoryItemSchema = {
                 }
             ],
             title: 'Class Number',
-            description: '교사가 학급에 전달한 경우 대상 반'
+            description: '교사가 학급에 전달했거나 서비스 계정이 학급에 지급한 경우 대상 반'
         },
         created_at: {
             type: 'string',

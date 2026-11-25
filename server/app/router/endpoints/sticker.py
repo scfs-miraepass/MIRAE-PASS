@@ -3,7 +3,7 @@ from math import ceil
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query, Response, status
-from pydantic import BaseModel, Field, field_serializer
+from pydantic import BaseModel, ConfigDict, Field, field_serializer
 from sqlalchemy import ColumnElement, Subquery, and_
 from sqlalchemy.orm import aliased
 from sqlmodel import col, func, select
@@ -11,7 +11,7 @@ from sqlmodel import col, func, select
 from app.core import LoginDep, ServiceClient
 from app.core.error import Conflict, LimitExceeded, NotFound
 from app.core.redis_keys import Keys
-from app.core.service.sticker import STICKER_MAX, STICKER_TARGET_TYPES, Sticker, StickerCount
+from app.core.service.sticker import STICKER_MAX, STICKER_TARGET_TYPES, Sticker, StickerClassGrant, StickerCount
 from app.schemas import StickerHistory, StickerHistoryItem, UserPermission, Users, UserSearch, UserSummary, UserType
 from app.schemas.core import SchemaCore
 from app.schemas.response import ResponseModel, api_responses
@@ -106,11 +106,36 @@ class StickerRankingResponse(BaseModel):
 
 
 class StickerClassRankingResponse(BaseModel):
+    # given_count가 없는 이전 캐시 항목도 읽을 수 있도록 기본값을 두되, SDK에서는 필수 필드로 생성되게 합니다.
+    model_config = ConfigDict(json_schema_serialization_defaults_required=True)
+
     grade: int = Field(..., description="학년")
     number: int = Field(..., description="반")
-    count: int = Field(..., description="학급 스티커 합계 (학생 보유 + 교사 전달)")
+    count: int = Field(..., description="학급 스티커 합계 (학생 보유 + 교사 전달 + 서비스 계정 지급)")
     teacher_count: int = Field(..., description="교사가 이 학급에 전달한 스티커 수")
+    given_count: int = Field(0, description="서비스 계정이 이 학급에 직접 지급한 스티커 수")
     rank: int = Field(..., description="합계 기준 순위")
+
+
+class StickerClassItem(BaseModel):
+    grade: int = Field(..., description="학년")
+    number: int = Field(..., description="반")
+
+
+class StickerClassGrantResult(BaseModel):
+    grade: int = Field(..., description="대상 학년")
+    number: int = Field(..., description="대상 반")
+    granted: int = Field(..., description="이번 요청으로 지급한 스티커 수")
+    given_count: int = Field(
+        ..., description="현재 집계 기간에 서비스 계정이 이 학급에 지급한 누적 수 (이번 지급 포함)"
+    )
+    period_start: datetime = Field(..., description="현재 집계 기간 시작 시각")
+
+    @field_serializer("period_start")
+    def serialize_period_start(self, dt: Any, _info):
+        if isinstance(dt, datetime):
+            return SchemaCore.sync_timezone(dt).isoformat()
+        return dt
 
 
 class StickerHistoryPage(BaseModel):
@@ -194,10 +219,12 @@ async def grant_sticker(data: StickerOperation, auth_data: LoginDep):
     if not (user.has_permission(UserPermission.GIVE_STICKER) or user.has_permission(UserPermission.MANAGE_STICKER)):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="권한이 없습니다.")
 
+    target = await client.get_user(data.user_id)
+    if target is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="유저를 찾을 수 없습니다.")
+
     try:
-        result = await Sticker.grant(data.user_id, user, data.amount, memo=data.memo)
-    except NotFound as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+        result = await user.sticker_grant(target, data.amount, memo=data.memo)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except LimitExceeded as e:
@@ -230,7 +257,7 @@ async def grant_stickers(data: StickerBulkOperation, auth_data: LoginDep):
     if not (user.has_permission(UserPermission.GIVE_STICKER) or user.has_permission(UserPermission.MANAGE_STICKER)):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="권한이 없습니다.")
 
-    results = await Sticker.grant_many(data.user_ids, user, data.amount, memo=data.memo)
+    results = await user.sticker_grant_many(data.user_ids, data.amount, memo=data.memo)
 
     return ResponseModel(
         success=True,
@@ -272,10 +299,12 @@ async def revoke_sticker(data: StickerOperation, auth_data: LoginDep):
     if not user.has_permission(UserPermission.MANAGE_STICKER):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="권한이 없습니다.")
 
+    target = await client.get_user(data.user_id)
+    if target is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="유저를 찾을 수 없습니다.")
+
     try:
-        result = await Sticker.revoke(data.user_id, user, data.amount, memo=data.memo)
-    except NotFound as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+        result = await user.sticker_revoke(target, data.amount, memo=data.memo)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Conflict as e:
@@ -307,13 +336,59 @@ async def give_sticker_to_class(data: StickerClassOperation, auth_data: LoginDep
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="권한이 없습니다.")
 
     try:
-        result = await Sticker.give_to_class(user, data.grade, data.number, data.amount, memo=data.memo)
+        result = await user.sticker_give_to_class(data.grade, data.number, data.amount, memo=data.memo)
     except Conflict as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
     except NotFound as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
     return ResponseModel(success=True, data=_balance(user.id, result))
+
+
+@router.post(
+    "/class/grant",
+    operation_id="grant_sticker_to_class",
+    response_model=ResponseModel[StickerClassGrantResult],
+    responses=api_responses(
+        {
+            200: "학급 지급 성공",
+            400: "서비스 계정이 아닌 유저가 지급 시도",
+            401: "세션이 만료되었거나 유효하지 않음",
+            403: "권한이 없음",
+            404: "해당 학급(학생)이 없음",
+        }
+    ),
+    status_code=status.HTTP_200_OK,
+    summary="학급에 스티커 지급 (서비스 계정)",
+    description=(
+        f"서비스 계정이 학급에 스티커를 1~{STICKER_MAX}개 직접 지급합니다. "
+        "학생 개인의 보유 수는 바뀌지 않고 학급 순위 합계에만 더해지며, 주간 한도는 적용되지 않습니다."
+    ),
+)
+async def grant_sticker_to_class(data: StickerClassOperation, auth_data: LoginDep):
+    user, _ = auth_data
+    if not (user.has_permission(UserPermission.GIVE_STICKER) or user.has_permission(UserPermission.MANAGE_STICKER)):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="권한이 없습니다.")
+
+    try:
+        result: StickerClassGrant = await user.sticker_grant_to_class(
+            data.grade, data.number, data.amount, memo=data.memo
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except NotFound as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+    return ResponseModel(
+        success=True,
+        data=StickerClassGrantResult(
+            grade=result.grade,
+            number=result.number,
+            granted=result.granted,
+            given_count=result.given_count,
+            period_start=result.period_start,
+        ),
+    )
 
 
 @router.post(
@@ -335,7 +410,7 @@ async def reset_stickers(auth_data: LoginDep):
     if not user.has_permission(UserPermission.MANAGE_STICKER):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="권한이 없습니다.")
 
-    await Sticker.reset(user)
+    await user.sticker_reset()
 
 
 @router.get(
@@ -359,7 +434,7 @@ async def get_my_sticker_balance(auth_data: LoginDep):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="권한이 없습니다.")
 
     if user.type in STICKER_TARGET_TYPES:
-        result = await Sticker.get_balance(user.id)
+        result = await user.get_sticker_balance()
     else:
         period_start = await Sticker.get_period_start()
         result = StickerCount(
@@ -394,7 +469,7 @@ async def get_user_sticker_balance(user_id: int, auth_data: LoginDep):
     if target is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="유저를 찾을 수 없습니다.")
 
-    return ResponseModel(success=True, data=_balance(target.id, await Sticker.get_balance(target.id)))
+    return ResponseModel(success=True, data=_balance(target.id, await target.get_sticker_balance()))
 
 
 @router.get(
@@ -529,7 +604,7 @@ async def get_sticker_ranking(
     status_code=status.HTTP_200_OK,
     summary="스티커 학급 랭킹 조회",
     description=(
-        "학급별(학년, 반) 스티커 합계를 조회합니다. "
+        "학급별(학년, 반) 스티커 합계를 조회합니다. 합계는 학생 보유 수 + 교사가 전달한 수 + 서비스 계정이 지급한 수입니다. "
         "결과는 1학년 1반부터 학년, 반 순으로 정렬되며 `rank`는 합계 기준 순위입니다."
     ),
 )
@@ -563,28 +638,46 @@ async def get_sticker_class_ranking(auth_data: LoginDep, response: Response):
         .group_by(col(Users.grade), col(Users.number))
         .order_by(col(Users.grade).asc(), col(Users.number).asc())
     )
-    # 교사가 학급에 전달한 합계 (전달 기록은 교사 기준 음수이므로 부호를 뒤집어 더합니다)
-    teacher_query = (
+    # 학급에 전달 · 지급된 합계 (기록은 전달 · 지급한 유저 기준 음수이므로 부호를 뒤집어 더합니다)
+    # 서비스 계정이 지급한 수(given_count)와 교사가 전달한 수(teacher_count)를 나누기 위해 유저 타입별로 묶습니다.
+    class_query = (
         select(
             col(StickerHistory.class_grade),
             col(StickerHistory.class_number),
+            col(Users.type).label("user_type"),
             func.coalesce(func.sum(-col(StickerHistory.amount)), 0).label("count"),
         )
+        .select_from(StickerHistory)
+        .join(Users, col(Users.id) == StickerHistory.user_id)
         .where(
             col(StickerHistory.class_grade).isnot(None),
             col(StickerHistory.class_number).isnot(None),
             col(StickerHistory.created_at) >= period_start,
         )
-        .group_by(col(StickerHistory.class_grade), col(StickerHistory.class_number))
+        .group_by(col(StickerHistory.class_grade), col(StickerHistory.class_number), col(Users.type))
     )
 
     async with client.session as session:
         student_rows = (await session.execute(student_query)).all()
-        teacher_rows = (await session.execute(teacher_query)).all()
+        class_rows = (await session.execute(class_query)).all()
 
-    teacher_counts = {(row.class_grade, row.class_number): int(row.count) for row in teacher_rows}
+    teacher_counts: dict[tuple[int, int], int] = {}
+    given_counts: dict[tuple[int, int], int] = {}
+    for row in class_rows:
+        key = (row.class_grade, row.class_number)
+        if row.user_type == UserType.service:
+            given_counts[key] = given_counts.get(key, 0) + int(row.count)
+        else:
+            teacher_counts[key] = teacher_counts.get(key, 0) + int(row.count)
     totals = [
-        (row.grade, row.number, int(row.count) + teacher_counts.get((row.grade, row.number), 0)) for row in student_rows
+        (
+            row.grade,
+            row.number,
+            int(row.count)
+            + teacher_counts.get((row.grade, row.number), 0)
+            + given_counts.get((row.grade, row.number), 0),
+        )
+        for row in student_rows
     ]
 
     # 정렬은 학년, 반 순을 유지하고 순위만 합계 기준 dense rank로 계산합니다.
@@ -595,10 +688,50 @@ async def get_sticker_class_ranking(auth_data: LoginDep, response: Response):
             number=number,
             count=total,
             teacher_count=teacher_counts.get((grade, number), 0),
+            given_count=given_counts.get((grade, number), 0),
             rank=rank_of[total],
         )
         for grade, number, total in totals
     ]
+    await client.redis.set(cache_key, [item.model_dump() for item in result])
+
+    return ResponseModel(success=True, data=result)
+
+
+@router.get(
+    "/classes",
+    operation_id="get_sticker_classes",
+    response_model=ResponseModel[list[StickerClassItem]],
+    responses=api_responses(
+        {
+            200: "학급 목록 조회 성공",
+            401: "세션이 만료되었거나 유효하지 않음",
+            403: "권한이 없음",
+        }
+    ),
+    status_code=status.HTTP_200_OK,
+    summary="스티커 학급 목록 조회",
+    description=(
+        "학급 전달 · 지급 화면에서 고를 수 있는 학급(학년, 반) 목록을 조회합니다. "
+        "학생이 한 명 이상 있는 학급만 포함되며, 1학년 1반부터 학년, 반 순으로 정렬됩니다."
+    ),
+)
+async def get_sticker_classes(auth_data: LoginDep, response: Response):
+    user, _ = auth_data
+    if not (
+        user.has_permission(UserPermission.GIVE_CLASS_STICKER)
+        or user.has_permission(UserPermission.GIVE_STICKER)
+        or user.has_permission(UserPermission.MANAGE_STICKER)
+    ):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="권한이 없습니다.")
+
+    cache_key = Keys.Sticker.CLASSES()
+    cached = await client.redis.get(cache_key)
+    if cached is not None:
+        response.headers["X-CACHED"] = "true"
+        return ResponseModel(success=True, data=[StickerClassItem(**item) for item in cached])
+
+    result = [StickerClassItem(grade=grade, number=number) for grade, number in await Sticker.list_classes()]
     await client.redis.set(cache_key, [item.model_dump() for item in result])
 
     return ResponseModel(success=True, data=result)

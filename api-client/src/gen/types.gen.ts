@@ -594,6 +594,126 @@ export type PointOperation = {
 };
 
 /**
+ * PollOperation
+ */
+export type PollOperation = {
+    /**
+     * Question
+     *
+     * 설문 질문
+     */
+    question: string;
+    /**
+     * Options
+     *
+     * 선택지 내용 목록 (2~10개, 각 1~100자, 중복 불가)
+     */
+    options: Array<string>;
+    /**
+     * Allow Multiple
+     *
+     * 복수 선택 허용 여부
+     */
+    allow_multiple?: boolean;
+    /**
+     * Closes At
+     *
+     * 설문 마감 시각 (없으면 마감 없음)
+     */
+    closes_at?: Date | null;
+};
+
+/**
+ * PollOptionResponse
+ */
+export type PollOptionResponse = {
+    /**
+     * Id
+     *
+     * 선택지 고유 ID
+     */
+    id: number;
+    /**
+     * Text
+     *
+     * 선택지 내용
+     */
+    text: string;
+    /**
+     * Votes
+     *
+     * 선택한 인원 수 (작성자·관리 권한자에게만 제공)
+     */
+    votes?: number | null;
+};
+
+/**
+ * PollResponse
+ */
+export type PollResponse = {
+    /**
+     * Post Id
+     *
+     * 설문이 연결된 게시글 고유 ID
+     */
+    post_id: number;
+    /**
+     * Question
+     *
+     * 설문 질문
+     */
+    question: string;
+    /**
+     * Allow Multiple
+     *
+     * 복수 선택 허용 여부
+     */
+    allow_multiple: boolean;
+    /**
+     * Closes At
+     *
+     * 설문 마감 시각 (없으면 마감 없음)
+     */
+    closes_at?: Date | null;
+    /**
+     * Closed
+     *
+     * 마감 여부
+     */
+    closed: boolean;
+    /**
+     * Options
+     *
+     * 선택지 목록 (표시 순서)
+     */
+    options: Array<PollOptionResponse>;
+    /**
+     * My Option Ids
+     *
+     * 요청한 유저가 선택한 선택지 ID 목록
+     */
+    my_option_ids: Array<number>;
+    /**
+     * Voter Count
+     *
+     * 응답자 수 (작성자·관리 권한자에게만 제공)
+     */
+    voter_count?: number | null;
+};
+
+/**
+ * PollVote
+ */
+export type PollVote = {
+    /**
+     * Option Ids
+     *
+     * 선택한 선택지 ID 목록
+     */
+    option_ids: Array<number>;
+};
+
+/**
  * PostCreateRequest
  */
 export type PostCreateRequest = {
@@ -611,6 +731,10 @@ export type PostCreateRequest = {
     content_data: {
         [key: string]: unknown;
     };
+    /**
+     * 게시글과 함께 만들 설문 (없으면 설문 없이 작성)
+     */
+    poll?: PollOperation | null;
 };
 
 /**
@@ -661,6 +785,12 @@ export type PostResponse = {
     content_data?: {
         [key: string]: unknown;
     } | null;
+    /**
+     * Has Poll
+     *
+     * 설문이 연결되어 있는지 여부
+     */
+    has_poll?: boolean;
 };
 
 /**
@@ -681,6 +811,10 @@ export type PostUpdateRequest = {
     content_data?: {
         [key: string]: unknown;
     } | null;
+    /**
+     * 설문. 보내지 않으면 그대로 두고, 객체를 보내면 만들거나 수정하며, null을 보내면 삭제합니다.
+     */
+    poll?: PollOperation | null;
 };
 
 /**
@@ -1016,6 +1150,20 @@ export type ResponseModelPointHistory = {
 };
 
 /**
+ * ResponseModel[PollResponse]
+ */
+export type ResponseModelPollResponse = {
+    /**
+     * Success
+     */
+    success: boolean;
+    /**
+     * 응답 데이터
+     */
+    data: PollResponse;
+};
+
+/**
  * ResponseModel[PostResponse]
  */
 export type ResponseModelPostResponse = {
@@ -1083,6 +1231,20 @@ export type ResponseModelStickerBulkResult = {
      * 응답 데이터
      */
     data: StickerBulkResult;
+};
+
+/**
+ * ResponseModel[StickerClassGrantResult]
+ */
+export type ResponseModelStickerClassGrantResult = {
+    /**
+     * Success
+     */
+    success: boolean;
+    /**
+     * 응답 데이터
+     */
+    data: StickerClassGrantResult;
 };
 
 /**
@@ -1255,6 +1417,22 @@ export type ResponseModelListStampsList = {
      * 응답 데이터
      */
     data: Array<StampsList>;
+};
+
+/**
+ * ResponseModel[list[StickerClassItem]]
+ */
+export type ResponseModelListStickerClassItem = {
+    /**
+     * Success
+     */
+    success: boolean;
+    /**
+     * Data
+     *
+     * 응답 데이터
+     */
+    data: Array<StickerClassItem>;
 };
 
 /**
@@ -1519,6 +1697,60 @@ export type StickerBulkResult = {
 };
 
 /**
+ * StickerClassGrantResult
+ */
+export type StickerClassGrantResult = {
+    /**
+     * Grade
+     *
+     * 대상 학년
+     */
+    grade: number;
+    /**
+     * Number
+     *
+     * 대상 반
+     */
+    number: number;
+    /**
+     * Granted
+     *
+     * 이번 요청으로 지급한 스티커 수
+     */
+    granted: number;
+    /**
+     * Given Count
+     *
+     * 현재 집계 기간에 서비스 계정이 이 학급에 지급한 누적 수 (이번 지급 포함)
+     */
+    given_count: number;
+    /**
+     * Period Start
+     *
+     * 현재 집계 기간 시작 시각
+     */
+    period_start: Date;
+};
+
+/**
+ * StickerClassItem
+ */
+export type StickerClassItem = {
+    /**
+     * Grade
+     *
+     * 학년
+     */
+    grade: number;
+    /**
+     * Number
+     *
+     * 반
+     */
+    number: number;
+};
+
+/**
  * StickerClassOperation
  */
 export type StickerClassOperation = {
@@ -1567,7 +1799,7 @@ export type StickerClassRankingResponse = {
     /**
      * Count
      *
-     * 학급 스티커 합계 (학생 보유 + 교사 전달)
+     * 학급 스티커 합계 (학생 보유 + 교사 전달 + 서비스 계정 지급)
      */
     count: number;
     /**
@@ -1576,6 +1808,12 @@ export type StickerClassRankingResponse = {
      * 교사가 이 학급에 전달한 스티커 수
      */
     teacher_count: number;
+    /**
+     * Given Count
+     *
+     * 서비스 계정이 이 학급에 직접 지급한 스티커 수
+     */
+    given_count: number;
     /**
      * Rank
      *
@@ -1605,7 +1843,7 @@ export type StickerHistoryItem = {
     /**
      * Amount
      *
-     * 변동 수량 (지급 양수, 회수 · 학급 전달 음수)
+     * 변동 수량 (지급 양수, 회수 · 학급 전달 · 학급 지급 음수)
      */
     amount: number;
     /**
@@ -1623,13 +1861,13 @@ export type StickerHistoryItem = {
     /**
      * Class Grade
      *
-     * 교사가 학급에 전달한 경우 대상 학년
+     * 교사가 학급에 전달했거나 서비스 계정이 학급에 지급한 경우 대상 학년
      */
     class_grade: number | null;
     /**
      * Class Number
      *
-     * 교사가 학급에 전달한 경우 대상 반
+     * 교사가 학급에 전달했거나 서비스 계정이 학급에 지급한 경우 대상 반
      */
     class_number: number | null;
     /**
@@ -3548,6 +3786,10 @@ export type UpdatePostPostsPostIdPatchErrors = {
      */
     404: ErrorResponse;
     /**
+     * 응답이 있어 바꿀 수 없는 설문 내용이 포함됨
+     */
+    409: ErrorResponse;
+    /**
      * Validation Error
      */
     422: HttpValidationError;
@@ -3563,6 +3805,140 @@ export type UpdatePostPostsPostIdPatchResponses = {
 };
 
 export type UpdatePostPostsPostIdPatchResponse = UpdatePostPostsPostIdPatchResponses[keyof UpdatePostPostsPostIdPatchResponses];
+
+export type GetPollPostsPostIdPollGetData = {
+    body?: never;
+    path: {
+        /**
+         * Post Id
+         */
+        post_id: number;
+    };
+    query?: never;
+    url: '/posts/{post_id}/poll';
+};
+
+export type GetPollPostsPostIdPollGetErrors = {
+    /**
+     * 인증되지 않은 사용자
+     */
+    401: ErrorResponse;
+    /**
+     * 권한이 없음
+     */
+    403: ErrorResponse;
+    /**
+     * 게시글 또는 설문을 찾을 수 없음
+     */
+    404: ErrorResponse;
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetPollPostsPostIdPollGetError = GetPollPostsPostIdPollGetErrors[keyof GetPollPostsPostIdPollGetErrors];
+
+export type GetPollPostsPostIdPollGetResponses = {
+    /**
+     * 설문 조회 성공
+     */
+    200: ResponseModelPollResponse;
+};
+
+export type GetPollPostsPostIdPollGetResponse = GetPollPostsPostIdPollGetResponses[keyof GetPollPostsPostIdPollGetResponses];
+
+export type CancelPollVotePostsPostIdPollVoteDeleteData = {
+    body?: never;
+    path: {
+        /**
+         * Post Id
+         */
+        post_id: number;
+    };
+    query?: never;
+    url: '/posts/{post_id}/poll/vote';
+};
+
+export type CancelPollVotePostsPostIdPollVoteDeleteErrors = {
+    /**
+     * 마감된 설문
+     */
+    400: ErrorResponse;
+    /**
+     * 인증되지 않은 사용자
+     */
+    401: ErrorResponse;
+    /**
+     * 권한이 없음
+     */
+    403: ErrorResponse;
+    /**
+     * 게시글 또는 설문을 찾을 수 없음
+     */
+    404: ErrorResponse;
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type CancelPollVotePostsPostIdPollVoteDeleteError = CancelPollVotePostsPostIdPollVoteDeleteErrors[keyof CancelPollVotePostsPostIdPollVoteDeleteErrors];
+
+export type CancelPollVotePostsPostIdPollVoteDeleteResponses = {
+    /**
+     * 설문 응답 취소 완료
+     */
+    204: void;
+};
+
+export type CancelPollVotePostsPostIdPollVoteDeleteResponse = CancelPollVotePostsPostIdPollVoteDeleteResponses[keyof CancelPollVotePostsPostIdPollVoteDeleteResponses];
+
+export type VotePollPostsPostIdPollVotePutData = {
+    body: PollVote;
+    path: {
+        /**
+         * Post Id
+         */
+        post_id: number;
+    };
+    query?: never;
+    url: '/posts/{post_id}/poll/vote';
+};
+
+export type VotePollPostsPostIdPollVotePutErrors = {
+    /**
+     * 마감되었거나 잘못된 선택
+     */
+    400: ErrorResponse;
+    /**
+     * 인증되지 않은 사용자
+     */
+    401: ErrorResponse;
+    /**
+     * 권한이 없음
+     */
+    403: ErrorResponse;
+    /**
+     * 게시글 또는 설문을 찾을 수 없음
+     */
+    404: ErrorResponse;
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type VotePollPostsPostIdPollVotePutError = VotePollPostsPostIdPollVotePutErrors[keyof VotePollPostsPostIdPollVotePutErrors];
+
+export type VotePollPostsPostIdPollVotePutResponses = {
+    /**
+     * 설문 응답 완료
+     */
+    200: ResponseModelPollResponse;
+};
+
+export type VotePollPostsPostIdPollVotePutResponse = VotePollPostsPostIdPollVotePutResponses[keyof VotePollPostsPostIdPollVotePutResponses];
 
 export type GetUserStampsStampGetData = {
     body?: never;
@@ -3794,6 +4170,47 @@ export type GiveStickerToClassResponses = {
 
 export type GiveStickerToClassResponse = GiveStickerToClassResponses[keyof GiveStickerToClassResponses];
 
+export type GrantStickerToClassData = {
+    body: StickerClassOperation;
+    path?: never;
+    query?: never;
+    url: '/sticker/class/grant';
+};
+
+export type GrantStickerToClassErrors = {
+    /**
+     * 서비스 계정이 아닌 유저가 지급 시도
+     */
+    400: ErrorResponse;
+    /**
+     * 세션이 만료되었거나 유효하지 않음
+     */
+    401: ErrorResponse;
+    /**
+     * 권한이 없음
+     */
+    403: ErrorResponse;
+    /**
+     * 해당 학급(학생)이 없음
+     */
+    404: ErrorResponse;
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GrantStickerToClassError = GrantStickerToClassErrors[keyof GrantStickerToClassErrors];
+
+export type GrantStickerToClassResponses = {
+    /**
+     * 학급 지급 성공
+     */
+    200: ResponseModelStickerClassGrantResult;
+};
+
+export type GrantStickerToClassResponse = GrantStickerToClassResponses[keyof GrantStickerToClassResponses];
+
 export type ResetStickersData = {
     body?: never;
     path?: never;
@@ -3972,6 +4389,35 @@ export type GetStickerClassRankingResponses = {
 };
 
 export type GetStickerClassRankingResponse = GetStickerClassRankingResponses[keyof GetStickerClassRankingResponses];
+
+export type GetStickerClassesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/sticker/classes';
+};
+
+export type GetStickerClassesErrors = {
+    /**
+     * 세션이 만료되었거나 유효하지 않음
+     */
+    401: ErrorResponse;
+    /**
+     * 권한이 없음
+     */
+    403: ErrorResponse;
+};
+
+export type GetStickerClassesError = GetStickerClassesErrors[keyof GetStickerClassesErrors];
+
+export type GetStickerClassesResponses = {
+    /**
+     * 학급 목록 조회 성공
+     */
+    200: ResponseModelListStickerClassItem;
+};
+
+export type GetStickerClassesResponse = GetStickerClassesResponses[keyof GetStickerClassesResponses];
 
 export type GetStickerHistoryData = {
     body?: never;

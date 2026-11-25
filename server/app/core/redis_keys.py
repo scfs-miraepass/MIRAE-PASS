@@ -175,6 +175,7 @@ class Keys:
         )
 
     class Sticker:
+        ITEM = RedisKey("sticker:item:{history_id}", ttl=5 * MINUTE, description="스티커 기록(history_id) 데이터")
         VERSION = RedisKey("sticker:ver", ttl=HOUR, description="스티커 랭킹/학급 랭킹 페이지 캐시 버전")
         RANKING = RedisKey(
             "sticker:ranking:{ver}:{period}:{week}:{limit}:{offset}",
@@ -192,6 +193,11 @@ class Keys:
             "sticker:class_ranking:{ver}:{period}",
             ttl=5 * MINUTE,
             description="학급별 스티커 합계 랭킹 (period: 현재 집계 기간 시작 시각)",
+        )
+        CLASSES = RedisKey(
+            "sticker:classes",
+            ttl=HOUR,
+            description="학생이 있는 학급(학년, 반) 목록 (학급 선택 화면용, 학생 생성 · 수정 · 삭제 시 삭제)",
         )
 
     class Search:

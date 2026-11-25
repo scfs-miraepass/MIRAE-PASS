@@ -199,11 +199,52 @@ export const zPointOperation = z.object({
 });
 
 /**
+ * PollOperation
+ */
+export const zPollOperation = z.object({
+    question: z.string().min(1).max(200),
+    options: z.array(z.string().min(1).max(100)).min(2).max(10),
+    allow_multiple: z.boolean().optional().default(false),
+    closes_at: z.iso.datetime({ offset: true }).nullish()
+});
+
+/**
+ * PollOptionResponse
+ */
+export const zPollOptionResponse = z.object({
+    id: z.int(),
+    text: z.string(),
+    votes: z.int().nullish()
+});
+
+/**
+ * PollResponse
+ */
+export const zPollResponse = z.object({
+    post_id: z.int(),
+    question: z.string(),
+    allow_multiple: z.boolean(),
+    closes_at: z.iso.datetime({ offset: true }).nullish(),
+    closed: z.boolean(),
+    options: z.array(zPollOptionResponse),
+    my_option_ids: z.array(z.int()),
+    voter_count: z.int().nullish()
+});
+
+/**
+ * PollVote
+ */
+export const zPollVote = z.object({
+    option_ids: z.array(z.int()).min(1).max(10)
+});
+
+/**
  * PostCreateRequest
  */
 export const zPostCreateRequest = z.object({
     title: z.string(),
-    content_data: z.record(z.string(), z.unknown())
+    content_data: z.record(z.string(), z.unknown()),
+    poll: zPollOperation.nullish()
 });
 
 /**
@@ -216,7 +257,8 @@ export const zPostResponse = z.object({
     created_at: z.iso.datetime({ offset: true }).optional(),
     updated_at: z.iso.datetime({ offset: true }).optional(),
     author_id: z.int(),
-    content_data: z.record(z.string(), z.unknown()).nullish()
+    content_data: z.record(z.string(), z.unknown()).nullish(),
+    has_poll: z.boolean().optional().default(false)
 });
 
 /**
@@ -224,7 +266,8 @@ export const zPostResponse = z.object({
  */
 export const zPostUpdateRequest = z.object({
     title: z.string().nullish(),
-    content_data: z.record(z.string(), z.unknown()).nullish()
+    content_data: z.record(z.string(), z.unknown()).nullish(),
+    poll: zPollOperation.nullish()
 });
 
 /**
@@ -338,6 +381,14 @@ export const zResponseModelKaraokes = z.object({
 export const zResponseModelPointHistory = z.object({
     success: z.boolean(),
     data: zPointHistory
+});
+
+/**
+ * ResponseModel[PollResponse]
+ */
+export const zResponseModelPollResponse = z.object({
+    success: z.boolean(),
+    data: zPollResponse
 });
 
 /**
@@ -543,6 +594,41 @@ export const zResponseModelStickerBulkResult = z.object({
 });
 
 /**
+ * StickerClassGrantResult
+ */
+export const zStickerClassGrantResult = z.object({
+    grade: z.int(),
+    number: z.int(),
+    granted: z.int(),
+    given_count: z.int(),
+    period_start: z.iso.datetime({ offset: true })
+});
+
+/**
+ * ResponseModel[StickerClassGrantResult]
+ */
+export const zResponseModelStickerClassGrantResult = z.object({
+    success: z.boolean(),
+    data: zStickerClassGrantResult
+});
+
+/**
+ * StickerClassItem
+ */
+export const zStickerClassItem = z.object({
+    grade: z.int(),
+    number: z.int()
+});
+
+/**
+ * ResponseModel[list[StickerClassItem]]
+ */
+export const zResponseModelListStickerClassItem = z.object({
+    success: z.boolean(),
+    data: z.array(zStickerClassItem)
+});
+
+/**
  * StickerClassOperation
  */
 export const zStickerClassOperation = z.object({
@@ -560,6 +646,7 @@ export const zStickerClassRankingResponse = z.object({
     number: z.int(),
     count: z.int(),
     teacher_count: z.int(),
+    given_count: z.int().default(0),
     rank: z.int()
 });
 
@@ -1140,6 +1227,35 @@ export const zUpdatePostPostsPostIdPatchPath = z.object({
  */
 export const zUpdatePostPostsPostIdPatchResponse = zResponseModelPosts;
 
+export const zGetPollPostsPostIdPollGetPath = z.object({
+    post_id: z.int()
+});
+
+/**
+ * 설문 조회 성공
+ */
+export const zGetPollPostsPostIdPollGetResponse = zResponseModelPollResponse;
+
+export const zCancelPollVotePostsPostIdPollVoteDeletePath = z.object({
+    post_id: z.int()
+});
+
+/**
+ * 설문 응답 취소 완료
+ */
+export const zCancelPollVotePostsPostIdPollVoteDeleteResponse = z.void();
+
+export const zVotePollPostsPostIdPollVotePutBody = zPollVote;
+
+export const zVotePollPostsPostIdPollVotePutPath = z.object({
+    post_id: z.int()
+});
+
+/**
+ * 설문 응답 완료
+ */
+export const zVotePollPostsPostIdPollVotePutResponse = zResponseModelPollResponse;
+
 /**
  * 정상 처리
  */
@@ -1180,6 +1296,13 @@ export const zGiveStickerToClassBody = zStickerClassOperation;
  */
 export const zGiveStickerToClassResponse = zResponseModelStickerBalance;
 
+export const zGrantStickerToClassBody = zStickerClassOperation;
+
+/**
+ * 학급 지급 성공
+ */
+export const zGrantStickerToClassResponse = zResponseModelStickerClassGrantResult;
+
 /**
  * 스티커 초기화 성공
  */
@@ -1214,6 +1337,11 @@ export const zGetStickerRankingResponse = zResponseModelListStickerRankingRespon
  * 스티커 학급 랭킹 조회 성공
  */
 export const zGetStickerClassRankingResponse = zResponseModelListStickerClassRankingResponse;
+
+/**
+ * 학급 목록 조회 성공
+ */
+export const zGetStickerClassesResponse = zResponseModelListStickerClassItem;
 
 export const zGetStickerHistoryQuery = z.object({
     user_id: z.int().nullish(),
