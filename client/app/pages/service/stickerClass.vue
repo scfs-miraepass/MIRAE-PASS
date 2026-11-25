@@ -138,7 +138,7 @@ const giveAnother = () => {
 
             <p class="text-ui-p2 my-5 flex items-center justify-center text-center light:text-black/50 dark:text-white/50">
                 <UIcon name="i-ph-info" class="mr-1 shrink-0" />
-                학급에 준 스티커는 학생 개인 보유 수가 아니라 학급 순위 합계에만 더해져요.
+                학급에 준 스티커는 학급 순위 합계에만 더해져요.
             </p>
             <div class="space-y-3 mb-3">
                 <UButton
