@@ -6,10 +6,6 @@ definePageMeta({
     permissions: [ UserPermission.GIVE_CLASS_STICKER ],
 });
 
-const GRADES = [1, 2, 3];
-// 1, 2학년은 6반(바이오 2 · 소프트 2 · 전기과 2), 3학년은 5반(바이오 2 · 소프트 2 · 전기과 1)
-const CLASS_COUNT: Record<number, number> = { 1: 6, 2: 6, 3: 5 };
-
 const toast = useToast();
 
 const grade = ref<number | undefined>();
@@ -32,9 +28,6 @@ const held = computed(() => balance.value?.count ?? 0);
 const maxCount = computed(() => balance.value?.max ?? 3);
 // 전달 성공 시 balance가 서버 응답(전달 후 보유 수)으로 갱신되므로 그대로 사용
 const afterCount = computed(() => held.value);
-const classes = computed(() =>
-    grade.value != null ? Array.from({ length: CLASS_COUNT[grade.value] ?? 0 }, (_, i) => i + 1) : [],
-);
 // 보유 수보다 많이 선택되어 있으면 줄임
 watch(
     held,
@@ -44,13 +37,6 @@ watch(
     { immediate: true },
 );
 const classSelected = computed(() => grade.value != null && number.value != null);
-
-const selectGrade = (g: number) => {
-    grade.value = g;
-    // 학년을 바꿔 반 수가 줄어든 경우 선택된 반 해제
-    if (number.value != null && number.value > (CLASS_COUNT[g] ?? 0)) number.value = undefined;
-    triggerVibration(10);
-};
 const canSubmit = computed(() => classSelected.value && held.value > 0 && amount.value <= held.value && !isLoading.value);
 
 // 완료 화면 배경 파티클 위치 (한 번만 계산)
@@ -118,39 +104,8 @@ const giveToClass = async () => {
                     <template v-if="held <= 0"> · 전달할 스티커가 없어요</template>
                 </p>
 
-                <!-- 학년 -->
-                <p class="text-ui-p1 font-semibold mt-6 mb-2">학년</p>
-                <div class="grid grid-cols-3 gap-2">
-                    <UButton
-                        v-for="g in GRADES"
-                        :key="g"
-                        :variant="grade === g ? 'solid' : 'outline'"
-                        class="rounded-2xl h-12 justify-center text-ui-p1"
-                        @click="selectGrade(g)"
-                    >
-                        {{ g }}학년
-                    </UButton>
-                </div>
-
-                <!-- 반 -->
-                <p class="text-ui-p1 font-semibold mt-5 mb-2">반</p>
-                <div class="grid grid-cols-6 gap-2" v-if="grade != null">
-                    <UButton
-                        v-for="c in classes"
-                        :key="c"
-                        :variant="number === c ? 'solid' : 'outline'"
-                        class="rounded-2xl h-12 justify-center text-ui-p1"
-                        @click="number = c; triggerVibration(10)"
-                    >
-                        {{ c }}반
-                    </UButton>
-                </div>
-                <p class="text-ui-p2 h-12 flex items-center light:text-black/40 dark:text-white/40" v-else>먼저 학년을 선택하세요</p>
-                <p class="text-ui-p2 mt-2 h-5" v-if="classSelected">
-                    {{ grade }}학년 {{ number }}반
-                    <span :class="stickerDepartment(number!).class">{{ stickerDepartment(number!).label }}</span>
-                </p>
-                <p class="text-ui-p2 mt-2 h-5 light:text-black/40 dark:text-white/40" v-else>학년과 반을 선택하세요</p>
+                <!-- 학년 · 반 -->
+                <StickerClassPicker v-model:grade="grade" v-model:number="number" :disabled="isLoading" />
 
                 <!-- 개수 -->
                 <p class="text-ui-p1 font-semibold mt-5 mb-2">개수</p>

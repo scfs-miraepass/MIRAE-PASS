@@ -117,7 +117,7 @@ class UserPermission(IntFlag):
 
     _GIVE_STICKER = 2**21
     GIVE_STICKER = _GIVE_STICKER | SEARCH_USER
-    """학생에게 스티커를 지급할 수 있는 권한 (기본: 서비스 계정)"""
+    """학생 · 교사에게 스티커를 지급하고 학급에 직접 지급할 수 있는 권한 (기본: 서비스 계정)"""
 
     VIEW_STICKER = 2**22
     """자신의 스티커 보유 수와 스티커 랭킹(개인/학급)을 확인할 수 있는 권한"""

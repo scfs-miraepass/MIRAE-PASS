@@ -1,3 +1,24 @@
+# [1.17.0-dev.4](https://github.com/scfs-miraepass/MIRAE-PASS/compare/v1.17.0-dev.3...v1.17.0-dev.4) (2026-11-25)
+
+
+### Bug Fixes
+
+* **server:** 서비스 사용자가 포인트 지급시 제한과 누적 포인트 반영 문제 해결 ([#35](https://github.com/scfs-miraepass/MIRAE-PASS/issues/35)) ([7433f49](https://github.com/scfs-miraepass/MIRAE-PASS/commit/7433f495b455b5bc5039db53acaf336f6492b4e2)), closes [#34](https://github.com/scfs-miraepass/MIRAE-PASS/issues/34)
+
+# [1.17.0-dev.3](https://github.com/scfs-miraepass/MIRAE-PASS/compare/v1.17.0-dev.2...v1.17.0-dev.3) (2026-11-25)
+
+
+### Features
+
+* 서비스 계정의 학급 스티커 지급 기능 추가 ([#32](https://github.com/scfs-miraepass/MIRAE-PASS/issues/32)) ([f12e40f](https://github.com/scfs-miraepass/MIRAE-PASS/commit/f12e40fb9921ba155c09cc27f26d9b99e90d316a))
+
+# [1.17.0-dev.2](https://github.com/scfs-miraepass/MIRAE-PASS/compare/v1.17.0-dev.1...v1.17.0-dev.2) (2026-11-24)
+
+
+### Bug Fixes
+
+* **admin:** 사용자 수정 화면에 스티커 권한 체크박스 추가 ([#31](https://github.com/scfs-miraepass/MIRAE-PASS/issues/31)) ([eddbd7f](https://github.com/scfs-miraepass/MIRAE-PASS/commit/eddbd7fec89171e2c9cbc679e8d3ce7a0ddc4395))
+
 # [1.17.0-dev.1](https://github.com/scfs-miraepass/MIRAE-PASS/compare/v1.16.0...v1.17.0-dev.1) (2026-11-24)
 
 

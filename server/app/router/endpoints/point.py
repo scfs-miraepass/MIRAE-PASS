@@ -194,13 +194,15 @@ async def grant_points(
             )
         reservations.append((grant_key, grant_expire, operation.amount))
 
-    if not await _reserve_limit(student_key, student_expire, STUDENT_POINT_LIMIT, operation.amount):
-        await _release_limits(reservations)
-        raise HTTPException(
-            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail="The target user's daily point limit has been exceeded.",
-        )
-    reservations.append((student_key, student_expire, operation.amount))
+    # 서비스 사용자가 지급하는 경우, 학생 하루 지급 한도 제한에 영향받지 않습니다. (이슈 #34)
+    if user.type != UserType.service:
+        if not await _reserve_limit(student_key, student_expire, STUDENT_POINT_LIMIT, operation.amount):
+            await _release_limits(reservations)
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail="The target user's daily point limit has been exceeded.",
+            )
+        reservations.append((student_key, student_expire, operation.amount))
 
     try:
         async with client.session:
@@ -215,6 +217,7 @@ async def grant_points(
                 reason=reason,
                 memo=operation.memo,
                 type=operation.change_type,
+                no_total=user.type == UserType.service # 서비스 사용자가 지급하는 포인트는 누적 포인트에 반영하지 않음
             )
 
             # 교사가 포인트를 지급하는 경우, 교사에게도 지급

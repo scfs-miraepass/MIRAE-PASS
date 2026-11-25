@@ -12,6 +12,7 @@ from app.core.config import settings
 
 settings.debug = False
 from app.core import ServiceClient
+from app.core.cache_events import on_user_created
 from app.schemas.users import Users, UserType, UserPermission
 
 client = ServiceClient()
@@ -119,6 +120,10 @@ async def main():
         async with client.session as session:
             await import_students(session)
             await import_teachers(session)
+
+        # 가져온 유저가 순위 · 검색 · 학급 목록에 바로 보이도록 관련 캐시를 지웁니다.
+        await on_user_created(UserType.student)
+        await on_user_created(UserType.teacher)
     finally:
         await client.close()
 

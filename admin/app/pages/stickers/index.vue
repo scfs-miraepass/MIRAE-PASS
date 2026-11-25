@@ -336,7 +336,7 @@ const onReset = async () => {
                 </template>
                 <template #amount-cell="{ row }">
                     <UBadge v-if="row.original.class_grade != null" color="info" variant="subtle">
-                        학급 전달 {{ -row.original.amount }}
+                        {{ row.original.user?.type === 'teacher' ? '학급 전달' : '학급 지급' }} {{ -row.original.amount }}
                     </UBadge>
                     <UBadge v-else :color="row.original.amount > 0 ? 'success' : 'error'" variant="subtle">
                         {{ row.original.amount > 0 ? `+${row.original.amount}` : row.original.amount }}
