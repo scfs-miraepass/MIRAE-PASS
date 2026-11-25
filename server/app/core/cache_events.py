@@ -32,6 +32,11 @@ async def _clear_sticker():
     await RedisCore.bump_version(Keys.Sticker.VERSION())
 
 
+async def _clear_sticker_classes():
+    """학급 선택 화면용 학급(학년, 반) 목록 캐시를 지웁니다. 학생 구성이 바뀔 때만 호출합니다."""
+    await RedisCore.delete(Keys.Sticker.CLASSES())
+
+
 # ---------- 유저 / 포인트 ----------
 
 
@@ -71,14 +76,16 @@ async def on_user_profile_changed(user_id: int, user_type: str):
     await _clear_ranking(user_type, count=True)
     if str(user_type) == "student":
         await _clear_sticker()
+        await _clear_sticker_classes()
     await RedisCore.delete_pattern(Keys.Search.USERS)
 
 
 async def on_user_created(user_type: str):
-    """새로운 유저가 생성된 경우 호출"""
+    """새로운 유저가 생성된 경우 호출 (학생을 추가하면 학급 목록이 바뀔 수 있음)"""
     await _clear_ranking(user_type, count=True)
     if str(user_type) == "student":
         await _clear_sticker()
+        await _clear_sticker_classes()
     await RedisCore.delete_pattern(Keys.Search.USERS)
 
 
@@ -94,6 +101,12 @@ async def on_user_deleted(user_id: int, user_type: str):
 async def on_sticker_changed():
     """스티커 지급 / 회수 / 수동 초기화와 같이 스티커 보유 수가 변동되는 경우 호출"""
     await _clear_sticker()
+
+
+async def on_sticker_history_deleted(history_id: int):
+    """스티커 기록이 삭제(취소)되는 경우 호출"""
+    await RedisCore.delete(Keys.Sticker.ITEM(history_id=history_id))
+    await on_sticker_changed()
 
 
 # ---------- 게시글 / 퀘스트 ----------

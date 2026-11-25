@@ -22,7 +22,11 @@ const successDescription = () => {
     const name = props.item.user?.name ?? props.item.user_id;
     const amount = Math.abs(props.item.amount);
     if (props.item.class_grade != null) {
-        return `${name} 선생님의 ${props.item.class_grade}학년 ${props.item.class_number}반 전달 ${amount}개 기록을 취소했습니다.`;
+        // 학급 기록: 교사는 보유분 전달, 서비스 계정은 직접 지급
+        if (props.item.user?.type === "teacher") {
+            return `${name} 선생님의 ${props.item.class_grade}학년 ${props.item.class_number}반 전달 ${amount}개 기록을 취소했습니다.`;
+        }
+        return `${name}의 ${props.item.class_grade}학년 ${props.item.class_number}반 지급 ${amount}개 기록을 취소했습니다.`;
     }
     const label = props.item.user?.type === "teacher" ? "선생님" : "학생";
     return `${name} ${label}의 스티커 ${props.item.amount > 0 ? "지급" : "회수"} ${amount}개 기록을 취소했습니다.`;
@@ -74,7 +78,7 @@ const onSubmit = async () => {
                 </p>
                 <p>
                     <UBadge v-if="item.class_grade != null" color="info" variant="subtle">
-                        {{ item.class_grade }}학년 {{ item.class_number }}반에 전달 {{ -item.amount }}
+                        {{ item.class_grade }}학년 {{ item.class_number }}반에 {{ item.user?.type === "teacher" ? "전달" : "지급" }} {{ -item.amount }}
                     </UBadge>
                     <UBadge v-else :color="item.amount > 0 ? 'success' : 'error'" variant="subtle">
                         {{ item.amount > 0 ? `+${item.amount}` : item.amount }}

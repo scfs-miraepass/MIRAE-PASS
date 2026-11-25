@@ -1086,6 +1086,20 @@ export type ResponseModelStickerBulkResult = {
 };
 
 /**
+ * ResponseModel[StickerClassGrantResult]
+ */
+export type ResponseModelStickerClassGrantResult = {
+    /**
+     * Success
+     */
+    success: boolean;
+    /**
+     * 응답 데이터
+     */
+    data: StickerClassGrantResult;
+};
+
+/**
  * ResponseModel[StickerHistoryPage]
  */
 export type ResponseModelStickerHistoryPage = {
@@ -1255,6 +1269,22 @@ export type ResponseModelListStampsList = {
      * 응답 데이터
      */
     data: Array<StampsList>;
+};
+
+/**
+ * ResponseModel[list[StickerClassItem]]
+ */
+export type ResponseModelListStickerClassItem = {
+    /**
+     * Success
+     */
+    success: boolean;
+    /**
+     * Data
+     *
+     * 응답 데이터
+     */
+    data: Array<StickerClassItem>;
 };
 
 /**
@@ -1519,6 +1549,60 @@ export type StickerBulkResult = {
 };
 
 /**
+ * StickerClassGrantResult
+ */
+export type StickerClassGrantResult = {
+    /**
+     * Grade
+     *
+     * 대상 학년
+     */
+    grade: number;
+    /**
+     * Number
+     *
+     * 대상 반
+     */
+    number: number;
+    /**
+     * Granted
+     *
+     * 이번 요청으로 지급한 스티커 수
+     */
+    granted: number;
+    /**
+     * Given Count
+     *
+     * 현재 집계 기간에 서비스 계정이 이 학급에 지급한 누적 수 (이번 지급 포함)
+     */
+    given_count: number;
+    /**
+     * Period Start
+     *
+     * 현재 집계 기간 시작 시각
+     */
+    period_start: Date;
+};
+
+/**
+ * StickerClassItem
+ */
+export type StickerClassItem = {
+    /**
+     * Grade
+     *
+     * 학년
+     */
+    grade: number;
+    /**
+     * Number
+     *
+     * 반
+     */
+    number: number;
+};
+
+/**
  * StickerClassOperation
  */
 export type StickerClassOperation = {
@@ -1567,7 +1651,7 @@ export type StickerClassRankingResponse = {
     /**
      * Count
      *
-     * 학급 스티커 합계 (학생 보유 + 교사 전달)
+     * 학급 스티커 합계 (학생 보유 + 교사 전달 + 서비스 계정 지급)
      */
     count: number;
     /**
@@ -1576,6 +1660,12 @@ export type StickerClassRankingResponse = {
      * 교사가 이 학급에 전달한 스티커 수
      */
     teacher_count: number;
+    /**
+     * Given Count
+     *
+     * 서비스 계정이 이 학급에 직접 지급한 스티커 수
+     */
+    given_count: number;
     /**
      * Rank
      *
@@ -1605,7 +1695,7 @@ export type StickerHistoryItem = {
     /**
      * Amount
      *
-     * 변동 수량 (지급 양수, 회수 · 학급 전달 음수)
+     * 변동 수량 (지급 양수, 회수 · 학급 전달 · 학급 지급 음수)
      */
     amount: number;
     /**
@@ -1623,13 +1713,13 @@ export type StickerHistoryItem = {
     /**
      * Class Grade
      *
-     * 교사가 학급에 전달한 경우 대상 학년
+     * 교사가 학급에 전달했거나 서비스 계정이 학급에 지급한 경우 대상 학년
      */
     class_grade: number | null;
     /**
      * Class Number
      *
-     * 교사가 학급에 전달한 경우 대상 반
+     * 교사가 학급에 전달했거나 서비스 계정이 학급에 지급한 경우 대상 반
      */
     class_number: number | null;
     /**
@@ -3794,6 +3884,47 @@ export type GiveStickerToClassResponses = {
 
 export type GiveStickerToClassResponse = GiveStickerToClassResponses[keyof GiveStickerToClassResponses];
 
+export type GrantStickerToClassData = {
+    body: StickerClassOperation;
+    path?: never;
+    query?: never;
+    url: '/sticker/class/grant';
+};
+
+export type GrantStickerToClassErrors = {
+    /**
+     * 서비스 계정이 아닌 유저가 지급 시도
+     */
+    400: ErrorResponse;
+    /**
+     * 세션이 만료되었거나 유효하지 않음
+     */
+    401: ErrorResponse;
+    /**
+     * 권한이 없음
+     */
+    403: ErrorResponse;
+    /**
+     * 해당 학급(학생)이 없음
+     */
+    404: ErrorResponse;
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GrantStickerToClassError = GrantStickerToClassErrors[keyof GrantStickerToClassErrors];
+
+export type GrantStickerToClassResponses = {
+    /**
+     * 학급 지급 성공
+     */
+    200: ResponseModelStickerClassGrantResult;
+};
+
+export type GrantStickerToClassResponse = GrantStickerToClassResponses[keyof GrantStickerToClassResponses];
+
 export type ResetStickersData = {
     body?: never;
     path?: never;
@@ -3972,6 +4103,35 @@ export type GetStickerClassRankingResponses = {
 };
 
 export type GetStickerClassRankingResponse = GetStickerClassRankingResponses[keyof GetStickerClassRankingResponses];
+
+export type GetStickerClassesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/sticker/classes';
+};
+
+export type GetStickerClassesErrors = {
+    /**
+     * 세션이 만료되었거나 유효하지 않음
+     */
+    401: ErrorResponse;
+    /**
+     * 권한이 없음
+     */
+    403: ErrorResponse;
+};
+
+export type GetStickerClassesError = GetStickerClassesErrors[keyof GetStickerClassesErrors];
+
+export type GetStickerClassesResponses = {
+    /**
+     * 학급 목록 조회 성공
+     */
+    200: ResponseModelListStickerClassItem;
+};
+
+export type GetStickerClassesResponse = GetStickerClassesResponses[keyof GetStickerClassesResponses];
 
 export type GetStickerHistoryData = {
     body?: never;

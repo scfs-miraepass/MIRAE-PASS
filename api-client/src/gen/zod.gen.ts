@@ -543,6 +543,41 @@ export const zResponseModelStickerBulkResult = z.object({
 });
 
 /**
+ * StickerClassGrantResult
+ */
+export const zStickerClassGrantResult = z.object({
+    grade: z.int(),
+    number: z.int(),
+    granted: z.int(),
+    given_count: z.int(),
+    period_start: z.iso.datetime({ offset: true })
+});
+
+/**
+ * ResponseModel[StickerClassGrantResult]
+ */
+export const zResponseModelStickerClassGrantResult = z.object({
+    success: z.boolean(),
+    data: zStickerClassGrantResult
+});
+
+/**
+ * StickerClassItem
+ */
+export const zStickerClassItem = z.object({
+    grade: z.int(),
+    number: z.int()
+});
+
+/**
+ * ResponseModel[list[StickerClassItem]]
+ */
+export const zResponseModelListStickerClassItem = z.object({
+    success: z.boolean(),
+    data: z.array(zStickerClassItem)
+});
+
+/**
  * StickerClassOperation
  */
 export const zStickerClassOperation = z.object({
@@ -560,6 +595,7 @@ export const zStickerClassRankingResponse = z.object({
     number: z.int(),
     count: z.int(),
     teacher_count: z.int(),
+    given_count: z.int().default(0),
     rank: z.int()
 });
 
@@ -1180,6 +1216,13 @@ export const zGiveStickerToClassBody = zStickerClassOperation;
  */
 export const zGiveStickerToClassResponse = zResponseModelStickerBalance;
 
+export const zGrantStickerToClassBody = zStickerClassOperation;
+
+/**
+ * 학급 지급 성공
+ */
+export const zGrantStickerToClassResponse = zResponseModelStickerClassGrantResult;
+
 /**
  * 스티커 초기화 성공
  */
@@ -1214,6 +1257,11 @@ export const zGetStickerRankingResponse = zResponseModelListStickerRankingRespon
  * 스티커 학급 랭킹 조회 성공
  */
 export const zGetStickerClassRankingResponse = zResponseModelListStickerClassRankingResponse;
+
+/**
+ * 학급 목록 조회 성공
+ */
+export const zGetStickerClassesResponse = zResponseModelListStickerClassItem;
 
 export const zGetStickerHistoryQuery = z.object({
     user_id: z.int().nullish(),
