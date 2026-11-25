@@ -1,3 +1,10 @@
+# [1.17.0-dev.5](https://github.com/scfs-miraepass/MIRAE-PASS/compare/v1.17.0-dev.4...v1.17.0-dev.5) (2026-11-25)
+
+
+### Features
+
+* 공지 설문 기능 추가 ([#30](https://github.com/scfs-miraepass/MIRAE-PASS/issues/30)) ([59add52](https://github.com/scfs-miraepass/MIRAE-PASS/commit/59add52c66b60ab9458b643638788100a2235750))
+
 # [1.17.0-dev.4](https://github.com/scfs-miraepass/MIRAE-PASS/compare/v1.17.0-dev.3...v1.17.0-dev.4) (2026-11-25)
 
 
