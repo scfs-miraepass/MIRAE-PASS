@@ -197,7 +197,7 @@ class Keys:
         CLASSES = RedisKey(
             "sticker:classes",
             ttl=HOUR,
-            description="학생이 있는 학급(학년, 반) 목록 (학급 선택 화면용, 학생 정보 변경 시 TTL로 만료)",
+            description="학생이 있는 학급(학년, 반) 목록 (학급 선택 화면용, 학생 생성 · 수정 · 삭제 시 삭제)",
         )
 
     class Search:
