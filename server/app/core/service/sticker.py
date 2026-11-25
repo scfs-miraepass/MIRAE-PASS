@@ -178,6 +178,29 @@ class Sticker(ServiceCore[StickerHistory], _Type):
         return int(result.scalar() or 0)
 
     @staticmethod
+    async def list_classes() -> list[tuple[int, int]]:
+        """
+        학생이 한 명 이상 있는 학급(학년, 반) 목록을 조회합니다.
+        `ensure_class_exists`와 같은 기준이므로, 이 목록에 있는 학급에는 학급 전달 · 지급을 할 수 있습니다.
+
+        Returns:
+            list[tuple[int, int]]: 학년, 반 순으로 정렬된 (학년, 반) 목록
+        """
+        query = (
+            select(col(Users.grade), col(Users.number))
+            .where(
+                col(Users.type) == UserType.student,
+                col(Users.grade).isnot(None),
+                col(Users.number).isnot(None),
+            )
+            .distinct()
+            .order_by(col(Users.grade).asc(), col(Users.number).asc())
+        )
+        async with DatabaseCore.session() as session:
+            rows = (await session.execute(query)).all()
+        return [(int(row.grade), int(row.number)) for row in rows]
+
+    @staticmethod
     async def ensure_class_exists(grade: int, number: int):
         """
         해당 학급에 학생이 한 명 이상 있는지 확인합니다.

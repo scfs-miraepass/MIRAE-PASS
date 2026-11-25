@@ -117,6 +117,11 @@ class StickerClassRankingResponse(BaseModel):
     rank: int = Field(..., description="합계 기준 순위")
 
 
+class StickerClassItem(BaseModel):
+    grade: int = Field(..., description="학년")
+    number: int = Field(..., description="반")
+
+
 class StickerClassGrantResult(BaseModel):
     grade: int = Field(..., description="대상 학년")
     number: int = Field(..., description="대상 반")
@@ -688,6 +693,45 @@ async def get_sticker_class_ranking(auth_data: LoginDep, response: Response):
         )
         for grade, number, total in totals
     ]
+    await client.redis.set(cache_key, [item.model_dump() for item in result])
+
+    return ResponseModel(success=True, data=result)
+
+
+@router.get(
+    "/classes",
+    operation_id="get_sticker_classes",
+    response_model=ResponseModel[list[StickerClassItem]],
+    responses=api_responses(
+        {
+            200: "학급 목록 조회 성공",
+            401: "세션이 만료되었거나 유효하지 않음",
+            403: "권한이 없음",
+        }
+    ),
+    status_code=status.HTTP_200_OK,
+    summary="스티커 학급 목록 조회",
+    description=(
+        "학급 전달 · 지급 화면에서 고를 수 있는 학급(학년, 반) 목록을 조회합니다. "
+        "학생이 한 명 이상 있는 학급만 포함되며, 1학년 1반부터 학년, 반 순으로 정렬됩니다."
+    ),
+)
+async def get_sticker_classes(auth_data: LoginDep, response: Response):
+    user, _ = auth_data
+    if not (
+        user.has_permission(UserPermission.GIVE_CLASS_STICKER)
+        or user.has_permission(UserPermission.GIVE_STICKER)
+        or user.has_permission(UserPermission.MANAGE_STICKER)
+    ):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="권한이 없습니다.")
+
+    cache_key = Keys.Sticker.CLASSES()
+    cached = await client.redis.get(cache_key)
+    if cached is not None:
+        response.headers["X-CACHED"] = "true"
+        return ResponseModel(success=True, data=[StickerClassItem(**item) for item in cached])
+
+    result = [StickerClassItem(grade=grade, number=number) for grade, number in await Sticker.list_classes()]
     await client.redis.set(cache_key, [item.model_dump() for item in result])
 
     return ResponseModel(success=True, data=result)
