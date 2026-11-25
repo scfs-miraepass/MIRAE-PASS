@@ -1,3 +1,18 @@
+# [1.17.0](https://github.com/scfs-miraepass/MIRAE-PASS/compare/v1.16.0...v1.17.0) (2026-11-25)
+
+
+### Bug Fixes
+
+* **admin:** 사용자 수정 화면에 스티커 권한 체크박스 추가 ([#31](https://github.com/scfs-miraepass/MIRAE-PASS/issues/31)) ([eddbd7f](https://github.com/scfs-miraepass/MIRAE-PASS/commit/eddbd7fec89171e2c9cbc679e8d3ce7a0ddc4395))
+* **server:** 서비스 사용자가 포인트 지급시 제한과 누적 포인트 반영 문제 해결 ([#35](https://github.com/scfs-miraepass/MIRAE-PASS/issues/35)) ([7433f49](https://github.com/scfs-miraepass/MIRAE-PASS/commit/7433f495b455b5bc5039db53acaf336f6492b4e2)), closes [#34](https://github.com/scfs-miraepass/MIRAE-PASS/issues/34)
+
+
+### Features
+
+* 공지 설문 기능 추가 ([#30](https://github.com/scfs-miraepass/MIRAE-PASS/issues/30)) ([59add52](https://github.com/scfs-miraepass/MIRAE-PASS/commit/59add52c66b60ab9458b643638788100a2235750))
+* 공지사항 화면 디자인 개선 및 전체 목록 화면 추가 ([#29](https://github.com/scfs-miraepass/MIRAE-PASS/issues/29)) ([160cf4b](https://github.com/scfs-miraepass/MIRAE-PASS/commit/160cf4b81107248886f1bfaf5a041e925ccc19b5))
+* 서비스 계정의 학급 스티커 지급 기능 추가 ([#32](https://github.com/scfs-miraepass/MIRAE-PASS/issues/32)) ([f12e40f](https://github.com/scfs-miraepass/MIRAE-PASS/commit/f12e40fb9921ba155c09cc27f26d9b99e90d316a))
+
 # [1.17.0-dev.5](https://github.com/scfs-miraepass/MIRAE-PASS/compare/v1.17.0-dev.4...v1.17.0-dev.5) (2026-11-25)
 
 
