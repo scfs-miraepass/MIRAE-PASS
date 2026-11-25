@@ -175,6 +175,7 @@ class User(ServiceCore[Users], _Type):
         reason: str,
         memo: str | None = None,
         type: PointHistoryType | None = None,
+        no_total: bool = False,
     ):
         """
         포인트를 지급합니다.
@@ -184,13 +185,17 @@ class User(ServiceCore[Users], _Type):
             reason: 포인트를 지급하는 이유
             memo: 포인트를 지급하는 추가적인 이유
             type: 포인트를 지급하는 이유의 카테고리(종류)
+            no_total: 누적 포인트(Users.total_point)에 포함시키지 않도록 합니다.
         """
         if type is None:
             type = PointHistoryType.etc
 
         async with self.session as session:
             user = await session.merge(self._payload)
+            before_total = user.total_point
             user.point += amount
+            if no_total:
+                user.total_point = before_total
 
             history = await self.create_history(changed=amount, reason=reason, memo=memo, type=type)
 
