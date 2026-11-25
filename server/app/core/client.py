@@ -135,14 +135,19 @@ class ServiceClient(BaseCore):
         return await Karaoke.get_by_id(karaoke_id=_id, cache=cache, save_cache=save_cache, lock=lock)
 
     @staticmethod
-    async def get_sticker(_id: int, /) -> Sticker | None:
+    async def get_sticker(
+        _id: int, /, *, cache: bool = False, save_cache: bool = True, lock: bool = False
+    ) -> Sticker | None:
         """
         ID를 이용해 스티커 기록을 가져옵니다.
 
         Args:
             _id: 스티커 기록 ID
+            cache: 캐시 사용 여부 (lock이 True 일경우 무시됨)
+            save_cache: 가져온 후 캐시를 저장 여부
+            lock: 조회후 Row-level Lock를 설정 여부
 
         Returns:
             Sticker | None
         """
-        return await Sticker.get_by_id(history_id=_id)
+        return await Sticker.get_by_id(history_id=_id, cache=cache, save_cache=save_cache, lock=lock)

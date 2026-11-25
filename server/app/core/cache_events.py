@@ -96,6 +96,12 @@ async def on_sticker_changed():
     await _clear_sticker()
 
 
+async def on_sticker_history_deleted(history_id: int):
+    """스티커 기록이 삭제(취소)되는 경우 호출"""
+    await RedisCore.delete(Keys.Sticker.ITEM(history_id=history_id))
+    await on_sticker_changed()
+
+
 # ---------- 게시글 / 퀘스트 ----------
 
 

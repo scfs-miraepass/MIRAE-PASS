@@ -214,10 +214,12 @@ async def grant_sticker(data: StickerOperation, auth_data: LoginDep):
     if not (user.has_permission(UserPermission.GIVE_STICKER) or user.has_permission(UserPermission.MANAGE_STICKER)):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="권한이 없습니다.")
 
+    target = await client.get_user(data.user_id)
+    if target is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="유저를 찾을 수 없습니다.")
+
     try:
-        result = await Sticker.grant(data.user_id, user, data.amount, memo=data.memo)
-    except NotFound as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+        result = await user.sticker_grant(target, data.amount, memo=data.memo)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except LimitExceeded as e:
@@ -250,7 +252,7 @@ async def grant_stickers(data: StickerBulkOperation, auth_data: LoginDep):
     if not (user.has_permission(UserPermission.GIVE_STICKER) or user.has_permission(UserPermission.MANAGE_STICKER)):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="권한이 없습니다.")
 
-    results = await Sticker.grant_many(data.user_ids, user, data.amount, memo=data.memo)
+    results = await user.sticker_grant_many(data.user_ids, data.amount, memo=data.memo)
 
     return ResponseModel(
         success=True,
@@ -292,10 +294,12 @@ async def revoke_sticker(data: StickerOperation, auth_data: LoginDep):
     if not user.has_permission(UserPermission.MANAGE_STICKER):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="권한이 없습니다.")
 
+    target = await client.get_user(data.user_id)
+    if target is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="유저를 찾을 수 없습니다.")
+
     try:
-        result = await Sticker.revoke(data.user_id, user, data.amount, memo=data.memo)
-    except NotFound as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+        result = await user.sticker_revoke(target, data.amount, memo=data.memo)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Conflict as e:
@@ -327,7 +331,7 @@ async def give_sticker_to_class(data: StickerClassOperation, auth_data: LoginDep
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="권한이 없습니다.")
 
     try:
-        result = await Sticker.give_to_class(user, data.grade, data.number, data.amount, memo=data.memo)
+        result = await user.sticker_give_to_class(data.grade, data.number, data.amount, memo=data.memo)
     except Conflict as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
     except NotFound as e:
@@ -362,8 +366,8 @@ async def grant_sticker_to_class(data: StickerClassOperation, auth_data: LoginDe
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="권한이 없습니다.")
 
     try:
-        result: StickerClassGrant = await Sticker.grant_to_class(
-            user, data.grade, data.number, data.amount, memo=data.memo
+        result: StickerClassGrant = await user.sticker_grant_to_class(
+            data.grade, data.number, data.amount, memo=data.memo
         )
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
@@ -401,7 +405,7 @@ async def reset_stickers(auth_data: LoginDep):
     if not user.has_permission(UserPermission.MANAGE_STICKER):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="권한이 없습니다.")
 
-    await Sticker.reset(user)
+    await user.sticker_reset()
 
 
 @router.get(
@@ -425,7 +429,7 @@ async def get_my_sticker_balance(auth_data: LoginDep):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="권한이 없습니다.")
 
     if user.type in STICKER_TARGET_TYPES:
-        result = await Sticker.get_balance(user.id)
+        result = await user.get_sticker_balance()
     else:
         period_start = await Sticker.get_period_start()
         result = StickerCount(
@@ -460,7 +464,7 @@ async def get_user_sticker_balance(user_id: int, auth_data: LoginDep):
     if target is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="유저를 찾을 수 없습니다.")
 
-    return ResponseModel(success=True, data=_balance(target.id, await Sticker.get_balance(target.id)))
+    return ResponseModel(success=True, data=_balance(target.id, await target.get_sticker_balance()))
 
 
 @router.get(

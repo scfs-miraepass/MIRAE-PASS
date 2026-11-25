@@ -175,6 +175,7 @@ class Keys:
         )
 
     class Sticker:
+        ITEM = RedisKey("sticker:item:{history_id}", ttl=5 * MINUTE, description="스티커 기록(history_id) 데이터")
         VERSION = RedisKey("sticker:ver", ttl=HOUR, description="스티커 랭킹/학급 랭킹 페이지 캐시 버전")
         RANKING = RedisKey(
             "sticker:ranking:{ver}:{period}:{week}:{limit}:{offset}",
