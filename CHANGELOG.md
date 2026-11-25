@@ -1,3 +1,10 @@
+# [1.17.0-dev.3](https://github.com/scfs-miraepass/MIRAE-PASS/compare/v1.17.0-dev.2...v1.17.0-dev.3) (2026-11-25)
+
+
+### Features
+
+* 서비스 계정의 학급 스티커 지급 기능 추가 ([#32](https://github.com/scfs-miraepass/MIRAE-PASS/issues/32)) ([f12e40f](https://github.com/scfs-miraepass/MIRAE-PASS/commit/f12e40fb9921ba155c09cc27f26d9b99e90d316a))
+
 # [1.17.0-dev.2](https://github.com/scfs-miraepass/MIRAE-PASS/compare/v1.17.0-dev.1...v1.17.0-dev.2) (2026-11-24)
 
 
