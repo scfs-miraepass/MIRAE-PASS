@@ -15,5 +15,6 @@ export default {
     stamp: "스탬프",
     sticker: "스티커",
     karaoke: "노래방 경매",
+    attendance: "출석체크",
     admin: "관리자",
 };
