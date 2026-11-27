@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { Motion } from "motion-v";
 import type { User, GetLimitResponse } from '@miraepass/api-client'
-import { useElementSize } from '@vueuse/core'
 import type { InputEmit } from '@/components/numberPad/index.vue'
 
 definePageMeta({
@@ -29,9 +28,7 @@ const amount = ref<number>(0);
 const isConfirm = ref<boolean>(false);
 const isLoading = ref<boolean>(false);
 const isComplete = ref<boolean>(false);
-const memoContainer = ref();
 const memoValue = ref<string>('');
-const { width: memoWidth } = useElementSize(memoContainer)
 const isDeduct = computed<boolean>(() => route.query.a == "deduct");
 const pointLimit = ref<GetLimitResponse>({
     limit: 0,
@@ -65,7 +62,7 @@ const onButton = async () => {
         target_user_id: userData.value.id!,
         amount: amount.value,
         change_type: history_type,
-        memo: memoValue.value.length > 0? memoValue.value : undefined
+        memo: memoValue.value.trim().length > 0 ? memoValue.value.trim() : undefined
     }
     if (isDeduct.value) {
         req = await $API.deductPointsPointDeductPost({ body: body });
@@ -78,10 +75,6 @@ const onButton = async () => {
     }
     isComplete.value = true;
 };
-
-const onMemoInput = (event: InputEvent) => {
-    memoValue.value = (event.target as HTMLInputElement).value;
-}
 
 const onInput = ({ value: val, vibration }: InputEmit) => {
     const currentStr = String(amount.value);
@@ -213,21 +206,30 @@ const onDelete = () => {
                         </template>
                     </p>
 
+                    <!-- 메모 (확인 단계에서만 표시) -->
                     <Motion
-                        as="button"
-                        class="flex justify-end max-w-[90%] overflow-clip w-fit text-ui-p2 px-3 py-1.5 rounded-xl dark:bg-muted light:text-black/45 dark:text-white/40 disabled:opacity-50"
+                        class="w-full"
                         :initial="{ marginTop: '-1.625rem', opacity: 0 }"
                         :animate="{
-                            marginTop: !isConfirm ? '-1.625rem' : '0.5rem',
-                            opacity: !isConfirm ? 0 : 1
+                            marginTop: !isConfirm ? '-1.625rem' : '1.5rem',
+                            opacity: !isConfirm ? 0 : 1,
                         }"
                         :transition="{
                             duration: 0.8,
                             ease: [0, 0.71, 0.2, 1.01],
                         }"
                     >
-                        <span class="absolute opacity-0 pointer-events-none" ref="memoContainer">{{ memoValue || '메모' }}</span>
-                        <input type="text" class="outline-none min-w-6" placeholder="메모" v-model="memoValue" @input="onMemoInput" :style="{ width: `${memoWidth}px` }" />
+                        <UInput
+                            v-model="memoValue"
+                            type="text"
+                            placeholder="메모 (선택)"
+                            maxlength="100"
+                            icon="i-ph-note-pencil"
+                            size="xl"
+                            class="w-full"
+                            :ui="{ base: 'rounded-xl' }"
+                            :disabled="!isConfirm || isLoading"
+                        />
                     </Motion>
                 </div>
             </div>
