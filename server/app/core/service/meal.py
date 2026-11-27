@@ -47,18 +47,22 @@ class Meal(BaseCore):
             day: 조회할 날짜
 
         Returns:
-            list[MealInfo]: 조식 → 중식 → 석식 순서. 급식이 없는 날은 빈 목록
+            list[MealInfo]: 조식 → 중식 → 석식 순서. 급식이 없는 날과 주말은 빈 목록
 
         Raises:
             ExternalServiceError: NEIS API 호출 또는 응답 처리에 실패했을 경우 발생합니다.
         """
+        # 토요일 · 일요일은 급식이 없으므로 NEIS를 호출하지 않고 빈 목록을 반환합니다.
+        if day.weekday() >= 5:
+            return []
+
         key = Keys.Meal.DAY(date=day.strftime("%Y%m%d"))
         cached = await self.redis.get(key)
         if cached is not None:
             return [MealInfo(**item) for item in cached]
 
         meals = self.parse_rows(await self._fetch_rows(day))
-        # 급식이 없는 날(빈 목록)도 캐시해 주말 · 방학에 NEIS를 반복 호출하지 않습니다. 실패는 캐시하지 않습니다.
+        # 급식이 없는 날(빈 목록)도 캐시해 공휴일 · 방학에 NEIS를 반복 호출하지 않습니다. 실패는 캐시하지 않습니다.
         await self.redis.set(key, [meal.model_dump(mode="json") for meal in meals])
         return meals
 
