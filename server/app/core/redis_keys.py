@@ -200,6 +200,13 @@ class Keys:
             description="학생이 있는 학급(학년, 반) 목록 (학급 선택 화면용, 학생 생성 · 수정 · 삭제 시 삭제)",
         )
 
+    class Neis:
+        OFF_DAYS = RedisKey(
+            "neis:off_days:{year_month}",
+            ttl=6 * HOUR,
+            description="NEIS 학사일정에서 가져온 해당 월(year_month; YYYYMM)의 출석 불가일(휴업일 · 공휴일) 목록",
+        )
+
     class Search:
         USERS = RedisKey(
             "search:users:{query}:{types}",

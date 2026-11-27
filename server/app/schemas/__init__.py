@@ -1,3 +1,4 @@
+from .attendance import Attendances, AttendanceResult, AttendanceStatus
 from .point import PointHistory, PointHistoryType
 from .post import (
     PollOperation,
@@ -18,6 +19,9 @@ from .users import User, UserPermission, Users, UserSearch, UserSummary, UserTyp
 from .karaokes import Karaokes, KaraokeBids, KaraokeMembers, KaraokePartis, KaraokeStatus
 
 __all__ = [
+    "AttendanceResult",
+    "AttendanceStatus",
+    "Attendances",
     "PointHistory",
     "PointHistoryType",
     "PollOperation",

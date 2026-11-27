@@ -24,6 +24,14 @@ class Service(BaseModel):
     session: Session = Field(Session(), alias="SESSION")
 
 
+class Neis(BaseModel):
+    """NEIS 교육정보 개방 포털 Open API 설정 (출석체크의 학사일정 조회에 사용)"""
+
+    api_key: str = Field(alias="API_KEY")
+    office_code: str = Field(alias="OFFICE_CODE")  # 시도교육청코드 (ATPT_OFCDC_SC_CODE)
+    school_code: str = Field(alias="SCHOOL_CODE")  # 행정표준코드 (SD_SCHUL_CODE)
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         case_sensitive=True,
@@ -35,6 +43,7 @@ class Settings(BaseSettings):
     database: Database = Field(alias="DATABASE")
     redis: Redis = Field(alias="REDIS")
     service: Service = Field(Service(), alias="SERVICE")
+    neis: Neis | None = Field(None, alias="NEIS")
     debug: bool = Field(False, alias="DEBUG")
     database_debug: bool = Field(False, alias="DATABASE_DEBUG")
     allow_origins: Annotated[list[str], NoDecode] = Field(alias="ALLOWED_ORIGINS")

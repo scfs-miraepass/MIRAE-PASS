@@ -117,6 +117,94 @@ export const AdminUserUpdateRequestSchema = {
     title: 'AdminUserUpdateRequest'
 } as const;
 
+export const AttendanceResultSchema = {
+    properties: {
+        attend_date: {
+            type: 'string',
+            format: 'date',
+            title: 'Attend Date',
+            description: '출석일 (KST)'
+        },
+        streak: {
+            type: 'integer',
+            title: 'Streak',
+            description: '연속 출석 일수'
+        },
+        reward: {
+            type: 'integer',
+            title: 'Reward',
+            description: '지급한 포인트'
+        },
+        bonus: {
+            type: 'boolean',
+            title: 'Bonus',
+            description: '연속 출석 보너스인지'
+        },
+        point: {
+            type: 'integer',
+            title: 'Point',
+            description: '지급 후 보유 포인트'
+        }
+    },
+    type: 'object',
+    required: [
+        'attend_date',
+        'streak',
+        'reward',
+        'bonus',
+        'point'
+    ],
+    title: 'AttendanceResult',
+    description: '출석체크 결과'
+} as const;
+
+export const AttendanceStatusSchema = {
+    properties: {
+        today: {
+            type: 'string',
+            format: 'date',
+            title: 'Today',
+            description: '오늘 날짜 (KST)'
+        },
+        available: {
+            type: 'boolean',
+            title: 'Available',
+            description: '오늘 출석할 수 있는 날인지 (주말 · 휴업일 · 공휴일이면 false)'
+        },
+        attended: {
+            type: 'boolean',
+            title: 'Attended',
+            description: '오늘 이미 출석했는지'
+        },
+        streak: {
+            type: 'integer',
+            title: 'Streak',
+            description: '현재 연속 출석 일수 (끊겼으면 0)'
+        },
+        days_to_bonus: {
+            type: 'integer',
+            title: 'Days To Bonus',
+            description: '다음 보너스까지 남은 출석 일수 (오늘 출석하면 받는 경우 1)'
+        },
+        reward: {
+            type: 'integer',
+            title: 'Reward',
+            description: '다음 출석 때 받을 포인트'
+        }
+    },
+    type: 'object',
+    required: [
+        'today',
+        'available',
+        'attended',
+        'streak',
+        'days_to_bonus',
+        'reward'
+    ],
+    title: 'AttendanceStatus',
+    description: '오늘의 출석체크 상태'
+} as const;
+
 export const ChangePasswordFormSchema = {
     properties: {
         old_password: {
@@ -771,7 +859,9 @@ export const PointHistoryTypeSchema = {
         'stamp',
         'stamp_bonus',
         'karaoke_bid',
-        'karaoke_cancel'
+        'karaoke_cancel',
+        'attendance',
+        'attendance_bonus'
     ],
     title: 'PointHistoryType'
 } as const;
@@ -1437,6 +1527,44 @@ export const RankingResponseSchema = {
         'rank'
     ],
     title: 'RankingResponse'
+} as const;
+
+export const ResponseModel_AttendanceResult_Schema = {
+    properties: {
+        success: {
+            type: 'boolean',
+            title: 'Success'
+        },
+        data: {
+            $ref: '#/components/schemas/AttendanceResult',
+            description: '응답 데이터'
+        }
+    },
+    type: 'object',
+    required: [
+        'success',
+        'data'
+    ],
+    title: 'ResponseModel[AttendanceResult]'
+} as const;
+
+export const ResponseModel_AttendanceStatus_Schema = {
+    properties: {
+        success: {
+            type: 'boolean',
+            title: 'Success'
+        },
+        data: {
+            $ref: '#/components/schemas/AttendanceStatus',
+            description: '응답 데이터'
+        }
+    },
+    type: 'object',
+    required: [
+        'success',
+        'data'
+    ],
+    title: 'ResponseModel[AttendanceStatus]'
 } as const;
 
 export const ResponseModel_GetLimitResponse_Schema = {
@@ -2833,10 +2961,11 @@ export const UserPermissionSchema = {
         8388608,
         8519680,
         16777216,
-        5652928,
-        22464962,
+        33554432,
+        39207360,
+        56019394,
         14296592,
-        33554431
+        67108863
     ],
     title: 'UserPermission',
     description: '유저 권한 IntFlag.\n작명시 `동사_목적`으로 작성하며, 대문자로만 작성한다.\n예) 포인트 관리 -> MANAGE_POINT',
@@ -2875,6 +3004,7 @@ export const UserPermissionSchema = {
         '_MANAGE_STICKER',
         'MANAGE_STICKER',
         'GIVE_CLASS_STICKER',
+        'CHECK_ATTENDANCE',
         'STUDENT',
         'TEACHER',
         'ADMIN',
@@ -2915,6 +3045,7 @@ export const UserPermissionSchema = {
         '_MANAGE_STICKER',
         'MANAGE_STICKER',
         'GIVE_CLASS_STICKER',
+        'CHECK_ATTENDANCE',
         'STUDENT',
         'TEACHER',
         'ADMIN',

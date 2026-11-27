@@ -11,6 +11,7 @@ import Karaoke from "@/components/home/section/karaoke.vue";
 import Sticker from "@/components/home/section/sticker.vue";
 import StickerGive from "@/components/home/section/stickerGive.vue";
 import Notice from "~/components/home/notice.vue";
+import Attendance from "~/components/home/attendance.vue";
 
 const session = useSession()
 const sectionItem = computed(() => {
@@ -41,6 +42,7 @@ const sectionItem = computed(() => {
     <div class="pb-2 mt-2.5 flex-1 flex flex-col">
         <Notice class="mb-3" />
         <Point v-if="hasPermission(session!.permissions, UserPermission.VIEW_POINT)" />
+        <Attendance v-if="hasPermission(session!.permissions, UserPermission.CHECK_ATTENDANCE)" />
         <Section class="mt-3" v-if="sectionItem.length > 0">
             <component v-for="i in sectionItem" :is="i" />
         </Section>
