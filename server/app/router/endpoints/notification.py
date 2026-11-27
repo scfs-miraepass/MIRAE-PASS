@@ -22,6 +22,7 @@ notification = Notification()
 
 @router.get(
     "/key",
+    operation_id="get_notification_key",
     response_model=ResponseModel[NotificationKey],
     responses=api_responses(
         {
@@ -44,6 +45,7 @@ async def get_notification_key(auth_data: LoginDep):
 
 @router.put(
     "/subscription",
+    operation_id="subscribe_notification",
     responses=api_responses(
         {
             204: "구독 등록 성공",
@@ -75,6 +77,7 @@ async def subscribe_notification(operation: PushSubscriptionOperation, request: 
 
 @router.delete(
     "/subscription",
+    operation_id="unsubscribe_notification",
     responses=api_responses(
         {
             204: "구독 해제 성공 (구독이 없어도 성공)",
@@ -92,6 +95,7 @@ async def unsubscribe_notification(operation: PushSubscriptionDelete, auth_data:
 
 @router.post(
     "/send",
+    operation_id="send_notification",
     response_model=ResponseModel[NotificationSendResult],
     responses=api_responses(
         {
