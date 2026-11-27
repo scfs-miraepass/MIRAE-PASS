@@ -13,17 +13,6 @@ from ..core import BaseCore
 from ..error import ExternalServiceError
 from ..redis_keys import Keys
 
-MEAL_TIMEZONE = ZoneInfo("Asia/Seoul")
-"""'오늘'을 정할 시간대. DB 시간대와 관계없이 학교 기준(KST)입니다."""
-
-NEIS_MEAL_URL = "https://open.neis.go.kr/hub/mealServiceDietInfo"
-NEIS_TIMEOUT_SECONDS = 5
-NEIS_MEAL_TYPES = {"1": MealType.breakfast, "2": MealType.lunch, "3": MealType.dinner}
-"""NEIS `MMEAL_SC_CODE` → 급식 종류"""
-
-NEIS_RESULT_OK = "INFO-000"
-NEIS_RESULT_NO_DATA = "INFO-200"
-
 _LINE_BREAK = compile(r"<br\s*/?>")
 _ALLERGY_SUFFIX = compile(r"\(([\d.\s]+)\)\s*$")
 _NUMBER = compile(r"\d+(?:\.\d+)?")
@@ -35,12 +24,20 @@ class Meal(BaseCore):
     DB 모델이 없으므로 `ServiceCore`가 아닌 `BaseCore`를 상속합니다.
     """
 
-    @staticmethod
-    def today() -> date:
+    MEAL_TIMEZONE = ZoneInfo("Asia/Seoul")
+    NEIS_MEAL_API = "https://open.neis.go.kr/hub/mealServiceDietInfo"
+    NEIS_TIMEOUT_SECONDS = 5
+    NEIS_MEAL_TYPES = {"1": MealType.breakfast, "2": MealType.lunch, "3": MealType.dinner}
+
+    NEIS_RESULT_OK = "INFO-000"
+    NEIS_RESULT_NO_DATA = "INFO-200"
+
+    @classmethod
+    def today(cls) -> date:
         """
         학교 기준(KST) 오늘 날짜를 반환합니다.
         """
-        return datetime.now(MEAL_TIMEZONE).date()
+        return datetime.now(cls.MEAL_TIMEZONE).date()
 
     async def get_by_date(self, day: date) -> list[MealInfo]:
         """
@@ -86,8 +83,8 @@ class Meal(BaseCore):
 
         # 요청 URL에 API 키가 들어가므로, 예외 메시지 · 스택(URL 포함)은 로그에 남기지 않고 종류만 남깁니다.
         try:
-            async with httpx.AsyncClient(timeout=NEIS_TIMEOUT_SECONDS) as http:
-                response = await http.get(NEIS_MEAL_URL, params=params)
+            async with httpx.AsyncClient(timeout=Meal.NEIS_TIMEOUT_SECONDS) as http:
+                response = await http.get(Meal.NEIS_MEAL_API, params=params)
             response.raise_for_status()
             data = response.json()
         except httpx.HTTPStatusError as e:
@@ -123,7 +120,7 @@ class Meal(BaseCore):
         # 결과가 없거나 오류이면 {"RESULT": {...}}만, 정상이면 {"mealServiceDietInfo": [{"head": ...}, {"row": ...}]}
         if "RESULT" in data:
             code = data["RESULT"].get("CODE")
-            if code == NEIS_RESULT_NO_DATA:
+            if code == Meal.NEIS_RESULT_NO_DATA:
                 return []
             raise ExternalServiceError(f"NEIS 결과 코드 {code}")
 
@@ -134,7 +131,7 @@ class Meal(BaseCore):
         except KeyError, TypeError, ValueError, StopIteration:
             raise ExternalServiceError("NEIS 응답 형식이 올바르지 않습니다.")
 
-        if code != NEIS_RESULT_OK:
+        if code != Meal.NEIS_RESULT_OK:
             raise ExternalServiceError(f"NEIS 결과 코드 {code}")
         return rows
 
@@ -149,15 +146,15 @@ class Meal(BaseCore):
         Returns:
             list[MealInfo]: 조식 → 중식 → 석식 순서
         """
-        order = list(NEIS_MEAL_TYPES.values())
+        order = list(Meal.NEIS_MEAL_TYPES.values())
         meals = [
             MealInfo(
-                type=NEIS_MEAL_TYPES[row["MMEAL_SC_CODE"]],
+                type=Meal.NEIS_MEAL_TYPES[row["MMEAL_SC_CODE"]],
                 dishes=cls.parse_dishes(row.get("DDISH_NM") or ""),
                 calorie=cls.parse_calorie(row.get("CAL_INFO")),
             )
             for row in rows
-            if row.get("MMEAL_SC_CODE") in NEIS_MEAL_TYPES
+            if row.get("MMEAL_SC_CODE") in Meal.NEIS_MEAL_TYPES
         ]
         return sorted(meals, key=lambda meal: order.index(meal.type))
 
