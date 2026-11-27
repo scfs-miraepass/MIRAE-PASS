@@ -134,7 +134,19 @@ class UserPermission(IntFlag):
     GIVE_CLASS_STICKER = 2**24
     """받은 스티커를 원하는 학급에 전달할 수 있는 권한 (기본: 교사)"""
 
-    STUDENT = VIEW_RANK | VIEW_POINT | VIEW_POINT_HISTORY | VIEW_POST | VIEW_KARAOKE | JOIN_KARAOKE | VIEW_STICKER
+    CHECK_ATTENDANCE = 2**25
+    """평일에 하루 한 번 출석체크를 하고 포인트를 받을 수 있는 권한 (기본: 학생, 교사)"""
+
+    STUDENT = (
+        VIEW_RANK
+        | VIEW_POINT
+        | VIEW_POINT_HISTORY
+        | VIEW_POST
+        | VIEW_KARAOKE
+        | JOIN_KARAOKE
+        | VIEW_STICKER
+        | CHECK_ATTENDANCE
+    )
     TEACHER = (
         GRANT_POINT
         | VIEW_RANK
@@ -147,6 +159,7 @@ class UserPermission(IntFlag):
         | JOIN_KARAOKE
         | VIEW_STICKER
         | GIVE_CLASS_STICKER
+        | CHECK_ATTENDANCE
     )
     ADMIN = (
         MANAGE_USER

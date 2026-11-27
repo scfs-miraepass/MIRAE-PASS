@@ -23,6 +23,8 @@ class PointHistoryType(StrEnum):
     stamp_bonus = "stamp_bonus"  # 스탬프 보너스
     karaoke_bid = "karaoke_bid"  # 노래방 예약 입찰
     karaoke_cancel = "karaoke_cancel"  # 노래방 예약 취소
+    attendance = "attendance"  # 출석체크
+    attendance_bonus = "attendance_bonus"  # 출석체크 연속 출석 보너스
 
 
 class PointHistory(SQLModel, table=True):

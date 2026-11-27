@@ -2,6 +2,9 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 
 from app.schemas import (
+    AttendanceResult,
+    Attendances,
+    AttendanceStatus,
     PointHistory,
     PointHistoryType,
     PollOperation,
@@ -18,7 +21,7 @@ from app.schemas import (
     Karaokes,
 )
 
-from sqlmodel import col, func, select
+from sqlmodel import col, desc, func, select
 
 from ..cache_events import (
     on_point_changed,
@@ -30,9 +33,20 @@ from ..cache_events import (
 )
 from ..core import ServiceCore
 from ..error import Conflict, Forbidden, LimitExceeded
+from ..neis import get_off_days
 from ..redis_keys import Keys
 from ..security import get_password_hash
 from ..sessions import revoke_user_sessions
+from .attendance import (
+    ATTENDANCE_BONUS_STREAK,
+    attendance_reward,
+    days_to_bonus,
+    is_school_day,
+    is_streak_continued,
+    next_streak,
+    off_days_window_start,
+    today_kst,
+)
 from .history import History
 from .post import Post
 from .quest import Quest
@@ -241,6 +255,100 @@ class User(ServiceCore[Users], _Type):
 
         self.logs.service_point.info(f"포인트 차감 - {self.name}({self.id}) +{amount} (기록 ID {history.id})")
         self._payload = user
+
+    async def _get_last_attendance(self) -> Attendances | None:
+        """가장 최근 출석 기록을 가져옵니다."""
+        async with self.session as session:
+            query = (
+                select(Attendances)
+                .where(col(Attendances.user_id) == self.id)
+                .order_by(desc(col(Attendances.attend_date)))
+                .limit(1)
+            )
+            return (await session.execute(query)).scalar_one_or_none()
+
+    async def get_attendance_status(self) -> AttendanceStatus:
+        """
+        오늘의 출석체크 상태를 가져옵니다.
+
+        Returns:
+            AttendanceStatus
+
+        Raises:
+            ServiceError.ServiceUnavailable: NEIS 학사일정을 가져오지 못한 경우 발생합니다.
+        """
+        today = today_kst()
+        last = await self._get_last_attendance()
+        attended = last is not None and last.attend_date == today
+
+        if attended:
+            # 오늘 출석했다면 오늘의 연속 일수가 현재 값입니다.
+            off_days = await get_off_days(today, today)
+            streak = last.streak
+        else:
+            last_date = last.attend_date if last else None
+            off_days = await get_off_days(off_days_window_start(last_date, today), today)
+            streak = last.streak if last and is_streak_continued(last_date, today, off_days) else 0
+
+        return AttendanceStatus(
+            today=today,
+            available=is_school_day(today, off_days),
+            attended=attended,
+            streak=streak,
+            days_to_bonus=days_to_bonus(streak),
+            reward=attendance_reward(streak + 1),
+        )
+
+    async def attend(self) -> AttendanceResult:
+        """
+        오늘 출석체크를 하고 포인트를 지급합니다.
+
+        Returns:
+            AttendanceResult
+
+        Raises:
+            ValueError: 오늘이 주말 · 휴업일 · 공휴일인 경우 발생합니다.
+            ServiceError.Conflict: 오늘 이미 출석한 경우 발생합니다.
+            ServiceError.ServiceUnavailable: NEIS 학사일정을 가져오지 못한 경우 발생합니다.
+        """
+        today = today_kst()
+        last = await self._get_last_attendance()
+        if last is not None and last.attend_date == today:
+            raise Conflict("오늘은 이미 출석했어요.")
+
+        # 외부 요청(NEIS)이 행 잠금 시간을 늘리지 않도록, 학사일정은 잠그기 전에 가져옵니다.
+        last_date = last.attend_date if last else None
+        off_days = await get_off_days(off_days_window_start(last_date, today), today)
+        if not is_school_day(today, off_days):
+            raise ValueError("오늘은 출석할 수 없는 날이에요.")
+
+        streak = next_streak(last_date, last.streak if last else 0, today, off_days)
+        reward = attendance_reward(streak)
+        bonus = streak % ATTENDANCE_BONUS_STREAK == 0
+
+        async with self.session as session:
+            # 같은 유저의 동시 요청이 연속 일수를 중복 계산하지 않도록 유저 행을 잠그고 다시 확인합니다.
+            user = await User.get_by_id(self.id, lock=True)
+            latest = await self._get_last_attendance()
+            if latest is not None and (latest.attend_date == today or latest.id != (last.id if last else None)):
+                raise Conflict("오늘은 이미 출석했어요.")
+
+            await user.point_grant(
+                amount=reward,
+                reason="출석체크",
+                memo=f"{streak}일 연속 출석 보너스" if bonus else None,
+                type=PointHistoryType.attendance_bonus if bonus else PointHistoryType.attendance,
+            )
+            session.add(Attendances(user_id=self.id, attend_date=today, streak=streak, reward=reward))
+
+        # point_grant 안의 캐시 무효화는 커밋 전에 실행되므로, 커밋 뒤에 한 번 더 무효화합니다.
+        await on_point_changed(self.id, user.type)
+        self._payload = user._payload
+
+        self.logs.service_attendance.info(
+            f"출석체크 - {self.name}({self.id}) {today.isoformat()} 연속 {streak}일 +{reward}"
+        )
+        return AttendanceResult(attend_date=today, streak=streak, reward=reward, bonus=bonus, point=user.point)
 
     async def get_sticker_count(self, period_start: datetime) -> int:
         """
