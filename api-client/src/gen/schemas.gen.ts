@@ -694,6 +694,75 @@ export const LoginFormSchema = {
     title: 'LoginForm'
 } as const;
 
+export const MealDishSchema = {
+    properties: {
+        name: {
+            type: 'string',
+            title: 'Name',
+            description: '메뉴 이름'
+        },
+        allergies: {
+            items: {
+                type: 'integer'
+            },
+            type: 'array',
+            title: 'Allergies',
+            description: '알레르기 유발 식품 번호 (NEIS 기준 1~19)'
+        }
+    },
+    type: 'object',
+    required: [
+        'name'
+    ],
+    title: 'MealDish'
+} as const;
+
+export const MealInfoSchema = {
+    properties: {
+        type: {
+            $ref: '#/components/schemas/MealType',
+            description: '급식 종류 (breakfast: 조식, lunch: 중식, dinner: 석식)'
+        },
+        dishes: {
+            items: {
+                $ref: '#/components/schemas/MealDish'
+            },
+            type: 'array',
+            title: 'Dishes',
+            description: '메뉴 목록 (식단표 순서)'
+        },
+        calorie: {
+            anyOf: [
+                {
+                    type: 'number',
+                    minimum: 0
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Calorie',
+            description: '열량 (kcal). NEIS에 정보가 없으면 null'
+        }
+    },
+    type: 'object',
+    required: [
+        'type'
+    ],
+    title: 'MealInfo'
+} as const;
+
+export const MealTypeSchema = {
+    type: 'string',
+    enum: [
+        'breakfast',
+        'lunch',
+        'dinner'
+    ],
+    title: 'MealType',
+    description: '급식 종류 (NEIS `MMEAL_SC_CODE` 1 · 2 · 3)'
+} as const;
+
 export const PointHistorySchema = {
     properties: {
         id: {
@@ -1848,6 +1917,29 @@ export const ResponseModel_list_KaraokeResponse__Schema = {
     title: 'ResponseModel[list[KaraokeResponse]]'
 } as const;
 
+export const ResponseModel_list_MealInfo__Schema = {
+    properties: {
+        success: {
+            type: 'boolean',
+            title: 'Success'
+        },
+        data: {
+            items: {
+                $ref: '#/components/schemas/MealInfo'
+            },
+            type: 'array',
+            title: 'Data',
+            description: '응답 데이터'
+        }
+    },
+    type: 'object',
+    required: [
+        'success',
+        'data'
+    ],
+    title: 'ResponseModel[list[MealInfo]]'
+} as const;
+
 export const ResponseModel_list_PointHistory__Schema = {
     properties: {
         success: {
@@ -2833,10 +2925,11 @@ export const UserPermissionSchema = {
         8388608,
         8519680,
         16777216,
-        5652928,
-        22464962,
+        33554432,
+        39207360,
+        56019394,
         14296592,
-        33554431
+        67108863
     ],
     title: 'UserPermission',
     description: '유저 권한 IntFlag.\n작명시 `동사_목적`으로 작성하며, 대문자로만 작성한다.\n예) 포인트 관리 -> MANAGE_POINT',
@@ -2875,6 +2968,7 @@ export const UserPermissionSchema = {
         '_MANAGE_STICKER',
         'MANAGE_STICKER',
         'GIVE_CLASS_STICKER',
+        'VIEW_MEAL',
         'STUDENT',
         'TEACHER',
         'ADMIN',
@@ -2915,6 +3009,7 @@ export const UserPermissionSchema = {
         '_MANAGE_STICKER',
         'MANAGE_STICKER',
         'GIVE_CLASS_STICKER',
+        'VIEW_MEAL',
         'STUDENT',
         'TEACHER',
         'ADMIN',

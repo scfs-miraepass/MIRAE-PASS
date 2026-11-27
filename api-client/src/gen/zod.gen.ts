@@ -160,6 +160,34 @@ export const zLoginForm = z.object({
 });
 
 /**
+ * MealDish
+ */
+export const zMealDish = z.object({
+    name: z.string(),
+    allergies: z.array(z.int()).optional()
+});
+
+/**
+ * MealType
+ *
+ * 급식 종류 (NEIS `MMEAL_SC_CODE` 1 · 2 · 3)
+ */
+export const zMealType = z.enum([
+    'breakfast',
+    'lunch',
+    'dinner'
+]);
+
+/**
+ * MealInfo
+ */
+export const zMealInfo = z.object({
+    type: zMealType,
+    dishes: z.array(zMealDish).optional(),
+    calorie: z.number().gte(0).nullish()
+});
+
+/**
  * PointHistoryType
  */
 export const zPointHistoryType = z.enum([
@@ -448,6 +476,14 @@ export const zResponseModelListKaraokeResponse = z.object({
 });
 
 /**
+ * ResponseModel[list[MealInfo]]
+ */
+export const zResponseModelListMealInfo = z.object({
+    success: z.boolean(),
+    data: z.array(zMealInfo)
+});
+
+/**
  * ResponseModel[list[PointHistory]]
  */
 export const zResponseModelListPointHistory = z.object({
@@ -730,10 +766,11 @@ export const zUserPermission = z.union([
     z.literal(8388608),
     z.literal(8519680),
     z.literal(16777216),
-    z.literal(5652928),
-    z.literal(22464962),
+    z.literal(33554432),
+    z.literal(39207360),
+    z.literal(56019394),
     z.literal(14296592),
-    z.literal(33554431)
+    z.literal(67108863)
 ]);
 
 /**
@@ -1500,3 +1537,12 @@ export const zDecideKaraokePartyInvitePath = z.object({
  * 정상적으로 수락/거절 완료
  */
 export const zDecideKaraokePartyInviteResponse = zResponseModelBool;
+
+export const zGetMealsMealGetQuery = z.object({
+    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullish()
+});
+
+/**
+ * 급식 조회 성공
+ */
+export const zGetMealsMealGetResponse = zResponseModelListMealInfo;

@@ -1,8 +1,10 @@
-from app.schemas import Posts, Quests
+from datetime import date
+
+from app.schemas import MealInfo, Posts, Quests
 
 from .core import BaseCore
 from .redis_keys import Keys
-from .service import History, Karaoke, Post, Quest, Sticker, User
+from .service import History, Karaoke, Meal, Post, Quest, Sticker, User
 
 
 class ServiceClient(BaseCore):
@@ -35,6 +37,22 @@ class ServiceClient(BaseCore):
             User | None
         """
         return await User.get_by_id(user_id=_id, cache=cache, save_cache=save_cache, lock=lock)
+
+    @staticmethod
+    async def get_meals(day: date | None = None, /) -> list[MealInfo]:
+        """
+        해당 날짜의 급식(조식 · 중식 · 석식)을 가져옵니다. 날짜별로 캐시됩니다.
+
+        Args:
+            day: 조회할 날짜. 생략하면 학교 기준(KST) 오늘
+
+        Returns:
+            list[MealInfo]: 조식 → 중식 → 석식 순서. 급식이 없는 날은 빈 목록
+
+        Raises:
+            ExternalServiceError: NEIS API 호출 또는 응답 처리에 실패했을 경우 발생합니다.
+        """
+        return await Meal().get_by_date(day or Meal.today())
 
     async def get_post(
         self,

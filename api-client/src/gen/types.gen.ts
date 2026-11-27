@@ -507,6 +507,64 @@ export type LoginForm = {
 };
 
 /**
+ * MealDish
+ */
+export type MealDish = {
+    /**
+     * Name
+     *
+     * 메뉴 이름
+     */
+    name: string;
+    /**
+     * Allergies
+     *
+     * 알레르기 유발 식품 번호 (NEIS 기준 1~19)
+     */
+    allergies?: Array<number>;
+};
+
+/**
+ * MealInfo
+ */
+export type MealInfo = {
+    /**
+     * 급식 종류 (breakfast: 조식, lunch: 중식, dinner: 석식)
+     */
+    type: MealType;
+    /**
+     * Dishes
+     *
+     * 메뉴 목록 (식단표 순서)
+     */
+    dishes?: Array<MealDish>;
+    /**
+     * Calorie
+     *
+     * 열량 (kcal). NEIS에 정보가 없으면 null
+     */
+    calorie?: number | null;
+};
+
+/**
+ * MealType
+ *
+ * 급식 종류 (NEIS `MMEAL_SC_CODE` 1 · 2 · 3)
+ */
+export const MealType = {
+    BREAKFAST: 'breakfast',
+    LUNCH: 'lunch',
+    DINNER: 'dinner'
+} as const;
+
+/**
+ * MealType
+ *
+ * 급식 종류 (NEIS `MMEAL_SC_CODE` 1 · 2 · 3)
+ */
+export type MealType = typeof MealType[keyof typeof MealType];
+
+/**
  * PointHistory
  */
 export type PointHistory = {
@@ -1337,6 +1395,22 @@ export type ResponseModelListKaraokeResponse = {
      * 응답 데이터
      */
     data: Array<KaraokeResponse>;
+};
+
+/**
+ * ResponseModel[list[MealInfo]]
+ */
+export type ResponseModelListMealInfo = {
+    /**
+     * Success
+     */
+    success: boolean;
+    /**
+     * Data
+     *
+     * 응답 데이터
+     */
+    data: Array<MealInfo>;
 };
 
 /**
@@ -2177,13 +2251,17 @@ export const UserPermission = {
      */
     GIVE_CLASS_STICKER: 16777216,
     /**
+     * VIEW_MEAL
+     */
+    VIEW_MEAL: 33554432,
+    /**
      * STUDENT
      */
-    STUDENT: 5652928,
+    STUDENT: 39207360,
     /**
      * TEACHER
      */
-    TEACHER: 22464962,
+    TEACHER: 56019394,
     /**
      * ADMIN
      */
@@ -2191,7 +2269,7 @@ export const UserPermission = {
     /**
      * ALL
      */
-    ALL: 33554431
+    ALL: 67108863
 } as const;
 
 /**
@@ -5110,3 +5188,51 @@ export type DecideKaraokePartyInviteResponses = {
 };
 
 export type DecideKaraokePartyInviteResponse = DecideKaraokePartyInviteResponses[keyof DecideKaraokePartyInviteResponses];
+
+export type GetMealsMealGetData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Date
+         *
+         * 조회할 날짜 (YYYY-MM-DD). 생략하면 오늘
+         */
+        date?: string | null;
+    };
+    url: '/meal';
+};
+
+export type GetMealsMealGetErrors = {
+    /**
+     * 존재하지 않는 날짜
+     */
+    400: ErrorResponse;
+    /**
+     * 세션이 만료되었거나 유효하지 않음
+     */
+    401: ErrorResponse;
+    /**
+     * 권한이 없음
+     */
+    403: ErrorResponse;
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+    /**
+     * NEIS에서 급식 정보를 가져오지 못함
+     */
+    502: ErrorResponse;
+};
+
+export type GetMealsMealGetError = GetMealsMealGetErrors[keyof GetMealsMealGetErrors];
+
+export type GetMealsMealGetResponses = {
+    /**
+     * 급식 조회 성공
+     */
+    200: ResponseModelListMealInfo;
+};
+
+export type GetMealsMealGetResponse = GetMealsMealGetResponses[keyof GetMealsMealGetResponses];
