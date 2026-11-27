@@ -694,6 +694,151 @@ export const LoginFormSchema = {
     title: 'LoginForm'
 } as const;
 
+export const NotificationKeySchema = {
+    properties: {
+        public_key: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Public Key',
+            description: 'VAPID 공개키 (base64url). 서버에 VAPID 키가 설정되지 않아 알림을 쓸 수 없으면 null'
+        }
+    },
+    type: 'object',
+    title: 'NotificationKey'
+} as const;
+
+export const NotificationSendSchema = {
+    properties: {
+        title: {
+            type: 'string',
+            maxLength: 50,
+            minLength: 1,
+            title: 'Title',
+            description: '알림 제목'
+        },
+        body: {
+            type: 'string',
+            maxLength: 200,
+            minLength: 1,
+            title: 'Body',
+            description: '알림 내용'
+        },
+        url: {
+            type: 'string',
+            maxLength: 200,
+            title: 'Url',
+            description: '알림을 눌렀을 때 열 앱 안 경로 (/로 시작)',
+            default: '/'
+        },
+        target: {
+            $ref: '#/components/schemas/NotificationTargetType',
+            description: '대상 종류 (all: 전체, users: 유저 선택, user_type: 계정 종류, class: 학년 · 반)'
+        },
+        user_ids: {
+            anyOf: [
+                {
+                    items: {
+                        type: 'integer'
+                    },
+                    type: 'array',
+                    maxItems: 1000,
+                    minItems: 1
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'User Ids',
+            description: 'target=users일 때 대상 유저 ID'
+        },
+        user_type: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/UserType'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'target=user_type일 때 계정 종류'
+        },
+        grade: {
+            anyOf: [
+                {
+                    type: 'integer',
+                    maximum: 9,
+                    minimum: 1
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Grade',
+            description: 'target=class일 때 학년'
+        },
+        number: {
+            anyOf: [
+                {
+                    type: 'integer',
+                    maximum: 99,
+                    minimum: 1
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Number',
+            description: 'target=class일 때 반. 생략하면 학년 전체'
+        }
+    },
+    type: 'object',
+    required: [
+        'title',
+        'body',
+        'target'
+    ],
+    title: 'NotificationSend'
+} as const;
+
+export const NotificationSendResultSchema = {
+    properties: {
+        target_users: {
+            type: 'integer',
+            title: 'Target Users',
+            description: '대상 유저 수'
+        },
+        subscriptions: {
+            type: 'integer',
+            title: 'Subscriptions',
+            description: '알림을 보낼 기기(구독) 수. 알림을 켜지 않은 유저는 포함되지 않음'
+        }
+    },
+    type: 'object',
+    required: [
+        'target_users',
+        'subscriptions'
+    ],
+    title: 'NotificationSendResult'
+} as const;
+
+export const NotificationTargetTypeSchema = {
+    type: 'string',
+    enum: [
+        'all',
+        'users',
+        'user_type',
+        'class'
+    ],
+    title: 'NotificationTargetType',
+    description: '수동 알림 대상 종류'
+} as const;
+
 export const PointHistorySchema = {
     properties: {
         id: {
@@ -1195,6 +1340,68 @@ export const PostsSchema = {
     title: 'Posts'
 } as const;
 
+export const PushSubscriptionDeleteSchema = {
+    properties: {
+        endpoint: {
+            type: 'string',
+            maxLength: 512,
+            title: 'Endpoint',
+            description: '해제할 푸시 서비스 endpoint (PushSubscription.endpoint)'
+        }
+    },
+    type: 'object',
+    required: [
+        'endpoint'
+    ],
+    title: 'PushSubscriptionDelete'
+} as const;
+
+export const PushSubscriptionKeysSchema = {
+    properties: {
+        p256dh: {
+            type: 'string',
+            maxLength: 200,
+            minLength: 1,
+            title: 'P256Dh',
+            description: '구독 공개키 (PushSubscription.toJSON().keys.p256dh)'
+        },
+        auth: {
+            type: 'string',
+            maxLength: 100,
+            minLength: 1,
+            title: 'Auth',
+            description: '구독 인증 비밀값 (PushSubscription.toJSON().keys.auth)'
+        }
+    },
+    type: 'object',
+    required: [
+        'p256dh',
+        'auth'
+    ],
+    title: 'PushSubscriptionKeys'
+} as const;
+
+export const PushSubscriptionOperationSchema = {
+    properties: {
+        endpoint: {
+            type: 'string',
+            maxLength: 512,
+            title: 'Endpoint',
+            description: '푸시 서비스 endpoint (PushSubscription.endpoint)'
+        },
+        keys: {
+            $ref: '#/components/schemas/PushSubscriptionKeys',
+            description: '구독 키'
+        }
+    },
+    type: 'object',
+    required: [
+        'endpoint',
+        'keys'
+    ],
+    title: 'PushSubscriptionOperation'
+} as const;
+
 export const QuestOperationSchema = {
     properties: {
         title: {
@@ -1570,6 +1777,44 @@ export const ResponseModel_Karaokes_Schema = {
         'data'
     ],
     title: 'ResponseModel[Karaokes]'
+} as const;
+
+export const ResponseModel_NotificationKey_Schema = {
+    properties: {
+        success: {
+            type: 'boolean',
+            title: 'Success'
+        },
+        data: {
+            $ref: '#/components/schemas/NotificationKey',
+            description: '응답 데이터'
+        }
+    },
+    type: 'object',
+    required: [
+        'success',
+        'data'
+    ],
+    title: 'ResponseModel[NotificationKey]'
+} as const;
+
+export const ResponseModel_NotificationSendResult_Schema = {
+    properties: {
+        success: {
+            type: 'boolean',
+            title: 'Success'
+        },
+        data: {
+            $ref: '#/components/schemas/NotificationSendResult',
+            description: '응답 데이터'
+        }
+    },
+    type: 'object',
+    required: [
+        'success',
+        'data'
+    ],
+    title: 'ResponseModel[NotificationSendResult]'
 } as const;
 
 export const ResponseModel_PointHistory_Schema = {
@@ -2833,10 +3078,11 @@ export const UserPermissionSchema = {
         8388608,
         8519680,
         16777216,
+        67108864,
         5652928,
         22464962,
-        14296592,
-        33554431
+        81405456,
+        100663295
     ],
     title: 'UserPermission',
     description: '유저 권한 IntFlag.\n작명시 `동사_목적`으로 작성하며, 대문자로만 작성한다.\n예) 포인트 관리 -> MANAGE_POINT',
@@ -2875,6 +3121,7 @@ export const UserPermissionSchema = {
         '_MANAGE_STICKER',
         'MANAGE_STICKER',
         'GIVE_CLASS_STICKER',
+        'SEND_NOTIFICATION',
         'STUDENT',
         'TEACHER',
         'ADMIN',
@@ -2915,6 +3162,7 @@ export const UserPermissionSchema = {
         '_MANAGE_STICKER',
         'MANAGE_STICKER',
         'GIVE_CLASS_STICKER',
+        'SEND_NOTIFICATION',
         'STUDENT',
         'TEACHER',
         'ADMIN',
