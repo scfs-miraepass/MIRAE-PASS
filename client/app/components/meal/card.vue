@@ -23,8 +23,8 @@ const ALLERGY_NAMES = [
 
 
 <template>
-    <div class="light:bg-default dark:bg-muted rounded-2xl p-5">
-        <div class="flex items-center justify-between mb-3">
+    <div>
+        <div class="flex items-center justify-between mb-3 px-5">
             <p class="text-p0 font-bold flex items-center gap-1.5">
                 <UIcon :name="MEAL_LABELS[item.type].icon" />
                 {{ MEAL_LABELS[item.type].label }}
@@ -33,13 +33,17 @@ const ALLERGY_NAMES = [
                 {{ item.calorie.toLocaleString("ko-KR") }} kcal
             </p>
         </div>
-        <ul class="space-y-3">
-            <li v-for="(dish, index) in item.dishes" :key="index" class="flex flex-col">
-                <span class="text-p1 text-nowrap mb-0.5">{{ dish.name }}</span>
+        <ul class="light:bg-default dark:bg-muted rounded-2xl p-5 space-y-2.5">
+            <li v-for="(dish, index) in item.dishes" :key="index" class="flex flex-col gap-0.5">
+                <span class="text-p1 text-nowrap">{{ dish.name }}</span>
                 <span v-if="dish.allergies?.length" class="text-p3 shrink-0 light:text-black/40 dark:text-white/40 truncate">
-                    {{ dish.allergies.map(value => ALLERGY_NAMES[value - 1]).join(', ') }}
-                </span>
+                {{ dish.allergies.map(value => ALLERGY_NAMES[value - 1]).join(', ') }}
+            </span>
             </li>
         </ul>
     </div>
+
+
+
+
 </template>

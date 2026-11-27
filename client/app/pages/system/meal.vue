@@ -78,7 +78,7 @@ const { data: meals, pending } = await useAsyncData(
     <div v-if="pending" class="space-y-5">
         <USkeleton v-for="i in 3" :key="i" class="h-40 rounded-2xl" />
     </div>
-    <div v-else-if="meals.length" class="space-y-5">
+    <div v-else-if="meals.length" class="space-y-10">
         <MealCard v-for="item in meals" :key="item.type" :item="item" />
     </div>
     <div v-else class="text-center py-16 light:text-black/50 dark:text-white/50">
