@@ -25,7 +25,7 @@ const dateLabel = computed(() => {
     return `${d.getUTCMonth() + 1}월 ${d.getUTCDate()}일 (${WEEKDAYS[d.getUTCDay()]})`;
 });
 const RELATIVE_LABELS: Record<number, string> = { [-1]: "어제", 0: "오늘", 1: "내일" };
-const relativeLabel = computed(() => RELATIVE_LABELS[dayOffset.value] ?? "오늘로 돌아가기");
+const relativeLabel = computed(() => RELATIVE_LABELS[dayOffset.value] ?? (dayOffset.value > 0 ? `${dayOffset.value}일 후` : `${dayOffset.value * -1}일 전`));
 
 const { data: meals, pending } = await useAsyncData(
     "meal.day",
@@ -51,21 +51,21 @@ const { data: meals, pending } = await useAsyncData(
         <p class="text-2xl font-bold text-gray-900 dark:text-white ml-1">급식</p>
     </div>
 
-    <div class="flex items-center justify-between mb-4">
-        <UButton @click="dayOffset--" color="neutral" variant="ghost" icon="i-ph-caret-left-bold" aria-label="이전 날" class="p-2 rounded-2xl" size="lg" />
+    <div class="flex items-center justify-between">
+        <UButton @click="dayOffset--" color="neutral" variant="ghost" icon="i-ph-caret-left-bold" aria-label="이전 날" class="p-2 rounded-2xl hover:bg-accented active:bg-accented focus-visible:bg-accented" size="lg" />
         <div class="text-center">
             <p class="text-p0 font-semibold">{{ dateLabel }}</p>
-            <button type="button" class="text-ui-p2 light:text-black/50 dark:text-white/50" @click="dayOffset = 0">
-                {{ relativeLabel }}
-            </button>
+            <p class="text-ui-p2 light:text-black/50 dark:text-white/50 mt-0.5">{{ relativeLabel }}</p>
         </div>
-        <UButton @click="dayOffset++" color="neutral" variant="ghost" icon="i-ph-caret-right-bold" aria-label="다음 날" class="p-2 rounded-2xl" size="lg" />
+        <UButton @click="dayOffset++" color="neutral" variant="ghost" icon="i-ph-caret-right-bold" aria-label="다음 날" class="p-2 rounded-2xl hover:bg-accented active:bg-accented focus-visible:bg-accented" size="lg" />
     </div>
 
-    <div v-if="pending" class="space-y-3">
-        <USkeleton v-for="i in 3" :key="i" class="h-40 rounded-3xl" />
+    <hr class="border-default my-5" />
+
+    <div v-if="pending" class="space-y-5">
+        <USkeleton v-for="i in 3" :key="i" class="h-40 rounded-2xl" />
     </div>
-    <div v-else-if="meals.length" class="space-y-3">
+    <div v-else-if="meals.length" class="space-y-5">
         <MealCard v-for="item in meals" :key="item.type" :item="item" />
     </div>
     <div v-else class="text-center py-16 light:text-black/50 dark:text-white/50">
