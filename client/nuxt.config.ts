@@ -17,6 +17,8 @@ export default defineNuxtConfig({
     },
     experimental: {
         viteEnvironmentApi: true,
+        // 배포 후 예전 청크(/_nuxt/옛해시.js)를 불러오지 못하면 다음 페이지 이동을 기다리지 않고 바로 새로고침합니다.
+        emitRouteChunkError: "automatic-immediate",
     },
     typescript: {
         typeCheck: 'build',
@@ -218,18 +220,14 @@ export default defineNuxtConfig({
             description: "순천미래과학고등학교의 교내전용 포인트 시스템 전용 앱",
             orientation: "portrait"
         },
-        workbox: {
-            navigateFallback: '/',
-
-            // 1. 빌드 시 실제 존재하는 파일만 캐싱하도록 필터링합니다.
-            globPatterns: ['**/*.{js,css,html,png,svg,ico}'],
-
-            // 2. 서비스 워커가 업데이트되었을 때 즉시 제어권을 갖도록 합니다. (중요!)
-            skipWaiting: true,
-            clientsClaim: true,
-
-            // 3. iOS Safari의 'Importing script...' 에러 방지를 위해 런타임을 인라인화합니다.
-            inlineWorkboxRuntime: true,
+        // 서비스 워커는 app/service-worker/sw.ts에서 직접 작성합니다. 빌드하면 /sw.js로 나옵니다.
+        strategies: "injectManifest",
+        srcDir: "service-worker",
+        filename: "sw.ts",
+        injectManifest: {
+            // 해시가 붙은 정적 파일과 아이콘만 미리 받아 둡니다.
+            // HTML과 /_nuxt/builds/*.json(새 빌드 감지용)은 넣지 않습니다.
+            globPatterns: ["_nuxt/**/*.{js,css}", "favicon.{ico,svg}", "apple-touch-icon.png", "pwa/*.png"],
         },
     },
 });
