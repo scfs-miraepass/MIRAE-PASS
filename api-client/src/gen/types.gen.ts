@@ -2350,9 +2350,13 @@ export const UserPermission = {
      */
     GIVE_CLASS_STICKER: 16777216,
     /**
+     * _SEND_NOTIFICATION
+     */
+    _SEND_NOTIFICATION: 67108864,
+    /**
      * SEND_NOTIFICATION
      */
-    SEND_NOTIFICATION: 67108864,
+    SEND_NOTIFICATION: 67239936,
     /**
      * STUDENT
      */

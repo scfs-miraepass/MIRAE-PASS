@@ -797,6 +797,7 @@ export const zUserPermission = z.union([
     z.literal(8519680),
     z.literal(16777216),
     z.literal(67108864),
+    z.literal(67239936),
     z.literal(5652928),
     z.literal(22464962),
     z.literal(81405456),

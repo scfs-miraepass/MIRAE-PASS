@@ -29,7 +29,9 @@ class UserPermission(IntFlag):
     NONE = 0
 
     _MANAGE_USER = 2**13
-    SEND_NOTIFICATION = 2**26
+    SEARCH_USER = 2**17
+    _SEND_NOTIFICATION = 2**26
+    SEND_NOTIFICATION = _SEND_NOTIFICATION | SEARCH_USER
 
 
 users = sa.table(
@@ -56,13 +58,10 @@ def _migrate_notification_permissions(*, grant: bool):
     유저 관리 권한(MANAGE_USER) 보유자(관리자)에게 알림 보내기 권한(SEND_NOTIFICATION)을 부여(grant=True)하거나 제거(grant=False)한다.
     """
     conn = op.get_bind()
-    key = "grant" if grant else "revoke"
+    # 회수할 때는 알림 비트만 뺀다. (묶음 값으로 빼면 관리자가 원래 가진 SEARCH_USER까지 빠짐)
+    change = {"grant": UserPermission.SEND_NOTIFICATION} if grant else {"revoke": UserPermission._SEND_NOTIFICATION}
 
-    n = _update_permissions(
-        conn,
-        users.c.permissions.op("&")(UserPermission._MANAGE_USER.value) != 0,
-        **{key: UserPermission.SEND_NOTIFICATION},
-    )
+    n = _update_permissions(conn, users.c.permissions.op("&")(UserPermission._MANAGE_USER.value) != 0, **change)
     log.info(f"Notification permission migration - admin SEND_NOTIFICATION: {n} rows")
 
 
