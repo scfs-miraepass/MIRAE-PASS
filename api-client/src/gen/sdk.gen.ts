@@ -1464,7 +1464,7 @@ export class MiraepassApi extends HeyApiClient {
     /**
      * 급식 조회
      *
-     * 해당 날짜의 학교 급식(조식 · 중식 · 석식)을 조회합니다. `date`를 생략하면 학교 기준(KST) 오늘입니다. 급식이 없는 날은 빈 목록을 반환합니다. NEIS 교육정보 개방 포털의 데이터를 날짜별로 1시간 동안 캐시합니다.
+     * 해당 날짜의 학교 급식(조식 · 중식 · 석식)을 조회합니다. `date`를 생략하면 학교 기준(KST) 오늘입니다. 급식이 없는 날은 빈 목록을 반환합니다. 토요일 · 일요일은 NEIS를 호출하지 않고 항상 빈 목록을 반환합니다. NEIS 교육정보 개방 포털의 데이터를 날짜별로 1시간 동안 캐시합니다.
      */
     public getMealsMealGet<ThrowOnError extends boolean = false>(options?: Options<GetMealsMealGetData, ThrowOnError>): RequestResult<GetMealsMealGetResponses, GetMealsMealGetErrors, ThrowOnError> {
         return (options?.client ?? this.client).get<GetMealsMealGetResponses, GetMealsMealGetErrors, ThrowOnError>({
