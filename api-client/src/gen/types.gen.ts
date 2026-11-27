@@ -507,6 +507,105 @@ export type LoginForm = {
 };
 
 /**
+ * NotificationKey
+ */
+export type NotificationKey = {
+    /**
+     * Public Key
+     *
+     * VAPID 공개키 (base64url). 서버에 VAPID 키가 설정되지 않아 알림을 쓸 수 없으면 null
+     */
+    public_key?: string | null;
+};
+
+/**
+ * NotificationSend
+ */
+export type NotificationSend = {
+    /**
+     * Title
+     *
+     * 알림 제목
+     */
+    title: string;
+    /**
+     * Body
+     *
+     * 알림 내용
+     */
+    body: string;
+    /**
+     * Url
+     *
+     * 알림을 눌렀을 때 열 앱 안 경로 (/로 시작)
+     */
+    url?: string;
+    /**
+     * 대상 종류 (all: 전체, users: 유저 선택, user_type: 계정 종류, class: 학년 · 반)
+     */
+    target: NotificationTargetType;
+    /**
+     * User Ids
+     *
+     * target=users일 때 대상 유저 ID
+     */
+    user_ids?: Array<number> | null;
+    /**
+     * target=user_type일 때 계정 종류
+     */
+    user_type?: UserType | null;
+    /**
+     * Grade
+     *
+     * target=class일 때 학년
+     */
+    grade?: number | null;
+    /**
+     * Number
+     *
+     * target=class일 때 반. 생략하면 학년 전체
+     */
+    number?: number | null;
+};
+
+/**
+ * NotificationSendResult
+ */
+export type NotificationSendResult = {
+    /**
+     * Target Users
+     *
+     * 대상 유저 수
+     */
+    target_users: number;
+    /**
+     * Subscriptions
+     *
+     * 알림을 보낼 기기(구독) 수. 알림을 켜지 않은 유저는 포함되지 않음
+     */
+    subscriptions: number;
+};
+
+/**
+ * NotificationTargetType
+ *
+ * 수동 알림 대상 종류
+ */
+export const NotificationTargetType = {
+    ALL: 'all',
+    USERS: 'users',
+    USER_TYPE: 'user_type',
+    CLASS: 'class'
+} as const;
+
+/**
+ * NotificationTargetType
+ *
+ * 수동 알림 대상 종류
+ */
+export type NotificationTargetType = typeof NotificationTargetType[keyof typeof NotificationTargetType];
+
+/**
  * PointHistory
  */
 export type PointHistory = {
@@ -860,6 +959,52 @@ export type Posts = {
 };
 
 /**
+ * PushSubscriptionDelete
+ */
+export type PushSubscriptionDelete = {
+    /**
+     * Endpoint
+     *
+     * 해제할 푸시 서비스 endpoint (PushSubscription.endpoint)
+     */
+    endpoint: string;
+};
+
+/**
+ * PushSubscriptionKeys
+ */
+export type PushSubscriptionKeys = {
+    /**
+     * P256Dh
+     *
+     * 구독 공개키 (PushSubscription.toJSON().keys.p256dh)
+     */
+    p256dh: string;
+    /**
+     * Auth
+     *
+     * 구독 인증 비밀값 (PushSubscription.toJSON().keys.auth)
+     */
+    auth: string;
+};
+
+/**
+ * PushSubscriptionOperation
+ */
+export type PushSubscriptionOperation = {
+    /**
+     * Endpoint
+     *
+     * 푸시 서비스 endpoint (PushSubscription.endpoint)
+     */
+    endpoint: string;
+    /**
+     * 구독 키
+     */
+    keys: PushSubscriptionKeys;
+};
+
+/**
  * QuestOperation
  */
 export type QuestOperation = {
@@ -1133,6 +1278,34 @@ export type ResponseModelKaraokes = {
      * 응답 데이터
      */
     data: Karaokes;
+};
+
+/**
+ * ResponseModel[NotificationKey]
+ */
+export type ResponseModelNotificationKey = {
+    /**
+     * Success
+     */
+    success: boolean;
+    /**
+     * 응답 데이터
+     */
+    data: NotificationKey;
+};
+
+/**
+ * ResponseModel[NotificationSendResult]
+ */
+export type ResponseModelNotificationSendResult = {
+    /**
+     * Success
+     */
+    success: boolean;
+    /**
+     * 응답 데이터
+     */
+    data: NotificationSendResult;
 };
 
 /**
@@ -2177,6 +2350,14 @@ export const UserPermission = {
      */
     GIVE_CLASS_STICKER: 16777216,
     /**
+     * _SEND_NOTIFICATION
+     */
+    _SEND_NOTIFICATION: 67108864,
+    /**
+     * SEND_NOTIFICATION
+     */
+    SEND_NOTIFICATION: 67239936,
+    /**
      * STUDENT
      */
     STUDENT: 5652928,
@@ -2187,11 +2368,11 @@ export const UserPermission = {
     /**
      * ADMIN
      */
-    ADMIN: 14296592,
+    ADMIN: 81405456,
     /**
      * ALL
      */
-    ALL: 33554431
+    ALL: 100663295
 } as const;
 
 /**
@@ -5110,3 +5291,131 @@ export type DecideKaraokePartyInviteResponses = {
 };
 
 export type DecideKaraokePartyInviteResponse = DecideKaraokePartyInviteResponses[keyof DecideKaraokePartyInviteResponses];
+
+export type GetNotificationKeyData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/notification/key';
+};
+
+export type GetNotificationKeyErrors = {
+    /**
+     * 세션이 만료되었거나 유효하지 않음
+     */
+    401: ErrorResponse;
+};
+
+export type GetNotificationKeyError = GetNotificationKeyErrors[keyof GetNotificationKeyErrors];
+
+export type GetNotificationKeyResponses = {
+    /**
+     * 공개키 조회 성공
+     */
+    200: ResponseModelNotificationKey;
+};
+
+export type GetNotificationKeyResponse = GetNotificationKeyResponses[keyof GetNotificationKeyResponses];
+
+export type UnsubscribeNotificationData = {
+    body: PushSubscriptionDelete;
+    path?: never;
+    query?: never;
+    url: '/notification/subscription';
+};
+
+export type UnsubscribeNotificationErrors = {
+    /**
+     * 세션이 만료되었거나 유효하지 않음
+     */
+    401: ErrorResponse;
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UnsubscribeNotificationError = UnsubscribeNotificationErrors[keyof UnsubscribeNotificationErrors];
+
+export type UnsubscribeNotificationResponses = {
+    /**
+     * 구독 해제 성공 (구독이 없어도 성공)
+     */
+    204: void;
+};
+
+export type UnsubscribeNotificationResponse = UnsubscribeNotificationResponses[keyof UnsubscribeNotificationResponses];
+
+export type SubscribeNotificationData = {
+    body: PushSubscriptionOperation;
+    path?: never;
+    query?: never;
+    url: '/notification/subscription';
+};
+
+export type SubscribeNotificationErrors = {
+    /**
+     * 세션이 만료되었거나 유효하지 않음
+     */
+    401: ErrorResponse;
+    /**
+     * 지원하지 않는 푸시 서비스이거나 요청 형식이 올바르지 않음
+     */
+    422: ErrorResponse;
+    /**
+     * 서버에 알림 설정이 되어 있지 않음
+     */
+    503: ErrorResponse;
+};
+
+export type SubscribeNotificationError = SubscribeNotificationErrors[keyof SubscribeNotificationErrors];
+
+export type SubscribeNotificationResponses = {
+    /**
+     * 구독 등록 성공
+     */
+    204: void;
+};
+
+export type SubscribeNotificationResponse = SubscribeNotificationResponses[keyof SubscribeNotificationResponses];
+
+export type SendNotificationData = {
+    body: NotificationSend;
+    path?: never;
+    query?: never;
+    url: '/notification/send';
+};
+
+export type SendNotificationErrors = {
+    /**
+     * 세션이 만료되었거나 유효하지 않음
+     */
+    401: ErrorResponse;
+    /**
+     * 권한이 없음
+     */
+    403: ErrorResponse;
+    /**
+     * 대상 유저가 없음
+     */
+    404: ErrorResponse;
+    /**
+     * 대상 조건이 올바르지 않음
+     */
+    422: ErrorResponse;
+    /**
+     * 서버에 알림 설정이 되어 있지 않음
+     */
+    503: ErrorResponse;
+};
+
+export type SendNotificationError = SendNotificationErrors[keyof SendNotificationErrors];
+
+export type SendNotificationResponses = {
+    /**
+     * 알림 전송 시작
+     */
+    200: ResponseModelNotificationSendResult;
+};
+
+export type SendNotificationResponse = SendNotificationResponses[keyof SendNotificationResponses];

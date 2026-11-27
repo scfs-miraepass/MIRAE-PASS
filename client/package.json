@@ -32,6 +32,10 @@
         "@types/node": "catalog:",
         "@types/ws": "^8.18.1",
         "typescript": "catalog:",
-        "vue-tsc": "catalog:"
+        "vue-tsc": "catalog:",
+        "workbox-core": "7.4.1",
+        "workbox-precaching": "7.4.1",
+        "workbox-routing": "7.4.1",
+        "workbox-strategies": "7.4.1"
     }
 }

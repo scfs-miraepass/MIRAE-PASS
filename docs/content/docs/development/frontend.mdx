@@ -249,6 +249,31 @@ watch(open, (value) => {
 yarn workspace scfs-miraepass-front dev:build
 ```
 
+#### 서비스 워커
+
+서비스 워커는 `app/service-worker/sw.ts`에 직접 작성합니다. (`@vite-pwa/nuxt`의 `injectManifest` 방식) 빌드하면 `/sw.js`로 나오며, 새 버전은 기다리지 않고 바로 적용됩니다.
+
+| 요청 | 처리 |
+| --- | --- |
+| 페이지 이동 (HTML) | 항상 서버에서 먼저 받습니다. 3초 안에 응답이 없거나 오프라인이면 마지막으로 받은 페이지를 보여줍니다. |
+| `/_nuxt/*.js`, `*.css`, 아이콘 | 설치할 때 미리 받아 두고 캐시에서 응답합니다. 예전 버전 파일은 새 버전이 적용될 때 지워집니다. |
+| `/api`, `/admin`, `/_icon`, `/_nuxt/builds` | 서비스 워커가 처리하지 않고 네트워크로 보냅니다. |
+
+- 배포 후 예전 청크를 불러오지 못하면 바로 새로고침합니다. (`nuxt.config.ts`의 `experimental.emitRouteChunkError: "automatic-immediate"`)
+- 미리 받아 둘 파일은 `nuxt.config.ts`의 `pwa.injectManifest.globPatterns`로 정합니다. HTML이나 `/_nuxt/builds/*.json`은 넣지 않습니다. 넣으면 배포 후에도 예전 화면이나 예전 청크를 계속 불러올 수 있습니다.
+
+#### 앱 알림 (웹 푸시)
+
+| 위치 | 역할 |
+| --- | --- |
+| `app/service-worker/sw.ts` | `push`를 받아 알림을 띄우고, 알림을 누르면 `url`의 화면을 엽니다. |
+| `composables/usePushNotification.ts` | 이 기기의 구독 상태 확인(`refresh`), 켜기(`enable`), 끄기(`disable`) |
+| `pages/setting/index.vue` | 설정의 "알림 받기" 항목 |
+| `pages/logout.vue` | 로그아웃 전에 `disable()`로 이 기기의 구독을 해제합니다. |
+
+- 알림 권한 요청(`enable`)은 브라우저 정책상 **버튼 클릭 같은 사용자 동작 안에서만** 호출할 수 있습니다.
+- 서버 API는 [앱 알림](/api/notification) 문서를 참고하세요.
+
 ## 새 페이지 추가하기
 
 <Steps>

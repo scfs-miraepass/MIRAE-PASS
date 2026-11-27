@@ -134,6 +134,12 @@ class UserPermission(IntFlag):
     GIVE_CLASS_STICKER = 2**24
     """받은 스티커를 원하는 학급에 전달할 수 있는 권한 (기본: 교사)"""
 
+    # 2**25는 VIEW_MEAL(#44, 급식 보기)에서 사용합니다.
+
+    _SEND_NOTIFICATION = 2**26
+    SEND_NOTIFICATION = _SEND_NOTIFICATION | SEARCH_USER
+    """관리자가 대상을 골라 앱 알림(웹 푸시)을 보낼 수 있는 권한 (대상 유저 검색 포함)"""
+
     STUDENT = VIEW_RANK | VIEW_POINT | VIEW_POINT_HISTORY | VIEW_POST | VIEW_KARAOKE | JOIN_KARAOKE | VIEW_STICKER
     TEACHER = (
         GRANT_POINT
@@ -157,6 +163,7 @@ class UserPermission(IntFlag):
         | VIEW_KARAOKE
         | MANAGE_STICKER
         | VIEW_STICKER
+        | SEND_NOTIFICATION
     )
     ALL = reduce(
         or_,

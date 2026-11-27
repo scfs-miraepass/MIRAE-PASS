@@ -18,6 +18,7 @@ from app.core.config import settings
 from app.core.redis_keys import DAY, HOUR, MINUTE, BoundKey, KeyPattern, Keys
 from app.core.sessions import revoke_user_sessions
 from app.core.service import History
+from app.core.service.notification import generate_vapid_keys
 from app.schemas.point import PointHistory, PointHistoryType
 from app.schemas.users import Users, UserType, UserPermission
 
@@ -428,6 +429,19 @@ def redis_delete_pattern(
         print(f"패턴 '{pattern}'과 일치하는 키 {deleted}개를 삭제했습니다.")
 
     asyncio.run(run_with_client(_redis_delete_pattern()))
+
+
+@app.command()
+def vapid_keys():
+    """
+    앱 알림(웹 푸시)에 쓸 VAPID 키 쌍을 새로 만들어 .env에 넣을 줄을 출력합니다. 파일에는 저장하지 않습니다.
+    """
+    public_key, private_key = generate_vapid_keys()
+    print("아래 줄을 .env에 넣고 서버를 다시 시작하세요. VAPID_SUBJECT는 관리자 메일이나 서비스 주소로 바꿉니다.")
+    print("키를 바꾸면 기존 구독이 모두 동작하지 않으므로, 한 번 정한 키는 바꾸지 마세요.\n")
+    print(f"VAPID_PUBLIC_KEY={public_key}")
+    print(f"VAPID_PRIVATE_KEY={private_key}")
+    print("VAPID_SUBJECT=mailto:admin@example.com")
 
 
 if __name__ == "__main__":

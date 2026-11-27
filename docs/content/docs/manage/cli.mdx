@@ -48,6 +48,7 @@ uv run python tools/cli.py --help
 | [`redis-get`](#redis-get) | Redis 값 조회 |
 | [`redis-delete`](#redis-delete) | Redis 키 삭제 |
 | [`redis-delete-pattern`](#redis-delete-pattern) | 패턴과 일치하는 Redis 키 삭제 |
+| [`vapid-keys`](#vapid-keys) | 앱 알림용 VAPID 키 생성 |
 
 ## 사용자
 
@@ -245,4 +246,19 @@ cli redis-delete-pattern 'point_history:*'
 
 <Callout type="warning">
     `session:*`을 지우면 모든 사용자가 로그아웃됩니다. 캐시 키는 지워도 다음 요청 때 데이터베이스에서 다시 채워집니다.
+</Callout>
+
+## 알림
+
+### vapid-keys
+
+앱 알림(웹 푸시)에 쓸 VAPID 키 쌍을 새로 만들어, `.env`에 넣을 줄을 출력합니다. 파일에는 저장하지 않습니다.
+출력된 세 줄을 `.env`에 넣고 `VAPID_SUBJECT`를 관리자 메일(`mailto:...`)이나 서비스 주소(`https://...`)로 바꾼 뒤 서버를 다시 시작합니다. ([환경 변수](/docs/getting-started/environment#알림-웹-푸시))
+
+```bash
+cli vapid-keys
+```
+
+<Callout type="warning">
+    키를 바꾸면 사용자들이 켜 둔 알림 구독이 모두 동작하지 않습니다. 한 번 정한 키는 바꾸지 말고, 개인키(`VAPID_PRIVATE_KEY`)는 외부에 공개하지 마세요.
 </Callout>

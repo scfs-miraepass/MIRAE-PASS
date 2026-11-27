@@ -38,6 +38,10 @@ class Settings(BaseSettings):
     debug: bool = Field(False, alias="DEBUG")
     database_debug: bool = Field(False, alias="DATABASE_DEBUG")
     allow_origins: Annotated[list[str], NoDecode] = Field(alias="ALLOWED_ORIGINS")
+    # 웹 푸시(앱 알림) VAPID 키. 없으면 알림 기능이 꺼집니다. (`python tools/cli.py vapid-keys`로 생성)
+    vapid_public_key: str | None = Field(None, alias="VAPID_PUBLIC_KEY")
+    vapid_private_key: str | None = Field(None, alias="VAPID_PRIVATE_KEY")
+    vapid_subject: str | None = Field(None, alias="VAPID_SUBJECT")
 
     @field_validator("allow_origins", mode="before")
     @classmethod

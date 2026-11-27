@@ -160,6 +160,33 @@ export const zLoginForm = z.object({
 });
 
 /**
+ * NotificationKey
+ */
+export const zNotificationKey = z.object({
+    public_key: z.string().nullish()
+});
+
+/**
+ * NotificationSendResult
+ */
+export const zNotificationSendResult = z.object({
+    target_users: z.int(),
+    subscriptions: z.int()
+});
+
+/**
+ * NotificationTargetType
+ *
+ * 수동 알림 대상 종류
+ */
+export const zNotificationTargetType = z.enum([
+    'all',
+    'users',
+    'user_type',
+    'class'
+]);
+
+/**
  * PointHistoryType
  */
 export const zPointHistoryType = z.enum([
@@ -283,6 +310,29 @@ export const zPosts = z.object({
 });
 
 /**
+ * PushSubscriptionDelete
+ */
+export const zPushSubscriptionDelete = z.object({
+    endpoint: z.string().max(512)
+});
+
+/**
+ * PushSubscriptionKeys
+ */
+export const zPushSubscriptionKeys = z.object({
+    p256dh: z.string().min(1).max(200),
+    auth: z.string().min(1).max(100)
+});
+
+/**
+ * PushSubscriptionOperation
+ */
+export const zPushSubscriptionOperation = z.object({
+    endpoint: z.string().max(512),
+    keys: zPushSubscriptionKeys
+});
+
+/**
  * QuestOperation
  */
 export const zQuestOperation = z.object({
@@ -373,6 +423,22 @@ export const zResponseModelKaraokeResponse = z.object({
 export const zResponseModelKaraokes = z.object({
     success: z.boolean(),
     data: zKaraokes
+});
+
+/**
+ * ResponseModel[NotificationKey]
+ */
+export const zResponseModelNotificationKey = z.object({
+    success: z.boolean(),
+    data: zNotificationKey
+});
+
+/**
+ * ResponseModel[NotificationSendResult]
+ */
+export const zResponseModelNotificationSendResult = z.object({
+    success: z.boolean(),
+    data: zNotificationSendResult
 });
 
 /**
@@ -730,10 +796,12 @@ export const zUserPermission = z.union([
     z.literal(8388608),
     z.literal(8519680),
     z.literal(16777216),
+    z.literal(67108864),
+    z.literal(67239936),
     z.literal(5652928),
     z.literal(22464962),
-    z.literal(14296592),
-    z.literal(33554431)
+    z.literal(81405456),
+    z.literal(100663295)
 ]);
 
 /**
@@ -754,6 +822,20 @@ export const zAdminUserCreateRequest = z.object({
     grade: z.int().nullish(),
     number: z.int().nullish(),
     student_no: z.int().nullish()
+});
+
+/**
+ * NotificationSend
+ */
+export const zNotificationSend = z.object({
+    title: z.string().min(1).max(50),
+    body: z.string().min(1).max(200),
+    url: z.string().max(200).optional().default('/'),
+    target: zNotificationTargetType,
+    user_ids: z.array(z.int()).min(1).max(1000).nullish(),
+    user_type: zUserType.nullish(),
+    grade: z.int().gte(1).lte(9).nullish(),
+    number: z.int().gte(1).lte(99).nullish()
 });
 
 /**
@@ -1500,3 +1582,29 @@ export const zDecideKaraokePartyInvitePath = z.object({
  * 정상적으로 수락/거절 완료
  */
 export const zDecideKaraokePartyInviteResponse = zResponseModelBool;
+
+/**
+ * 공개키 조회 성공
+ */
+export const zGetNotificationKeyResponse = zResponseModelNotificationKey;
+
+export const zUnsubscribeNotificationBody = zPushSubscriptionDelete;
+
+/**
+ * 구독 해제 성공 (구독이 없어도 성공)
+ */
+export const zUnsubscribeNotificationResponse = z.void();
+
+export const zSubscribeNotificationBody = zPushSubscriptionOperation;
+
+/**
+ * 구독 등록 성공
+ */
+export const zSubscribeNotificationResponse = z.void();
+
+export const zSendNotificationBody = zNotificationSend;
+
+/**
+ * 알림 전송 시작
+ */
+export const zSendNotificationResponse = zResponseModelNotificationSendResult;

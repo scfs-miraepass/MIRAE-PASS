@@ -66,6 +66,7 @@ class LoggerCore:
     service_quest: logging.Logger = ...
     service_karaoke: logging.Logger = ...
     service_sticker: logging.Logger = ...
+    service_notification: logging.Logger = ...
 
     def __new__(cls, *args, **kwargs):
         if cls.instance is None:
@@ -101,6 +102,7 @@ class LoggerCore:
         cls.service_quest = self.get_logger("service.quest", filename="service", debug=settings.debug)
         cls.service_karaoke = self.get_logger("service.karaoke", filename="service", debug=settings.debug)
         cls.service_sticker = self.get_logger("service.sticker", filename="service", debug=settings.debug)
+        cls.service_notification = self.get_logger("service.notification", filename="service", debug=settings.debug)
 
         cls.initialized = True
 

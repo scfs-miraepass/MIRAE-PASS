@@ -17028,6 +17028,10 @@ __metadata:
     vue: "catalog:"
     vue-router: "npm:^5.4.0"
     vue-tsc: "catalog:"
+    workbox-core: "npm:7.4.1"
+    workbox-precaching: "npm:7.4.1"
+    workbox-routing: "npm:7.4.1"
+    workbox-strategies: "npm:7.4.1"
     ws: "npm:^8.18.3"
     zod: "catalog:"
   languageName: unknown

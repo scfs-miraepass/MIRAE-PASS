@@ -1,0 +1,134 @@
+import { Callout } from 'nextra/components'
+
+# 앱 알림
+
+미래패스 앱(PWA)에 **웹 푸시 알림**을 보냅니다. 앱을 닫아 두어도 휴대폰 알림으로 받을 수 있습니다.
+
+- 사용자가 앱의 **설정 → 알림 받기**를 켜면, 그 기기가 [구독](#알림-구독-등록)됩니다. 한 사람이 여러 기기를 구독할 수 있습니다.
+- **포인트가 지급되거나 차감(사용)되면** 본인에게 자동으로 알림이 갑니다. ([포인트 알림](#포인트-알림))
+- 관리자는 대상을 골라 [알림을 보낼 수 있습니다](#알림-보내기-관리자).
+
+| 방법 | 경로 | 설명 | 필요한 권한 |
+| --- | --- | --- | --- |
+| `GET` | `/notification/key` | [알림 공개키 조회](#알림-공개키-조회) | 로그인 |
+| `PUT` | `/notification/subscription` | [알림 구독 등록](#알림-구독-등록) | 로그인 |
+| `DELETE` | `/notification/subscription` | [알림 구독 해제](#알림-구독-해제) | 로그인 |
+| `POST` | `/notification/send` | [알림 보내기 (관리자)](#알림-보내기-관리자) | `SEND_NOTIFICATION` |
+
+<Callout type="info">
+    서버에 VAPID 키 환경 변수가 없으면 알림 기능이 꺼집니다. ([환경 변수](/docs/getting-started/environment#알림-웹-푸시))
+    iPhone은 홈 화면에 추가한 앱(iOS 16.4 이상)에서만 알림을 받을 수 있습니다.
+</Callout>
+
+## 알림 공개키 조회
+
+`GET /notification/key` · SDK `getNotificationKey`
+
+기기에서 구독할 때 `PushManager.subscribe()`의 `applicationServerKey`로 쓰는 VAPID 공개키를 가져옵니다.
+
+```json
+{ "success": true, "data": { "public_key": "BNc...(base64url)" } }
+```
+
+| 항목 | 설명 |
+| --- | --- |
+| `public_key` | VAPID 공개키(base64url)입니다. 서버에 알림 설정이 없으면 `null`입니다. |
+
+## 알림 구독 등록
+
+`PUT /notification/subscription` · SDK `subscribeNotification`
+
+이 기기의 푸시 구독을 등록합니다. 본문은 브라우저의 `PushSubscription.toJSON()` 값입니다.
+같은 기기를 다른 사람이 구독하고 있었다면 로그인한 사람으로 옮깁니다.
+
+| 위치 | 이름 | 타입 | 필수 | 설명 |
+| --- | --- | --- | --- | --- |
+| 본문 | `endpoint` | 문자열 | ○ | 푸시 서비스 주소 (최대 512자) |
+| 본문 | `keys.p256dh` | 문자열 | ○ | 구독 공개키 |
+| 본문 | `keys.auth` | 문자열 | ○ | 구독 인증 비밀값 |
+
+**응답** `204` — 본문이 없습니다.
+
+| 오류 | 이유 |
+| --- | --- |
+| `422` | 지원하지 않는 푸시 서비스이거나 형식이 올바르지 않습니다. |
+| `503` | 서버에 알림 설정이 없습니다. |
+
+<Callout type="info">
+    서버가 엉뚱한 주소로 요청을 보내지 않도록, `endpoint`는 브라우저 푸시 서비스(Chrome `fcm.googleapis.com`, Firefox `push.services.mozilla.com`, Safari `web.push.apple.com`, Edge `notify.windows.com`)의 `https` 주소만 받습니다.
+</Callout>
+
+## 알림 구독 해제
+
+`DELETE /notification/subscription` · SDK `unsubscribeNotification`
+
+이 기기의 구독을 해제합니다. 앱은 **로그아웃하기 전에** 이 API를 호출해, 공용 기기에서 다음 사람에게 이전 사람의 알림이 가지 않게 합니다.
+구독이 없어도 `204`로 응답합니다.
+
+| 위치 | 이름 | 타입 | 필수 | 설명 |
+| --- | --- | --- | --- | --- |
+| 본문 | `endpoint` | 문자열 | ○ | 해제할 푸시 서비스 주소 |
+
+**응답** `204` — 본문이 없습니다.
+
+## 알림 보내기 (관리자)
+
+`POST /notification/send` · SDK `sendNotification`
+
+대상을 골라 알림을 보냅니다. 대상 수와 기기 수를 바로 응답하고, 실제 전송은 백그라운드에서 진행합니다.
+알림을 켜지 않은 사람에게는 가지 않습니다. 보낸 알림은 따로 저장하지 않습니다.
+
+| 위치 | 이름 | 타입 | 필수 | 설명 |
+| --- | --- | --- | --- | --- |
+| 본문 | `title` | 문자열 | ○ | 제목 (1~50자) |
+| 본문 | `body` | 문자열 | ○ | 내용 (1~200자) |
+| 본문 | `url` | 문자열 | | 알림을 눌렀을 때 열 앱 안 경로. `/`로 시작해야 합니다. 기본값 `/` |
+| 본문 | `target` | 문자열 | ○ | 대상 종류 (아래 표) |
+| 본문 | `user_ids` | 숫자 목록 | | `target`이 `users`일 때 대상 유저 ID (최대 1000명) |
+| 본문 | `user_type` | 문자열 | | `target`이 `user_type`일 때 `student` · `teacher` · `service` |
+| 본문 | `grade` | 숫자 | | `target`이 `class`일 때 학년 |
+| 본문 | `number` | 숫자 | | `target`이 `class`일 때 반. 생략하면 학년 전체 |
+
+| `target` | 대상 |
+| --- | --- |
+| `all` | 모든 사용자 |
+| `users` | `user_ids`의 사용자 |
+| `user_type` | 계정 종류가 `user_type`인 사용자 전체 |
+| `class` | `grade`학년(`number`반) 학생 |
+
+**응답** `200`
+
+```json
+{ "success": true, "data": { "target_users": 120, "subscriptions": 87 } }
+```
+
+| 항목 | 설명 |
+| --- | --- |
+| `target_users` | 대상 사용자 수입니다. |
+| `subscriptions` | 알림을 보낼 기기 수입니다. 알림을 켠 기기만 셉니다. |
+
+| 오류 | 이유 |
+| --- | --- |
+| `403` | `SEND_NOTIFICATION` 권한이 없습니다. |
+| `404` | 대상 사용자가 없습니다. |
+| `422` | 대상 조건이 빠졌거나(`users`인데 `user_ids` 없음 등) `url`이 앱 안 경로가 아닙니다. |
+| `503` | 서버에 알림 설정이 없습니다. |
+
+```ts
+await $API.sendNotification({
+    body: { title: "체육대회 안내", body: "내일 1교시는 운동장으로 모여 주세요.", target: "class", grade: 1 },
+})
+```
+
+## 포인트 알림
+
+포인트가 바뀌면 본인에게 자동으로 알림이 갑니다. 별도 API는 없습니다.
+
+| 경우 | 알림 |
+| --- | --- |
+| 지급 (교사 지급, 퀘스트, 스탬프, 노래방 예약 취소 환불, 관리자 일괄 지급 등) | 제목 `포인트 지급`, 내용 `+100점 · {사유}` |
+| 차감 (매점 · 카페 결제, 노래방 입찰, 관리자 일괄 차감 등) | 제목 `포인트 사용`, 내용 `-3,000점 · {사유}` |
+
+- 사유는 포인트 기록의 `reason`이며, 메모(`memo`)는 넣지 않습니다.
+- 데이터베이스에 반영(커밋)된 뒤에 보내며, 처리 중 오류로 취소(롤백)되면 보내지 않습니다.
+- 푸시 서비스가 만료(`404`, `410`)를 알린 구독은 자동으로 지웁니다.

@@ -25,6 +25,21 @@ import { Callout } from 'nextra/components'
 | `DEBUG`           | `false`              | 디버그 모드. 운영에서는 끄세요.                                                                   |
 | `DATABASE_DEBUG`  | `false`              | 실행되는 SQL을 로그에 출력합니다.                                                                 |
 
+### 알림 (웹 푸시)
+
+앱 알림을 보내려면 세 값을 모두 넣어야 합니다. 하나라도 없으면 알림 기능이 꺼지고(설정 화면에서 켤 수 없음), 서버는 정상적으로 동작합니다.
+키는 [`cli vapid-keys`](/docs/manage/cli#vapid-keys)로 만듭니다.
+
+| 변수                | 기본값 | 설명                                                                             |
+|---------------------|--------|----------------------------------------------------------------------------------|
+| `VAPID_PUBLIC_KEY`  | (없음) | VAPID 공개키. 앱이 알림을 구독할 때 사용합니다.                                  |
+| `VAPID_PRIVATE_KEY` | (없음) | VAPID 개인키. 외부에 공개하지 마세요.                                             |
+| `VAPID_SUBJECT`     | (없음) | 푸시 서비스에 알리는 연락처. `mailto:관리자메일` 또는 `https://서비스주소` 형식입니다. |
+
+<Callout type="warning">
+    VAPID 키를 바꾸면 사용자들이 켜 둔 알림 구독이 모두 동작하지 않아, 각자 설정에서 알림을 다시 켜야 합니다.
+</Callout>
+
 <Callout type="info">
 웹 앱과 관리자 페이지는 모두 `client`를 거쳐 같은 출처에서 API를 호출합니다. 다른 도메인에서 API를 직접 호출하지 않는다면 `ALLOWED_ORIGINS`를 서비스 도메인으로 좁혀 두는 것이 좋습니다.
 </Callout>
