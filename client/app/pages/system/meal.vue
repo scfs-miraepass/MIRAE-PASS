@@ -11,14 +11,27 @@ const toast = useToast();
 
 // 기기 시간대와 관계없이 학교 기준(KST) 오늘을 YYYY-MM-DD로 구합니다. (en-CA 형식이 YYYY-MM-DD)
 const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date());
-const dayOffset = ref<number>(0);
 
 // 날짜 계산은 UTC 자정 기준 Date로 해서 시간대 영향을 받지 않게 합니다.
-const targetDate = computed(() => {
+const dateAt = (offset: number) => {
     const d = new Date(`${today}T00:00:00Z`);
-    d.setUTCDate(d.getUTCDate() + dayOffset.value);
+    d.setUTCDate(d.getUTCDate() + offset);
     return d;
-});
+};
+// 토요일 · 일요일은 급식이 없으므로 건너뜁니다. (getUTCDay: 0 = 일, 6 = 토)
+const isWeekend = (offset: number) => [0, 6].includes(dateAt(offset).getUTCDay());
+
+// 오늘부터의 날짜 차이. 오늘이 주말이면 다음 월요일부터 보여줍니다.
+const dayOffset = ref<number>(0);
+while (isWeekend(dayOffset.value)) dayOffset.value++;
+
+const moveDay = (direction: 1 | -1) => {
+    let next = dayOffset.value + direction;
+    while (isWeekend(next)) next += direction;
+    dayOffset.value = next;
+};
+
+const targetDate = computed(() => dateAt(dayOffset.value));
 const dateQuery = computed(() => targetDate.value.toISOString().slice(0, 10));
 const dateLabel = computed(() => {
     const d = targetDate.value;
@@ -52,12 +65,12 @@ const { data: meals, pending } = await useAsyncData(
     </div>
 
     <div class="flex items-center justify-between">
-        <UButton @click="dayOffset--" color="neutral" variant="ghost" icon="i-ph-caret-left-bold" aria-label="이전 날" class="p-2 rounded-2xl hover:bg-accented active:bg-accented focus-visible:bg-accented" size="lg" />
+        <UButton @click="moveDay(-1)" color="neutral" variant="ghost" icon="i-ph-caret-left-bold" aria-label="이전 날" class="p-2 rounded-2xl hover:bg-accented active:bg-accented focus-visible:bg-accented" size="lg" />
         <div class="text-center">
             <p class="text-p0 font-semibold">{{ dateLabel }}</p>
             <p class="text-ui-p2 light:text-black/50 dark:text-white/50 mt-0.5">{{ relativeLabel }}</p>
         </div>
-        <UButton @click="dayOffset++" color="neutral" variant="ghost" icon="i-ph-caret-right-bold" aria-label="다음 날" class="p-2 rounded-2xl hover:bg-accented active:bg-accented focus-visible:bg-accented" size="lg" />
+        <UButton @click="moveDay(1)" color="neutral" variant="ghost" icon="i-ph-caret-right-bold" aria-label="다음 날" class="p-2 rounded-2xl hover:bg-accented active:bg-accented focus-visible:bg-accented" size="lg" />
     </div>
 
     <hr class="border-default my-5" />
