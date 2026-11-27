@@ -10,6 +10,7 @@ import DeductPoint from "@/components/home/section/deductPoint.vue";
 import Karaoke from "@/components/home/section/karaoke.vue";
 import Sticker from "@/components/home/section/sticker.vue";
 import StickerGive from "@/components/home/section/stickerGive.vue";
+import Meal from "@/components/home/section/meal.vue";
 import Notice from "~/components/home/notice.vue";
 
 const session = useSession()
@@ -25,6 +26,7 @@ const sectionItem = computed(() => {
     if (hasPermission(permissions, UserPermission.VIEW_KARAOKE)) items.push(Karaoke)
     if (hasPermission(permissions, UserPermission.GIVE_STICKER)) items.push(StickerGive)
     if (hasPermission(permissions, UserPermission.VIEW_STICKER)) items.push(Sticker)
+    if (hasPermission(permissions, UserPermission.VIEW_MEAL)) items.push(Meal)
 
     return items
 })

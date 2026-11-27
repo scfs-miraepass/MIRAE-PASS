@@ -1,0 +1,84 @@
+<script setup lang="ts">
+import type { MealInfo } from "@miraepass/api-client";
+
+definePageMeta({
+    permissions: [ UserPermission.VIEW_MEAL ],
+});
+
+// NEIS 알레르기 유발 식품 번호 (식단표 메뉴 옆 숫자)
+const ALLERGY_NAMES = [
+    "난류", "우유", "메밀", "땅콩", "대두", "밀", "고등어", "게", "새우", "돼지고기",
+    "복숭아", "토마토", "아황산류", "호두", "닭고기", "쇠고기", "오징어", "조개류", "잣",
+];
+const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
+
+const toast = useToast();
+
+// 기기 시간대와 관계없이 학교 기준(KST) 오늘을 YYYY-MM-DD로 구합니다. (en-CA 형식이 YYYY-MM-DD)
+const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date());
+const dayOffset = ref<number>(0);
+
+// 날짜 계산은 UTC 자정 기준 Date로 해서 시간대 영향을 받지 않게 합니다.
+const targetDate = computed(() => {
+    const d = new Date(`${today}T00:00:00Z`);
+    d.setUTCDate(d.getUTCDate() + dayOffset.value);
+    return d;
+});
+const dateQuery = computed(() => targetDate.value.toISOString().slice(0, 10));
+const dateLabel = computed(() => {
+    const d = targetDate.value;
+    return `${d.getUTCMonth() + 1}월 ${d.getUTCDate()}일 (${WEEKDAYS[d.getUTCDay()]})`;
+});
+const RELATIVE_LABELS: Record<number, string> = { [-1]: "어제", 0: "오늘", 1: "내일" };
+const relativeLabel = computed(() => RELATIVE_LABELS[dayOffset.value] ?? "오늘로 돌아가기");
+
+const { data: meals, pending } = await useAsyncData(
+    "meal.day",
+    async (_nuxtApp, { signal }): Promise<MealInfo[]> => {
+        const req = await $API.getMealsMealGet({ query: { date: dateQuery.value }, signal });
+        if (req.error) {
+            if (!signal.aborted) {
+                toast.add({ title: "급식을 불러오지 못했어요.", description: karaokeErrorMessage(req.error), color: "error" });
+            }
+            return [];
+        }
+        return req.data.data;
+    },
+    { watch: [dateQuery], default: () => [] },
+);
+</script>
+
+<template>
+    <div class="flex items-center mb-4">
+        <NuxtLink to="/" v-slot="{ navigate }" custom>
+            <UButton @click="navigate()" color="neutral" variant="ghost" icon="i-ph-caret-left-bold" class="p-2 rounded-2xl hover:bg-accented active:bg-accented focus-visible:bg-accented" size="xl" />
+        </NuxtLink>
+        <p class="text-2xl font-bold text-gray-900 dark:text-white ml-1">급식</p>
+    </div>
+
+    <div class="flex items-center justify-between mb-4">
+        <UButton @click="dayOffset--" color="neutral" variant="ghost" icon="i-ph-caret-left-bold" aria-label="이전 날" class="p-2 rounded-2xl" size="lg" />
+        <div class="text-center">
+            <p class="text-p0 font-semibold">{{ dateLabel }}</p>
+            <button type="button" class="text-ui-p2 light:text-black/50 dark:text-white/50" @click="dayOffset = 0">
+                {{ relativeLabel }}
+            </button>
+        </div>
+        <UButton @click="dayOffset++" color="neutral" variant="ghost" icon="i-ph-caret-right-bold" aria-label="다음 날" class="p-2 rounded-2xl" size="lg" />
+    </div>
+
+    <div v-if="pending" class="space-y-3">
+        <USkeleton v-for="i in 3" :key="i" class="h-40 rounded-3xl" />
+    </div>
+    <div v-else-if="meals.length" class="space-y-3">
+        <MealCard v-for="item in meals" :key="item.type" :item="item" />
+        <p class="text-p3 leading-relaxed px-2 pt-1 light:text-black/40 dark:text-white/40">
+            알레르기 정보:
+            <template v-for="(name, index) in ALLERGY_NAMES" :key="name">{{ index + 1 }}.{{ name }} </template>
+        </p>
+    </div>
+    <div v-else class="text-center py-16 light:text-black/50 dark:text-white/50">
+        <UIcon name="i-ph-bowl-food" class="text-h6" />
+        <p class="text-p1 mt-2">급식 정보가 없어요</p>
+    </div>
+</template>
