@@ -15,5 +15,6 @@ export default {
     stamp: "스탬프",
     sticker: "스티커",
     karaoke: "노래방 경매",
+    notification: "앱 알림",
     admin: "관리자",
 };

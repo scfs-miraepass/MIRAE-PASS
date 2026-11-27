@@ -262,6 +262,18 @@ yarn workspace scfs-miraepass-front dev:build
 - 배포 후 예전 청크를 불러오지 못하면 바로 새로고침합니다. (`nuxt.config.ts`의 `experimental.emitRouteChunkError: "automatic-immediate"`)
 - 미리 받아 둘 파일은 `nuxt.config.ts`의 `pwa.injectManifest.globPatterns`로 정합니다. HTML이나 `/_nuxt/builds/*.json`은 넣지 않습니다. 넣으면 배포 후에도 예전 화면이나 예전 청크를 계속 불러올 수 있습니다.
 
+#### 앱 알림 (웹 푸시)
+
+| 위치 | 역할 |
+| --- | --- |
+| `app/service-worker/sw.ts` | `push`를 받아 알림을 띄우고, 알림을 누르면 `url`의 화면을 엽니다. |
+| `composables/usePushNotification.ts` | 이 기기의 구독 상태 확인(`refresh`), 켜기(`enable`), 끄기(`disable`) |
+| `pages/setting/index.vue` | 설정의 "알림 받기" 항목 |
+| `pages/logout.vue` | 로그아웃 전에 `disable()`로 이 기기의 구독을 해제합니다. |
+
+- 알림 권한 요청(`enable`)은 브라우저 정책상 **버튼 클릭 같은 사용자 동작 안에서만** 호출할 수 있습니다.
+- 서버 API는 [앱 알림](/api/notification) 문서를 참고하세요.
+
 ## 새 페이지 추가하기
 
 <Steps>
