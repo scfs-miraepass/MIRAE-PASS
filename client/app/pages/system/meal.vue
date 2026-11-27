@@ -5,11 +5,6 @@ definePageMeta({
     permissions: [ UserPermission.VIEW_MEAL ],
 });
 
-// NEIS 알레르기 유발 식품 번호 (식단표 메뉴 옆 숫자)
-const ALLERGY_NAMES = [
-    "난류", "우유", "메밀", "땅콩", "대두", "밀", "고등어", "게", "새우", "돼지고기",
-    "복숭아", "토마토", "아황산류", "호두", "닭고기", "쇠고기", "오징어", "조개류", "잣",
-];
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
 
 const toast = useToast();
@@ -72,10 +67,6 @@ const { data: meals, pending } = await useAsyncData(
     </div>
     <div v-else-if="meals.length" class="space-y-3">
         <MealCard v-for="item in meals" :key="item.type" :item="item" />
-        <p class="text-p3 leading-relaxed px-2 pt-1 light:text-black/40 dark:text-white/40">
-            알레르기 정보:
-            <template v-for="(name, index) in ALLERGY_NAMES" :key="name">{{ index + 1 }}.{{ name }} </template>
-        </p>
     </div>
     <div v-else class="text-center py-16 light:text-black/50 dark:text-white/50">
         <UIcon name="i-ph-bowl-food" class="text-h6" />

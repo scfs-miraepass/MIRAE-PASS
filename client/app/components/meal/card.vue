@@ -10,7 +10,17 @@ const MEAL_LABELS: Record<MealType, { label: string; icon: string }> = {
     lunch: { label: "점심", icon: "i-ph-sun" },
     dinner: { label: "저녁", icon: "i-ph-moon" },
 };
+
+// NEIS 알레르기 유발 식품 번호 (식단표 메뉴 옆 숫자)
+const ALLERGY_NAMES = [
+    "난류", "우유", "메밀", "땅콩", "대두", "밀", "고등어", "게", "새우", "돼지고기",
+    "복숭아", "토마토", "아황산류", "호두", "닭고기", "쇠고기", "오징어", "조개류", "잣",
+];
+
+
 </script>
+
+
 
 <template>
     <div class="rounded-3xl bg-elevated/60 px-6 py-5">
@@ -27,7 +37,7 @@ const MEAL_LABELS: Record<MealType, { label: string; icon: string }> = {
             <li v-for="(dish, index) in item.dishes" :key="index" class="flex items-baseline justify-between gap-3">
                 <span class="text-p1">{{ dish.name }}</span>
                 <span v-if="dish.allergies?.length" class="text-p3 shrink-0 light:text-black/40 dark:text-white/40">
-                    {{ dish.allergies.join(".") }}
+                    {{ dish.allergies.map(value => ALLERGY_NAMES[value - 1]).join(', ') }}
                 </span>
             </li>
         </ul>
