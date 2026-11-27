@@ -20,6 +20,33 @@ export const zAdminUserUpdateRequest = z.object({
 });
 
 /**
+ * AttendanceResult
+ *
+ * 출석체크 결과
+ */
+export const zAttendanceResult = z.object({
+    attend_date: z.iso.date(),
+    streak: z.int(),
+    reward: z.int(),
+    bonus: z.boolean(),
+    point: z.int()
+});
+
+/**
+ * AttendanceStatus
+ *
+ * 오늘의 출석체크 상태
+ */
+export const zAttendanceStatus = z.object({
+    today: z.iso.date(),
+    available: z.boolean(),
+    attended: z.boolean(),
+    streak: z.int(),
+    days_to_bonus: z.int(),
+    reward: z.int()
+});
+
+/**
  * ChangePasswordForm
  */
 export const zChangePasswordForm = z.object({
@@ -172,7 +199,9 @@ export const zPointHistoryType = z.enum([
     'stamp',
     'stamp_bonus',
     'karaoke_bid',
-    'karaoke_cancel'
+    'karaoke_cancel',
+    'attendance',
+    'attendance_bonus'
 ]);
 
 /**
@@ -333,6 +362,22 @@ export const zRankingResponse = z.object({
     number: z.int().nullable(),
     total_point: z.int(),
     rank: z.int()
+});
+
+/**
+ * ResponseModel[AttendanceResult]
+ */
+export const zResponseModelAttendanceResult = z.object({
+    success: z.boolean(),
+    data: zAttendanceResult
+});
+
+/**
+ * ResponseModel[AttendanceStatus]
+ */
+export const zResponseModelAttendanceStatus = z.object({
+    success: z.boolean(),
+    data: zAttendanceStatus
 });
 
 /**
@@ -730,10 +775,11 @@ export const zUserPermission = z.union([
     z.literal(8388608),
     z.literal(8519680),
     z.literal(16777216),
-    z.literal(5652928),
-    z.literal(22464962),
+    z.literal(33554432),
+    z.literal(39207360),
+    z.literal(56019394),
     z.literal(14296592),
-    z.literal(33554431)
+    z.literal(67108863)
 ]);
 
 /**
@@ -1500,3 +1546,13 @@ export const zDecideKaraokePartyInvitePath = z.object({
  * 정상적으로 수락/거절 완료
  */
 export const zDecideKaraokePartyInviteResponse = zResponseModelBool;
+
+/**
+ * 출석체크 상태 조회 성공
+ */
+export const zGetAttendanceAttendanceGetResponse = zResponseModelAttendanceStatus;
+
+/**
+ * 출석체크 성공
+ */
+export const zCheckAttendanceAttendancePostResponse = zResponseModelAttendanceResult;

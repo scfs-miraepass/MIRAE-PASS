@@ -81,6 +81,88 @@ export type AdminUserUpdateRequest = {
 };
 
 /**
+ * AttendanceResult
+ *
+ * 출석체크 결과
+ */
+export type AttendanceResult = {
+    /**
+     * Attend Date
+     *
+     * 출석일 (KST)
+     */
+    attend_date: Date;
+    /**
+     * Streak
+     *
+     * 연속 출석 일수
+     */
+    streak: number;
+    /**
+     * Reward
+     *
+     * 지급한 포인트
+     */
+    reward: number;
+    /**
+     * Bonus
+     *
+     * 연속 출석 보너스인지
+     */
+    bonus: boolean;
+    /**
+     * Point
+     *
+     * 지급 후 보유 포인트
+     */
+    point: number;
+};
+
+/**
+ * AttendanceStatus
+ *
+ * 오늘의 출석체크 상태
+ */
+export type AttendanceStatus = {
+    /**
+     * Today
+     *
+     * 오늘 날짜 (KST)
+     */
+    today: Date;
+    /**
+     * Available
+     *
+     * 오늘 출석할 수 있는 날인지 (주말 · 휴업일 · 공휴일이면 false)
+     */
+    available: boolean;
+    /**
+     * Attended
+     *
+     * 오늘 이미 출석했는지
+     */
+    attended: boolean;
+    /**
+     * Streak
+     *
+     * 현재 연속 출석 일수 (끊겼으면 0)
+     */
+    streak: number;
+    /**
+     * Days To Bonus
+     *
+     * 다음 보너스까지 남은 출석 일수 (오늘 출석하면 받는 경우 1)
+     */
+    days_to_bonus: number;
+    /**
+     * Reward
+     *
+     * 다음 출석 때 받을 포인트
+     */
+    reward: number;
+};
+
+/**
  * ChangePasswordForm
  */
 export type ChangePasswordForm = {
@@ -559,7 +641,9 @@ export const PointHistoryType = {
     STAMP: 'stamp',
     STAMP_BONUS: 'stamp_bonus',
     KARAOKE_BID: 'karaoke_bid',
-    KARAOKE_CANCEL: 'karaoke_cancel'
+    KARAOKE_CANCEL: 'karaoke_cancel',
+    ATTENDANCE: 'attendance',
+    ATTENDANCE_BONUS: 'attendance_bonus'
 } as const;
 
 /**
@@ -1035,6 +1119,34 @@ export type RankingResponse = {
      * 현재 순위
      */
     rank: number;
+};
+
+/**
+ * ResponseModel[AttendanceResult]
+ */
+export type ResponseModelAttendanceResult = {
+    /**
+     * Success
+     */
+    success: boolean;
+    /**
+     * 응답 데이터
+     */
+    data: AttendanceResult;
+};
+
+/**
+ * ResponseModel[AttendanceStatus]
+ */
+export type ResponseModelAttendanceStatus = {
+    /**
+     * Success
+     */
+    success: boolean;
+    /**
+     * 응답 데이터
+     */
+    data: AttendanceStatus;
 };
 
 /**
@@ -2177,13 +2289,17 @@ export const UserPermission = {
      */
     GIVE_CLASS_STICKER: 16777216,
     /**
+     * CHECK_ATTENDANCE
+     */
+    CHECK_ATTENDANCE: 33554432,
+    /**
      * STUDENT
      */
-    STUDENT: 5652928,
+    STUDENT: 39207360,
     /**
      * TEACHER
      */
-    TEACHER: 22464962,
+    TEACHER: 56019394,
     /**
      * ADMIN
      */
@@ -2191,7 +2307,7 @@ export const UserPermission = {
     /**
      * ALL
      */
-    ALL: 33554431
+    ALL: 67108863
 } as const;
 
 /**
@@ -5110,3 +5226,77 @@ export type DecideKaraokePartyInviteResponses = {
 };
 
 export type DecideKaraokePartyInviteResponse = DecideKaraokePartyInviteResponses[keyof DecideKaraokePartyInviteResponses];
+
+export type GetAttendanceAttendanceGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/attendance';
+};
+
+export type GetAttendanceAttendanceGetErrors = {
+    /**
+     * 세션이 만료되었거나 유효하지 않음
+     */
+    401: ErrorResponse;
+    /**
+     * 권한이 없음
+     */
+    403: ErrorResponse;
+    /**
+     * 학사일정(NEIS)을 확인할 수 없음
+     */
+    503: ErrorResponse;
+};
+
+export type GetAttendanceAttendanceGetError = GetAttendanceAttendanceGetErrors[keyof GetAttendanceAttendanceGetErrors];
+
+export type GetAttendanceAttendanceGetResponses = {
+    /**
+     * 출석체크 상태 조회 성공
+     */
+    200: ResponseModelAttendanceStatus;
+};
+
+export type GetAttendanceAttendanceGetResponse = GetAttendanceAttendanceGetResponses[keyof GetAttendanceAttendanceGetResponses];
+
+export type CheckAttendanceAttendancePostData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/attendance';
+};
+
+export type CheckAttendanceAttendancePostErrors = {
+    /**
+     * 오늘은 출석할 수 없는 날 (주말 · 휴업일 · 공휴일)
+     */
+    400: ErrorResponse;
+    /**
+     * 세션이 만료되었거나 유효하지 않음
+     */
+    401: ErrorResponse;
+    /**
+     * 권한이 없음
+     */
+    403: ErrorResponse;
+    /**
+     * 오늘 이미 출석함
+     */
+    409: ErrorResponse;
+    /**
+     * 학사일정(NEIS)을 확인할 수 없음
+     */
+    503: ErrorResponse;
+};
+
+export type CheckAttendanceAttendancePostError = CheckAttendanceAttendancePostErrors[keyof CheckAttendanceAttendancePostErrors];
+
+export type CheckAttendanceAttendancePostResponses = {
+    /**
+     * 출석체크 성공
+     */
+    201: ResponseModelAttendanceResult;
+};
+
+export type CheckAttendanceAttendancePostResponse = CheckAttendanceAttendancePostResponses[keyof CheckAttendanceAttendancePostResponses];
