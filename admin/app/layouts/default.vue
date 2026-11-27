@@ -26,6 +26,14 @@ const links = computed(() => {
         })
     }
 
+    if (hasPermission(session.value?.permissions, UserPermission.SEND_NOTIFICATION)) {
+        items.push({
+            label: "알림 보내기",
+            icon: 'i-lucide-bell',
+            to: '/notifications'
+        })
+    }
+
     if (hasPermission(session.value?.permissions, UserPermission.MANAGE_STICKER)) {
         items.push({
             label: "스티커 관리",

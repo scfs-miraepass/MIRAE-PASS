@@ -61,6 +61,7 @@ const permissionList = [
     { label: '스티커 보기', value: UserPermission.VIEW_STICKER, description: '자신의 스티커 보유 수와 스티커 랭킹(개인·학급)을 열람할 수 있는 권한' },
     { label: '스티커 관리', value: UserPermission._MANAGE_STICKER, description: '스티커 지급·회수, 기록 조회·취소, 수동 초기화 등 전반적으로 관리할 수 있는 권한' },
     { label: '학급에 스티커 전달', value: UserPermission.GIVE_CLASS_STICKER, description: '받은 스티커를 원하는 학급에 전달할 수 있는 권한 (교사용)' },
+    { label: '알림 보내기', value: UserPermission._SEND_NOTIFICATION, description: '대상을 골라 앱 알림을 보낼 수 있는 권한 (대상 검색에 유저 검색 권한 필요)' },
 ]
 
 const presetPermissions = [
