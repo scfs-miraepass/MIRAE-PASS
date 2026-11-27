@@ -22,8 +22,12 @@ const dateAt = (offset: number) => {
 const isWeekend = (offset: number) => [0, 6].includes(dateAt(offset).getUTCDay());
 
 // 오늘부터의 날짜 차이. 오늘이 주말이면 다음 월요일부터 보여줍니다.
-const dayOffset = ref<number>(0);
-while (isWeekend(dayOffset.value)) dayOffset.value++;
+let startOffset = 0;
+while (isWeekend(startOffset)) startOffset++;
+const dayOffset = ref<number>(startOffset);
+// 처음 보여준 날(오늘, 주말이면 다음 월요일)이 아닌 날을 보고 있으면 돌아가기 버튼을 띄웁니다.
+const isAwayFromStart = computed(() => dayOffset.value !== startOffset);
+const returnLabel = startOffset === 0 ? "오늘로 돌아가기" : "다음 급식일로 돌아가기";
 
 const moveDay = (direction: 1 | -1) => {
     let next = dayOffset.value + direction;
@@ -85,4 +89,20 @@ const { data: meals, pending } = await useAsyncData(
         <UIcon name="i-ph-bowl-food" class="text-h6" />
         <p class="text-p1 mt-2">급식 정보가 없어요</p>
     </div>
+
+    <!-- 플로팅 버튼이 마지막 급식 카드를 가리지 않도록 공간을 둡니다. -->
+    <div v-if="isAwayFromStart" class="h-20" />
+
+    <Transition
+        enter-active-class="transition duration-200 ease-out"
+        enter-from-class="opacity-0 translate-y-4"
+        leave-active-class="transition duration-150 ease-in"
+        leave-to-class="opacity-0 translate-y-4"
+    >
+        <div v-if="isAwayFromStart" class="fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+1.25rem)] flex justify-center pointer-events-none">
+            <UButton @click="dayOffset = startOffset" icon="i-ph-arrow-counter-clockwise-bold" size="xl" class="pointer-events-auto rounded-full px-5 py-3 shadow-lg transition-all active:scale-95">
+                <p class="text-p1">{{ returnLabel }}</p>
+            </UButton>
+        </div>
+    </Transition>
 </template>
