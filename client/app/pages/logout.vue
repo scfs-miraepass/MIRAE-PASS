@@ -6,7 +6,11 @@ definePageMeta({
 const session = useSession();
 const { lastFetched } = useAuth();
 
+const push = usePushNotification();
+
 onMounted(async () => {
+    // 공용 기기에서 다음 사용자에게 이전 사용자의 알림이 가지 않도록, 로그아웃 전에 이 기기의 알림 구독을 해제합니다.
+    await push.disable().catch(() => undefined);
     const req = await $API.logoutAuthLogoutPost();
     if (!req.error) {
         session.value = undefined;

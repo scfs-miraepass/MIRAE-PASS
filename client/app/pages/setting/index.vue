@@ -23,6 +23,30 @@ const selectedTheme = computed({
     }
 })
 
+const toast = useToast()
+const push = usePushNotification()
+const pushBusy = ref(false)
+const PUSH_LABELS = { on: '켜짐', off: '꺼짐', denied: '거부됨', unsupported: '지원 안 함' } as const
+
+onMounted(() => push.refresh())
+
+const handlePush = async () => {
+    if (pushBusy.value) return
+    pushBusy.value = true
+    try {
+        if (push.state.value === 'on') {
+            await push.disable()
+            toast.add({ title: '이 기기의 알림을 껐어요.', color: 'success' })
+            return
+        }
+        const error = await push.enable()
+        if (error) toast.add({ title: '알림을 켜지 못했어요.', description: error, color: 'error' })
+        else toast.add({ title: '이제 포인트 알림과 공지 알림을 받아요.', color: 'success' })
+    } finally {
+        pushBusy.value = false
+    }
+}
+
 const handleLogout = async () => {
     await navigateTo('/logout', { replace: true })
 }
@@ -45,6 +69,7 @@ const handleTheme = () => {
     <div class="space-y-3">
         <Section>
             <Obj :icon="selectedTheme!.icon()" label="화면 테마" :value="selectedTheme!.label" @click="handleTheme" />
+            <Obj icon="i-ph-bell" label="알림 받기" :value="PUSH_LABELS[push.state.value]" :disabled="pushBusy" @click="handlePush" />
         </Section>
         <Section name="계정">
             <NuxtLink to="/setting/kiosk" v-slot="{ navigate }" custom>

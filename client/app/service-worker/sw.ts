@@ -40,3 +40,46 @@ registerRoute(
         { denylist: NETWORK_ONLY_PATHS },
     ),
 );
+
+// ---- 앱 알림 (웹 푸시) ----
+// 서버(app/core/service/notification.py)가 보내는 PushMessage JSON: { title, body, url }
+type PushMessage = { title?: string; body?: string; url?: string };
+
+const NOTIFICATION_ICON = "/pwa/pwa-192x192.png";
+
+self.addEventListener("push", (event) => {
+    let message: PushMessage = {};
+    try {
+        message = event.data?.json() ?? {};
+    } catch {
+        message = { body: event.data?.text() };
+    }
+    event.waitUntil(
+        self.registration.showNotification(message.title || "미래패스", {
+            body: message.body ?? "",
+            icon: NOTIFICATION_ICON,
+            badge: NOTIFICATION_ICON,
+            data: { url: message.url || "/" },
+        }),
+    );
+});
+
+self.addEventListener("notificationclick", (event) => {
+    event.notification.close();
+    // 앱 안 경로만 엽니다. (다른 출처 주소면 첫 화면으로)
+    const target = new URL(event.notification.data?.url ?? "/", self.location.origin);
+    const url = target.origin === self.location.origin ? target.href : self.location.origin;
+
+    event.waitUntil(
+        (async () => {
+            const windows = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+            const opened = windows.find((client) => new URL(client.url).origin === self.location.origin);
+            if (opened) {
+                await opened.focus();
+                if (opened.url !== url) await opened.navigate(url).catch(() => undefined);
+                return;
+            }
+            await self.clients.openWindow(url);
+        })(),
+    );
+});
