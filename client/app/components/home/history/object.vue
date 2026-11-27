@@ -85,6 +85,14 @@ const icon = computed(() => {
             icon: "🎤",
             color: "#586475",
         },
+        attendance: {
+            icon: "📅",
+            color: "#a2bcff",
+        },
+        attendance_bonus: {
+            icon: "🎉",
+            color: "#f2a154",
+        },
     }[props.type];
 });
 </script>
