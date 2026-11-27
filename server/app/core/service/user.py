@@ -34,6 +34,7 @@ from ..redis_keys import Keys
 from ..security import get_password_hash
 from ..sessions import revoke_user_sessions
 from .history import History
+from .notification import point_message, queue_after_commit
 from .post import Post
 from .quest import Quest
 from .sticker import STICKER_MAX, STICKER_TARGET_TYPES, Sticker, StickerBulkItem, StickerClassGrant, StickerCount
@@ -199,6 +200,8 @@ class User(ServiceCore[Users], _Type):
                 user.total_point = before_total
 
             history = await self.create_history(changed=amount, reason=reason, memo=memo, type=type)
+            # 바깥 트랜잭션까지 커밋된 뒤에 보냅니다. (롤백되면 보내지 않음)
+            queue_after_commit(session, [self.id], point_message(amount, reason))
 
         await on_point_changed(self.id, user.type)
 
@@ -236,6 +239,7 @@ class User(ServiceCore[Users], _Type):
             user.point -= amount
 
             history = await self.create_history(changed=(amount * -1), reason=reason, memo=memo, type=type)
+            queue_after_commit(session, [self.id], point_message(-amount, reason))
 
         await on_point_changed(self.id, user.type)
 

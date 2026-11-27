@@ -6,6 +6,7 @@ from sqlmodel import col, func, select, update, delete
 
 from app.core import LoginDep, ServiceClient
 from app.core.cache_events import on_points_changed, on_user_created, on_user_deleted, on_user_profile_changed
+from app.core.service.notification import point_message, queue_after_commit
 from app.core.sessions import revoke_user_sessions
 from app.schemas import (
     PointHistory,
@@ -155,6 +156,8 @@ async def update_users_point(request: AdminPointRequest, auth_data: LoginDep):
             for uid in target_ids
         ]
         session.add_all(history_entries)
+        if request.amount != 0:
+            queue_after_commit(session, target_ids, point_message(request.amount, request.reason))
 
         client.logs.service.info(
             f"관리자(ID: {user.id})가 사용자들({target_ids})의 포인트를 {request.amount}만큼 일괄 변경했습니다. (사유: {request.reason})"

@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from .endpoints import admin, auth, point, posts, quest, search, stamp, sticker, karaoke
+from .endpoints import admin, auth, point, posts, quest, search, stamp, sticker, karaoke, notification
 
 router = APIRouter()
 
@@ -13,3 +13,4 @@ router.include_router(posts.router)
 router.include_router(stamp.router)
 router.include_router(sticker.router)
 router.include_router(karaoke.router)
+router.include_router(notification.router)
