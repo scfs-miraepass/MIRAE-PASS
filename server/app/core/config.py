@@ -3,6 +3,12 @@ from typing import Annotated
 from pydantic import BaseModel, Field, MySQLDsn, RedisDsn, field_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
+NEIS_OFFICE_CODE = "Q10"
+"""NEIS 시도교육청 코드 (전남). 환경변수 `NEIS_OFFICE_CODE`가 있으면 그 값을 사용합니다."""
+
+NEIS_SCHOOL_CODE = "7140309"
+"""NEIS 학교 코드 (순천미래과학고등학교). 환경변수 `NEIS_SCHOOL_CODE`가 있으면 그 값을 사용합니다."""
+
 
 class Database(BaseModel):
     url: MySQLDsn = Field(alias="URL")
@@ -38,6 +44,9 @@ class Settings(BaseSettings):
     debug: bool = Field(False, alias="DEBUG")
     database_debug: bool = Field(False, alias="DATABASE_DEBUG")
     allow_origins: Annotated[list[str], NoDecode] = Field(alias="ALLOWED_ORIGINS")
+    neis_api_key: str | None = Field(None, alias="NEIS_API_KEY")
+    neis_office_code: str = Field(NEIS_OFFICE_CODE, alias="NEIS_OFFICE_CODE")
+    neis_school_code: str = Field(NEIS_SCHOOL_CODE, alias="NEIS_SCHOOL_CODE")
 
     @field_validator("allow_origins", mode="before")
     @classmethod

@@ -48,6 +48,14 @@ class ExpiredError(ServiceError):
     pass
 
 
+class ExternalServiceError(ServiceError):
+    """
+    외부 서비스(NEIS 등) 호출에 실패했을 때 발생합니다.
+    """
+
+    pass
+
+
 class PointInsufficient(ServiceError):
     def __init__(self, user: "User"):
         self.user = user

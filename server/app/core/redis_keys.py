@@ -223,6 +223,9 @@ class Keys:
         VERSION = RedisKey("quest:ver", ttl=HOUR, description="퀘스트 목록 페이지 캐시 버전")
         PAGE = RedisKey("quest:page:{ver}:{limit}:{offset}", ttl=5 * MINUTE, description="퀘스트 목록 페이지")
 
+    class Meal:
+        DAY = RedisKey("meal:day:{date}", ttl=HOUR, description="날짜(date, YYYYMMDD)별 급식 데이터 (NEIS)")
+
     class Karaoke:
         ITEM = RedisKey("karaoke:item:{karaoke_id}", ttl=5 * MINUTE, description="노래방(karaoke_id) 경매 데이터")
         VERSION = RedisKey(
